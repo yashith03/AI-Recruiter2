@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,                   // ✅ allows .js/.jsx files
+    "checkJs": false,                  // set true if you want type-checking in JS
+    "skipLibCheck": true,
+    "strict": false,                   // you can turn this to true later
+    "noEmit": true,
+    "incremental": true,
+    "module": "esnext",
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",     // ✅ best for Next.js (uses bundlers)
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",                 // ✅ keep JSX as-is for Next.js
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx"                        // ✅ include your JSX files
+  ],
+  "exclude": ["node_modules"]
+}
