@@ -1,53 +1,45 @@
-import { UserDetailContext } from '@/context/UserDetailContext';
-import React from 'react'
-import {useState} from "react"
-import {useEffect} from "react"
+"use client"
 
-function Provider({children}) {
-    const [user,setUser]=useState();
-    useEffect(()=>{
-        CreateNewUser();
-    },[])
+import React, { useState, useEffect, useContext } from "react"
+import { UserDetailContext } from "@/context/UserDetailContext"
+import { supabase } from "/services/supabaseClient"
 
-    const CreateNewUser = () =>{
+function Provider({ children }) {
+  const [user, setUser] = useState(null)
 
-        supabase.auth.getUser().then(async({data:{user}})=>{
+  useEffect(() => {
+    const createNewUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-        //Chceks if user already exist
-        let { data: Users, error } = await supabase
-         .from('Users')
-         .select("*")
-         .eq("email", user.email)
+      // format name with capitalized words
+      const formatName = (name) => {
+        if (!name) return ""
+        return name
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(" ")
+      }
 
-         console.log(Users)
+      const formattedName = formatName(user?.user_metadata?.name)
 
-        //If not then create new user
-        if(Users?.length==0)
-        {
-            const {data,error}=await superbase
-            .from("Users")
-                .insert([
-                    {
-                        name:user?.user_metadata?.name,
-                        email:user?.email,
-                        picture:user?.user_metadata?.picture
-                    },
-                ]);
-                console.log(data);
-            
-        }
-    })
-}
+      setUser({
+        name: formattedName,
+        email: user?.email,
+        picture: user?.user_metadata?.picture,
+      })
+    }
+
+    createNewUser()
+  }, [])
+
   return (
-    <UserDetailContext.Provider value={{user, setUser}}>
-      <div>{children}</div>
+    <UserDetailContext.Provider value={{ user, setUser }}>
+      {children}
     </UserDetailContext.Provider>
   )
 }
 
 export default Provider
 
-export const useUser=()=>{
-    const context=useContext(UserDetailContext);
-    return context;
-}
+export const useUser = () => useContext(UserDetailContext)
