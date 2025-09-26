@@ -1,3 +1,5 @@
+// app/(main)/_components/AppSidebar.jsx
+
 'use client'
 
 import Image from 'next/image'
