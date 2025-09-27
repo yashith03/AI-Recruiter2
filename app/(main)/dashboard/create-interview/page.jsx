@@ -10,16 +10,18 @@ import FormContainer from './_components/FormContainer';
 
 
 
+
 function CreateInterview() {
   const  router = useRouter();
   const [step, setStep] =useState(1);
-  cont [FormData, setFormData] = useState();
+  const [FormData, setFormData] = useState();
   const onHandleInputChange = (field, value) => {
     setFormData(prev=>({
         ...prev,
         [field]: value
     })
     )
+    console.log("FormData", FormData);
   }
 
 
