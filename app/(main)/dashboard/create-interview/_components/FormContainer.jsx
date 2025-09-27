@@ -1,11 +1,11 @@
 // app/(main)/dashboard/create-interview/_components/FormContainer.jsx
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { ArrrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -15,13 +15,33 @@ import {
 } from '@/components/ui/select'
 import { InterviewType } from '@/services/Constants'
 
-function FormContainer({onHandleInputChange}) {
+function FormContainer({ onHandleInputChange }) {
+  const [interviewType, setInterviewType] = useState([])
+
+  // Send updated interviewType to parent whenever it changes
+  useEffect(() => {
+    onHandleInputChange('type', interviewType)
+  }, [interviewType])
+
+  // Toggle interview type selection
+  const AddInterviewType = (type) => {
+    if (!interviewType.includes(type)) {
+      setInterviewType((prev) => [...prev, type])
+    } else {
+      setInterviewType((prev) => prev.filter((item) => item !== type))
+    }
+  }
+
   return (
-    <div className="p-5 bg-white rounded-xl">
+    <div className="rounded-xl bg-white p-5">
       <div>
         <h2 className="text-sm font-medium">Job Position</h2>
-        <Input placeholder="e.g. Software Engineer" className="mt-2" 
-        onChange={(event) => onHandleInputChange('jobPosition', event.target.value)}
+        <Input
+          placeholder="e.g. Software Engineer"
+          className="mt-2"
+          onChange={(event) =>
+            onHandleInputChange('jobPosition', event.target.value)
+          }
         />
       </div>
 
@@ -29,14 +49,17 @@ function FormContainer({onHandleInputChange}) {
         <h2 className="text-sm font-medium">Job Description</h2>
         <Textarea
           placeholder="Enter details job description"
-          className="h-[200px] mt-2"
+          className="mt-2 h-[200px]"
+          onChange={(event) =>
+            onHandleInputChange('jobDescription', event.target.value)
+          }
         />
       </div>
 
       <div className="mt-5">
         <h2 className="text-sm font-medium">Interview Duration</h2>
-        <Select>
-          <SelectTrigger className="w-full mt-2">
+        <Select onValueChange={(value) => onHandleInputChange('duration', value)}>
+          <SelectTrigger className="mt-2 w-full">
             <SelectValue placeholder="Select Duration" />
           </SelectTrigger>
           <SelectContent>
@@ -55,7 +78,13 @@ function FormContainer({onHandleInputChange}) {
           {InterviewType.map((type, index) => (
             <div
               key={index}
-              className="flex cursor-pointer gap-2 rounded-2xl border border-gray-300 p-1 px-2"
+              className={`flex cursor-pointer gap-2 rounded-2xl border border-gray-300 p-1 px-4 hover:bg-secondary 
+                ${
+                  interviewType.includes(type.title)
+                    ? 'bg-blue-50 text-primary border-primary'
+                    : ''
+                }`}
+              onClick={() => AddInterviewType(type.title)}
             >
               <type.icon className="h-4 w-4" />
               <span>{type.title}</span>
@@ -63,8 +92,11 @@ function FormContainer({onHandleInputChange}) {
           ))}
         </div>
       </div>
-      <div className='mt-7 flex justify-end'>
-      <Button>Geenrate Question <ArrrowRight/></Button>
+
+      <div className="mt-7 flex justify-end">
+        <Button>
+          Generate Question <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
     </div>
   )
