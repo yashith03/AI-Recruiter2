@@ -1,5 +1,3 @@
-// app/(main)/dashboard/create-interview/_components/FormContainer.jsx
-
 import React, { useEffect, useState } from 'react'
 
 import { Input } from '@/components/ui/input'
@@ -18,18 +16,16 @@ import { InterviewType } from '@/services/Constants'
 function FormContainer({ onHandleInputChange }) {
   const [interviewType, setInterviewType] = useState([])
 
-  // Send updated interviewType to parent whenever it changes
-useEffect(() => {
-  onHandleInputChange('type', interviewType)
-}, [interviewType]) // ✅ OK now
+  // Update parent whenever interviewType changes
+  useEffect(() => {
+    onHandleInputChange('type', interviewType)
+  }, [interviewType, onHandleInputChange]) // ✅ include callback
 
   // Toggle interview type selection
-  const AddInterviewType = (type) => {
-    if (!interviewType.includes(type)) {
-      setInterviewType((prev) => [...prev, type])
-    } else {
-      setInterviewType((prev) => prev.filter((item) => item !== type))
-    }
+  const toggleInterviewType = (type) => {
+    setInterviewType((prev) =>
+      prev.includes(type) ? prev.filter((item) => item !== type) : [...prev, type]
+    )
   }
 
   return (
@@ -48,7 +44,7 @@ useEffect(() => {
       <div className="mt-5">
         <h2 className="text-sm font-medium">Job Description</h2>
         <Textarea
-          placeholder="Enter details job description"
+          placeholder="Enter job description details"
           className="mt-2 h-[200px]"
           onChange={(event) =>
             onHandleInputChange('jobDescription', event.target.value)
@@ -79,12 +75,8 @@ useEffect(() => {
             <div
               key={index}
               className={`flex cursor-pointer gap-2 rounded-2xl border border-gray-300 p-1 px-4 hover:bg-secondary 
-                ${
-                  interviewType.includes(type.title)
-                    ? 'bg-blue-50 text-primary border-primary'
-                    : ''
-                }`}
-              onClick={() => AddInterviewType(type.title)}
+                ${interviewType.includes(type.title) ? 'bg-blue-50 text-primary border-primary' : ''}`}
+              onClick={() => toggleInterviewType(type.title)}
             >
               <type.icon className="h-4 w-4" />
               <span>{type.title}</span>
