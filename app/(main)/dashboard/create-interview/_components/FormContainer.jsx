@@ -19,9 +19,9 @@ function FormContainer({ onHandleInputChange }) {
   const [interviewType, setInterviewType] = useState([])
 
   // Send updated interviewType to parent whenever it changes
-  useEffect(() => {
-    onHandleInputChange('type', interviewType)
-  }, [interviewType])
+useEffect(() => {
+  onHandleInputChange('type', interviewType)
+}, [interviewType]) // ✅ OK now
 
   // Toggle interview type selection
   const AddInterviewType = (type) => {
