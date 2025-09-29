@@ -1,3 +1,4 @@
+// app/(main)/dashboard/create-interview/_components/FormContainer.jsx
 import React, { useEffect, useState } from 'react'
 
 import { Input } from '@/components/ui/input'
@@ -16,10 +17,10 @@ import { InterviewType } from '@/services/Constants'
 function FormContainer({ onHandleInputChange }) {
   const [interviewType, setInterviewType] = useState([])
 
-  // Update parent whenever interviewType changes
+  // Send updated interviewType to parent whenever it changes
   useEffect(() => {
     onHandleInputChange('type', interviewType)
-  }, [interviewType, onHandleInputChange]) // ✅ include callback
+  }, [interviewType, onHandleInputChange]) // ✅ include callback in dependency array
 
   // Toggle interview type selection
   const toggleInterviewType = (type) => {
@@ -30,6 +31,7 @@ function FormContainer({ onHandleInputChange }) {
 
   return (
     <div className="rounded-xl bg-white p-5">
+      {/* Job Position */}
       <div>
         <h2 className="text-sm font-medium">Job Position</h2>
         <Input
@@ -41,6 +43,7 @@ function FormContainer({ onHandleInputChange }) {
         />
       </div>
 
+      {/* Job Description */}
       <div className="mt-5">
         <h2 className="text-sm font-medium">Job Description</h2>
         <Textarea
@@ -52,6 +55,7 @@ function FormContainer({ onHandleInputChange }) {
         />
       </div>
 
+      {/* Interview Duration */}
       <div className="mt-5">
         <h2 className="text-sm font-medium">Interview Duration</h2>
         <Select onValueChange={(value) => onHandleInputChange('duration', value)}>
@@ -68,6 +72,7 @@ function FormContainer({ onHandleInputChange }) {
         </Select>
       </div>
 
+      {/* Interview Type */}
       <div className="mt-5">
         <h2 className="text-sm font-medium">Interview Type</h2>
         <div className="mt-2 flex flex-wrap gap-3">
@@ -85,6 +90,7 @@ function FormContainer({ onHandleInputChange }) {
         </div>
       </div>
 
+      {/* Submit Button */}
       <div className="mt-7 flex justify-end">
         <Button>
           Generate Question <ArrowRight className="ml-2 h-4 w-4" />
