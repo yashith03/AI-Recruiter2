@@ -14,13 +14,25 @@ import {
 } from '@/components/ui/select'
 import { InterviewType } from '@/services/Constants'
 
-function FormContainer({ onHandleInputChange }) {
+function FormContainer({ onHandleInputChange, GoToNext }) {
   const [interviewType, setInterviewType] = useState([])
 
   // Send updated interviewType to parent whenever it changes
   useEffect(() => {
     onHandleInputChange('type', interviewType)
   }, [interviewType, onHandleInputChange]) // ✅ include callback in dependency array
+
+  const AddInterviewType=(type)=>{
+    const data=interviewType.includes(type);
+    if(!data){
+      setInterviewType([...interviewType,type])
+    }
+    else{
+      const result=interviewType.filter((item)=>item!==type)
+      setInterviewType(result)
+    }
+
+  }
 
   // Toggle interview type selection
   const toggleInterviewType = (type) => {
@@ -91,8 +103,8 @@ function FormContainer({ onHandleInputChange }) {
       </div>
 
       {/* Submit Button */}
-      <div className="mt-7 flex justify-end">
-        <Button>
+      <div className="mt-7 flex justify-end" >
+        <Button onClick={GoToNext}>
           Generate Question <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
