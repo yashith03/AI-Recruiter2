@@ -12,7 +12,7 @@ function QuestionList( { formData }) {
 
     useEffect(()=>{
         if(formData){
-            GenerateQuestionList();
+            //GenerateQuestionList();
         }
     },[formData])
 
@@ -22,12 +22,13 @@ function QuestionList( { formData }) {
          const result=await axios.post('/api/ai-model',{
            ...formData
       })
-      console.log(result.data); 
+      console.log(result.data.content); 
       setLoading(false);
 
       }catch(e){
-        toast("Server Error , Try Again");
-        setLoading(false);
+          const msg = e.response?.data?.error || "Server is busy, please try again later.";
+          toast.error(msg);
+          setLoading(false);
       }
     }
   return (

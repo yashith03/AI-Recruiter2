@@ -3,43 +3,84 @@ import { QUESTIONS_PROMPT } from "@/services/Constants";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
 
+export async function POST(req) {
+  try {
+    const { jobPosition, jobDescription, duration, type } = await req.json();
 
-export async function POST(req){
-
-    const {jobPosition, jobDescription, duration, type } = await req.json();
     const FINAL_PROMPT = QUESTIONS_PROMPT
-    .replace("{{jobTitle}}", jobPosition)
-    .replace("{{jobDescription}}", jobDescription)
-    .replace("{{duration}}", duration)
-    .replace("{{type}}", type);
+      .replace("{{jobTitle}}", jobPosition)
+      .replace("{{jobDescription}}", jobDescription)
+      .replace("{{duration}}", duration)
+      .replace("{{type}}", type);
 
-    console.log(FINAL_PROMPT);
+    console.log("🧠 Prompt sent to model:\n", FINAL_PROMPT);
 
-    try{
-
+    // ✅ Initialize OpenRouter client
     const openai = new OpenAI({
-        baseURL: "https://openrouter.ai/api/v1",
-        apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: process.env.OPENROUTER_API_KEY,
     });
-    const completion = await openai.chat.completions.create({
-        model: "google/gemini-2.0-flash-exp:free",
-        messages: [
-            { role: "user", content: FINAL_PROMPT }
-    ],
-    })
-    console.log(completion.choices[0].message);
-    return NextResponse.json({result: completion.choices[0].message}, {status: 200}  )
 
-}
-catch (error) {
-  console.error("AI Model API Error:", error?.response?.data || error.message);
+    // ✅ Fallback chain — from newest → safest
+    const models = [
+      "google/gemma-3-12b-it:free",          // ⚡️ primary: fast + accurate
+      "google/gemini-2.0-flash-exp:free",   // ⚡ fallback: large context
+      "mistralai/mistral-7b-instruct:free", // ⚙️ backup: reliable baseline
+    ];
 
-  return NextResponse.json(
-    {
-      error: error?.response?.data || "Failed to generate interview questions. Please try again later.",
-    },
-    { status: error?.status || 500 }
-  );
-}
+    let completion = null;
 
+    for (const model of models) {
+      try {
+        console.log(`🚀 Trying model: ${model}`);
+        completion = await openai.chat.completions.create({
+          model,
+          messages: [{ role: "user", content: FINAL_PROMPT }],
+        });
+        console.log(`✅ Success with model: ${model}`);
+        break; // stop after first success
+      } catch (err) {
+        console.warn(`⚠️ Model ${model} failed: ${err.message}`);
+        if (err.status === 429) {
+          console.log("⏳ Rate limited, waiting 3 seconds before next model...");
+          await new Promise((r) => setTimeout(r, 3000));
+          continue; // try next model
+        }
+        // For non-rate errors, move to next model too
+        continue;
+      }
+    }
+
+    if (!completion) {
+      throw new Error("All models failed or rate-limited.");
+    }
+
+    const message = completion.choices?.[0]?.message?.content || "No response.";
+    console.log("📝 Raw AI Output:", message);
+
+    // ✅ Try to extract clean JSON if provided
+    let parsedOutput;
+    try {
+      const jsonBlock = message.match(/```json([\s\S]*?)```/)?.[1] || "{}";
+      parsedOutput = JSON.parse(jsonBlock);
+    } catch {
+      parsedOutput = { interviewQuestions: [] };
+    }
+
+    return NextResponse.json(
+      { result: parsedOutput },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("❌ AI Model API Error:", error?.response?.data || error.message);
+    return NextResponse.json(
+      {
+        error:
+          error?.response?.data ||
+          error?.message ||
+          "Failed to generate interview questions. Please try again later.",
+      },
+      { status: error?.status || 500 }
+    );
+  }
 }
