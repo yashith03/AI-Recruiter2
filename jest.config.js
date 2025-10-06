@@ -32,6 +32,9 @@ const customJestConfig = {
     "/node_modules/",
     "<rootDir>/__tests__/QuestionList.test.jsx", // ⛔ skip this test completely
   ],
+  transformIgnorePatterns: [
+  "node_modules/(?!@vercel/speed-insights)" // ✅ allow Jest to safely skip/transform that package
+],
 };
 
 module.exports = createJestConfig(customJestConfig);
