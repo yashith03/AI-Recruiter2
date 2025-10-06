@@ -84,7 +84,7 @@ describe("CreateInterview Page", () => {
 
   test("calls router.back() when back arrow clicked", () => {
     render(<CreateInterview />);
-    fireEvent.click(screen.getByRole("img", { hidden: true })); // lucide icon is rendered as <svg>
+    fireEvent.click(screen.getByText("Create New Interview").previousSibling);
     // safer alternative if lucide icon not accessible by role:
     // fireEvent.click(screen.getByText("Create New Interview").previousSibling)
     expect(mockBack).toHaveBeenCalled();

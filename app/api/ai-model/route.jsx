@@ -1,4 +1,4 @@
-// app/(main)/api/ai-model/route.jsx
+// app/api/ai-model/route.jsx
 import { QUESTIONS_PROMPT } from "@/services/Constants";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
@@ -13,7 +13,7 @@ export async function POST(req) {
       .replace("{{duration}}", duration)
       .replace("{{type}}", type);
 
-    console.log("🧠 Prompt sent to model:\n", FINAL_PROMPT);
+    console.log(" Prompt sent to model:\n", FINAL_PROMPT);
 
     // ✅ Initialize OpenRouter client
     const openai = new OpenAI({
@@ -32,17 +32,17 @@ export async function POST(req) {
 
     for (const model of models) {
       try {
-        console.log(`🚀 Trying model: ${model}`);
+        console.log(` Trying model: ${model}`);
         completion = await openai.chat.completions.create({
           model,
           messages: [{ role: "user", content: FINAL_PROMPT }],
         });
-        console.log(`✅ Success with model: ${model}`);
+        console.log(` Success with model: ${model}`);
         break; // stop after first success
       } catch (err) {
-        console.warn(`⚠️ Model ${model} failed: ${err.message}`);
+        console.warn(` Model ${model} failed: ${err.message}`);
         if (err.status === 429) {
-          console.log("⏳ Rate limited, waiting 3 seconds before next model...");
+          console.log(" Rate limited, waiting 3 seconds before next model...");
           await new Promise((r) => setTimeout(r, 3000));
           continue; // try next model
         }
@@ -56,7 +56,7 @@ export async function POST(req) {
     }
 
     const message = completion.choices?.[0]?.message?.content || "No response.";
-    console.log("📝 Raw AI Output:", message);
+    console.log(" Raw AI Output:", message);
 
     // ✅ Try to extract clean JSON if provided
     let parsedOutput;
@@ -72,7 +72,7 @@ export async function POST(req) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("❌ AI Model API Error:", error?.response?.data || error.message);
+    console.error(" AI Model API Error:", error?.response?.data || error.message);
     return NextResponse.json(
       {
         error:

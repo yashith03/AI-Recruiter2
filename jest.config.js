@@ -1,8 +1,7 @@
+// jest.config.js
 const nextJest = require("next/jest");
 
-const createJestConfig = nextJest({
-  dir: "./",
-});
+const createJestConfig = nextJest({ dir: "./" });
 
 const customJestConfig = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
@@ -10,18 +9,14 @@ const customJestConfig = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
-
-  // ✅ Add coverage thresholds
   coverageThreshold: {
     global: {
-      branches: 80,     // % of branch coverage required
-      functions: 80,    // % of functions tested
-      lines: 80,        // % of lines tested
-      statements: 80,   // % of statements tested
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
-
-  // Optional: ignore node_modules and Next.js build folders from coverage
   coveragePathIgnorePatterns: [
     "/node_modules/",
     "<rootDir>/.next/",
@@ -29,7 +24,7 @@ const customJestConfig = {
     "<rootDir>/components/ui/",
     "context/UserDetailContext.jsx",
     "lib/utils.js",
-    "<>rootDir>/services"
+    "<rootDir>/services/",
   ],
 };
 
