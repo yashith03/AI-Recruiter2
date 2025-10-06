@@ -1,4 +1,5 @@
-//app/(main)/dashboard/create-interview/_components/QuestionList.jsx
+//app\(main)\dashboard\create-interview\_components\QuestionList.jsx
+
 import React from 'react'
 import { useEffect } from 'react'
 import { useState } from 'react'

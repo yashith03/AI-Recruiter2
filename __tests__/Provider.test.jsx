@@ -1,18 +1,22 @@
+//__tests_/Provider.test.jsx
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import Provider, { useUser } from "@/app/provider";
 import { UserDetailContext } from "@/context/UserDetailContext";
 
 // ✅ Mock Supabase client
-jest.mock("/services/supabaseClient", () => ({
+jest.mock("@/services/supabaseClient", () => ({
   supabase: {
     auth: {
-      getUser: jest.fn(),
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { email: "test@example.com", user_metadata: { name: "inupama" } } },
+      }),
     },
   },
 }));
 
-const { supabase } = require("/services/supabaseClient");
+
+const { supabase } = require("@/services/supabaseClient");
 
 // ✅ Helper component to consume context
 function TestConsumer() {
