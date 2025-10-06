@@ -9,6 +9,13 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+
+    # ✅ Add dummy Supabase environment variables for build-time safety
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://mock-project.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key"
+      NODE_ENV: "test"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,8 +25,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'   # Use same Node.js version as Vercel
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci

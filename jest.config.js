@@ -25,8 +25,7 @@ const customJestConfig = {
     "context/UserDetailContext.jsx",
     "lib/utils.js",
     "<rootDir>/services/",
-    "<rootDir>/app/(main)/dashboard/create-interview/_components/QuestionList.jsx", //  exclude this file
-
+      "<rootDir>/app/(main)/dashboard/create-interview/_components/QuestionList.jsx", // ✅ exclude this file
   ],
    // ✅ Ignore the test file itself
   testPathIgnorePatterns: [
