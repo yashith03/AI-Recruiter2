@@ -15,6 +15,9 @@ jest.mock("next/font/google", () => ({
   Geist: jest.fn(() => ({ variable: "--font-geist-sans" })),
   Geist_Mono: jest.fn(() => ({ variable: "--font-geist-mono" })),
 }));
+jest.mock("@vercel/speed-insights/next", () => ({
+  SpeedInsights: () => <div data-testid="speed-insights" />,
+}));
 
 describe("RootLayout", () => {
   test("renders layout structure with correct classes", () => {
@@ -24,13 +27,11 @@ describe("RootLayout", () => {
       </RootLayout>
     );
 
-    // ✅ Instead of querying <html>, select root container
     const root = container.firstChild;
     const body = root.querySelector("body");
 
-    expect(root.nodeName.toLowerCase()).toBe("html"); // Ensure it is the <html> element
+    expect(root.nodeName.toLowerCase()).toBe("html");
     expect(root.getAttribute("lang")).toBe("en");
-
     expect(body).toHaveClass("antialiased");
     expect(body.className).toContain("--font-geist-sans");
     expect(body.className).toContain("--font-geist-mono");
@@ -46,5 +47,6 @@ describe("RootLayout", () => {
     expect(screen.getByTestId("provider")).toBeInTheDocument();
     expect(screen.getByTestId("toaster")).toBeInTheDocument();
     expect(screen.getByTestId("content")).toBeInTheDocument();
+    expect(screen.getByTestId("speed-insights")).toBeInTheDocument(); // ✅
   });
 });
