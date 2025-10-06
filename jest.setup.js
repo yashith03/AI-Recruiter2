@@ -57,3 +57,7 @@ beforeAll(() => {
 afterAll(() => {
   console.error = originalError;
 });
+
+jest.mock("@vercel/speed-insights/next", () => ({
+  SpeedInsights: () => null,
+}));
