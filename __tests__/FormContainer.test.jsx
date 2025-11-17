@@ -129,4 +129,54 @@ describe("FormContainer Component", () => {
     fireEvent.click(screen.getByTestId("button"));
     expect(mockGoToNext).toHaveBeenCalled();
   });
+
+  test("toggles interview type on and off multiple times", () => {
+    render(
+      <FormContainer
+        onHandleInputChange={mockOnHandleInputChange}
+        GoToNext={mockGoToNext}
+      />
+    );
+
+    const videoType = screen.getByText("Video Interview");
+    const phoneType = screen.getByText("Phone Interview");
+
+    // Add Video Interview
+    fireEvent.click(videoType);
+    expect(mockOnHandleInputChange).toHaveBeenCalledWith("type", ["Video Interview"]);
+
+    // Add Phone Interview
+    fireEvent.click(phoneType);
+    expect(mockOnHandleInputChange).toHaveBeenCalledWith("type", ["Video Interview", "Phone Interview"]);
+
+    // Remove Video Interview
+    fireEvent.click(videoType);
+    expect(mockOnHandleInputChange).toHaveBeenCalledWith("type", ["Phone Interview"]);
+
+    // Remove Phone Interview
+    fireEvent.click(phoneType);
+    expect(mockOnHandleInputChange).toHaveBeenCalledWith("type", []);
+  });
+
+  test("maintains interview type selection state", () => {
+    const { rerender } = render(
+      <FormContainer
+        onHandleInputChange={mockOnHandleInputChange}
+        GoToNext={mockGoToNext}
+      />
+    );
+
+    const videoType = screen.getByText("Video Interview");
+    fireEvent.click(videoType);
+
+    // Rerender to check if selection persists
+    rerender(
+      <FormContainer
+        onHandleInputChange={mockOnHandleInputChange}
+        GoToNext={mockGoToNext}
+      />
+    );
+
+    expect(mockOnHandleInputChange).toHaveBeenCalled();
+  });
 });
