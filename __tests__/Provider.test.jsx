@@ -4,18 +4,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import Provider, { useUser } from "@/app/provider";
 import { UserDetailContext } from "@/context/UserDetailContext";
 
-// ✅ Mock Supabase client
-jest.mock("@/services/supabaseClient", () => ({
-  supabase: {
-    auth: {
-      getUser: jest.fn().mockResolvedValue({
-        data: { user: { email: "test@example.com", user_metadata: { name: "inupama" } } },
-      }),
-    },
-  },
-}));
-
-
 const { supabase } = require("@/services/supabaseClient");
 
 // ✅ Helper component to consume context
@@ -97,26 +85,31 @@ describe("Provider Component", () => {
       user_metadata: { name: "alice cooper", picture: "pic.jpg" },
     };
 
+    // Mock both getUser and onAuthStateChange to return the same user
     supabase.auth.getUser.mockResolvedValueOnce({
       data: { user: mockUser },
     });
 
-    let contextValue;
-    function TestCapture() {
-      const ctx = React.useContext(UserDetailContext);
-      contextValue = ctx;
-      return null;
-    }
+    supabase.auth.onAuthStateChange.mockImplementationOnce((callback) => {
+      // Call the callback with the mock user
+      callback(null, { user: mockUser });
+      return {
+        data: {
+          subscription: {
+            unsubscribe: jest.fn(),
+          },
+        },
+      };
+    });
 
     render(
       <Provider>
-        <TestCapture />
+        <TestConsumer />
       </Provider>
     );
 
     await waitFor(() => {
-      expect(contextValue).toHaveProperty("user");
-      expect(contextValue.user.name).toBe("Alice Cooper");
+      expect(screen.getByTestId("user-name")).toHaveTextContent("Alice Cooper");
     });
   });
 });

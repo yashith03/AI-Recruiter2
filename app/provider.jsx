@@ -1,47 +1,100 @@
-// app/provider.jsx
+"use client";
 
-"use client"
+import React, { useState, useEffect, useContext, createContext } from "react";
+import { supabase } from "@/services/supabaseClient";
 
-import React, { useState, useEffect, useContext } from "react"
-import { UserDetailContext } from "@/context/UserDetailContext"
-import { supabase } from "/services/supabaseClient"
+export const UserDetailContext = createContext();
 
 function Provider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const createNewUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    const formatName = (name) => {
+      if (!name) return "";
+      return name
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    };
 
-      // format name with capitalized words
-      const formatName = (name) => {
-        if (!name) return ""
-        return name
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(" ")
+    // Store user in DB
+    const saveUserToDB = async (sessionUser) => {
+      try {
+        const formattedName = formatName(sessionUser.user_metadata?.name);
+
+        const { error } = await supabase
+          .from("users")
+          .upsert(
+            {
+              email: sessionUser.email,
+              name: formattedName,
+              picture: sessionUser.user_metadata?.picture,
+            },
+            { onConflict: "email" }
+          );
+
+        if (error) console.error("Error saving user:", error.message);
+        else console.log("✅ User saved to DB");
+      } catch (err) {
+        console.error("User save error:", err);
+      }
+    };
+
+    // Load current user on first render
+    const loadUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      const sessionUser = data?.user;
+
+      if (!sessionUser) {
+        setUser(null);
+        return;
       }
 
-      const formattedName = formatName(user?.user_metadata?.name)
+      const formattedName = formatName(sessionUser.user_metadata?.name);
 
       setUser({
         name: formattedName,
-        email: user?.email,
-        picture: user?.user_metadata?.picture,
-      })
-    }
+        email: sessionUser.email,
+        picture: sessionUser.user_metadata?.picture,
+      });
 
-    createNewUser()
-  }, [])
+      await saveUserToDB(sessionUser);
+    };
+
+    loadUser();
+
+    // Listen to future logins/logouts
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_, session) => {
+        const sessionUser = session?.user;
+
+        if (!sessionUser) {
+          setUser(null);
+          return;
+        }
+
+        const formattedName = formatName(sessionUser.user_metadata?.name);
+
+        setUser({
+          name: formattedName,
+          email: sessionUser.email,
+          picture: sessionUser.user_metadata?.picture,
+        });
+
+        saveUserToDB(sessionUser);
+      }
+    );
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   return (
     <UserDetailContext.Provider value={{ user, setUser }}>
       {children}
     </UserDetailContext.Provider>
-  )
+  );
 }
 
-export default Provider
+export default Provider;
 
-export const useUser = () => useContext(UserDetailContext)
+export const useUser = () => useContext(UserDetailContext);

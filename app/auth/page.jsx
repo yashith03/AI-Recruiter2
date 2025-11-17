@@ -2,15 +2,20 @@
 'use client'
 import React from 'react'
 import Image from 'next/image'
+
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/services/supabaseClient'
 
 function Login() {
 
+
     //Used to Sign In with Google
     const singInWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/dashboard`,
+            },
         })
         if (error) console.log('Error: ', error.message)
     }

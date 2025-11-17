@@ -39,8 +39,22 @@ jest.mock("@/services/supabaseClient", () => ({
           },
         },
       }),
+      onAuthStateChange: jest.fn((callback) => {
+        // Immediately call the callback with null to simulate no active session
+        callback(null, null);
+        return {
+          data: {
+            subscription: {
+              unsubscribe: jest.fn(),
+            },
+          },
+        };
+      }),
+      signInWithOAuth: jest.fn(),
     },
-    from: jest.fn(),
+    from: jest.fn(() => ({
+      upsert: jest.fn().mockResolvedValue({ error: null }),
+    })),
   },
 }));
 
@@ -48,7 +62,12 @@ jest.mock("@/services/supabaseClient", () => ({
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args) => {
-    if (typeof args[0] === "string" && args[0].includes("validateDOMNesting")) {
+    if (
+      typeof args[0] === "string" &&
+      (args[0].includes("validateDOMNesting") ||
+        args[0].includes("An update to") ||
+        args[0].includes("wrapped in act"))
+    ) {
       return;
     }
     originalError(...args);
