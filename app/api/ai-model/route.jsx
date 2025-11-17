@@ -7,11 +7,14 @@ export async function POST(req) {
   try {
     const { jobPosition, jobDescription, duration, type } = await req.json();
 
+    // Ensure `type` is a string (frontend may send an array)
+    const typeString = Array.isArray(type) ? type.join(", ") : (type || "");
+
     const FINAL_PROMPT = QUESTIONS_PROMPT
       .replace("{{jobTitle}}", jobPosition)
       .replace("{{jobDescription}}", jobDescription)
       .replace("{{duration}}", duration)
-      .replace("{{type}}", type);
+      .replace("{{type}}", typeString);
 
     console.log(" Prompt sent to model:\n", FINAL_PROMPT);
 
@@ -23,9 +26,9 @@ export async function POST(req) {
 
     // ✅ Fallback chain — from newest → safest
     const models = [
-      "google/gemma-3-12b-it:free",          // ⚡️ primary: fast + accurate
-      "google/gemini-2.0-flash-exp:free",   // ⚡ fallback: large context
-      "mistralai/mistral-7b-instruct:free", // ⚙️ backup: reliable baseline
+      "google/gemma-3-12b-it:free",          //  primary: fast + accurate
+      "google/gemini-2.0-flash-exp:free",   //  fallback: large context
+      "mistralai/mistral-7b-instruct:free", //  backup: reliable baseline
     ];
 
     let completion = null;
@@ -36,6 +39,7 @@ export async function POST(req) {
         completion = await openai.chat.completions.create({
           model,
           messages: [{ role: "user", content: FINAL_PROMPT }],
+          response_format: "json",
         });
         console.log(` Success with model: ${model}`);
         break; // stop after first success
@@ -58,7 +62,7 @@ export async function POST(req) {
     const message = completion.choices?.[0]?.message?.content || "No response.";
     console.log(" Raw AI Output:", message);
 
-    // ✅ Try to extract clean JSON if provided
+    //  Try to extract clean JSON if provided
     let parsedOutput;
     try {
       const jsonBlock = message.match(/```json([\s\S]*?)```/)?.[1] || "{}";
@@ -67,8 +71,9 @@ export async function POST(req) {
       parsedOutput = { interviewQuestions: [] };
     }
 
+    // Return both the raw message content and the parsed JSON for compatibility
     return NextResponse.json(
-      { result: parsedOutput },
+      { content: message, result: parsedOutput },
       { status: 200 }
     );
   } catch (error) {

@@ -1,3 +1,4 @@
+import React from "react";
 import { POST } from "@/app/api/ai-model/route";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";

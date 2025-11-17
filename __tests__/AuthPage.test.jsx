@@ -7,14 +7,7 @@ jest.mock("next/image", () => (props) => (
   <img {...props} alt={props.alt || "mocked image"} />
 ));
 
-// Mock Supabase client
-jest.mock("@/services/supabaseClient", () => ({
-  supabase: {
-    auth: {
-      signInWithOAuth: jest.fn(),
-    },
-  },
-}));
+// Mock Supabase client (already mocked in jest.setup.js)
 
 describe("Login Page", () => {
   const { supabase } = require("@/services/supabaseClient");
@@ -50,6 +43,9 @@ describe("Login Page", () => {
     await waitFor(() => {
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: "google",
+        options: {
+          redirectTo: `http://localhost/dashboard`,
+        },
       });
     });
   });
