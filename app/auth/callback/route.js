@@ -16,5 +16,5 @@ export async function GET(request) {
   }
 
   // Redirect to dashboard after processing the callback
-  return NextResponse.redirect(new URL("/dashboard", requestUrl.origin));
+return NextResponse.redirect(new URL("/dashboard/create-interview", requestUrl.origin));
 }

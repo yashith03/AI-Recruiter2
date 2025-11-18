@@ -1,19 +1,15 @@
-// app/page.js
-
 import React from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-function page() {
+export default function Page() {
   return (
-    <div>
-      <h2> Subscribe to yashith</h2>
-      
-      
+    <div className='p-10'>
+      <h2>Subscribe to yashith</h2>
 
+      <Link href="/auth">
+        <Button className="mt-4">Login</Button>
+      </Link>
     </div>
   )
 }
-
-export default page
