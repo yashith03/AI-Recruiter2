@@ -42,23 +42,27 @@ function Provider({ children }) {
 
     // Load current user on first render
     const loadUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      const sessionUser = data?.user;
+      try {
+        const { data } = await supabase.auth.getUser();
+        const sessionUser = data?.user;
 
-      if (!sessionUser) {
-        setUser(null);
-        return;
+        if (!sessionUser) {
+          setUser(null);
+          return;
+        }
+
+        const formattedName = formatName(sessionUser.user_metadata?.name);
+
+        setUser({
+          name: formattedName,
+          email: sessionUser.email,
+          picture: sessionUser.user_metadata?.picture,
+        });
+
+        await saveUserToDB(sessionUser);
+      } catch (err) {
+        console.error("Error loading user:", err);
       }
-
-      const formattedName = formatName(sessionUser.user_metadata?.name);
-
-      setUser({
-        name: formattedName,
-        email: sessionUser.email,
-        picture: sessionUser.user_metadata?.picture,
-      });
-
-      await saveUserToDB(sessionUser);
     };
 
     loadUser();
@@ -85,7 +89,7 @@ function Provider({ children }) {
       }
     );
 
-    return () => listener.subscription.unsubscribe();
+    return () => listener?.subscription?.unsubscribe();
   }, []);
 
   return (

@@ -44,7 +44,7 @@ describe("Login Page", () => {
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: "google",
         options: {
-          redirectTo: `http://localhost/dashboard`,
+          redirectTo: `http://localhost/auth/callback`,
         },
       });
     });

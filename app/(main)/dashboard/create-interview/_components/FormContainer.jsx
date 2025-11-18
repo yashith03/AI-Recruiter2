@@ -22,18 +22,6 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
     onHandleInputChange('type', interviewType)
   }, [interviewType, onHandleInputChange]) // ✅ include callback in dependency array
 
-  const AddInterviewType=(type)=>{
-    const data=interviewType.includes(type);
-    if(!data){
-      setInterviewType([...interviewType,type])
-    }
-    else{
-      const result=interviewType.filter((item)=>item!==type)
-      setInterviewType(result)
-    }
-
-  }
-
   // Toggle interview type selection
   const toggleInterviewType = (type) => {
     setInterviewType((prev) =>
