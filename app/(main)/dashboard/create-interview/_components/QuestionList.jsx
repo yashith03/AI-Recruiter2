@@ -1,5 +1,7 @@
+// app/(main)/dashboard/create-interview/_components/QuestionList.jsx
+
 import React, { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader, Loader2 } from 'lucide-react'
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button'
@@ -9,11 +11,13 @@ import { useUser } from '@/app/provider';
 import {v4 as uuidv4} from 'uuid';
 import { supabase } from '@/services/supabaseClient';
 
-function QuestionList({ formData }) {
+
+function QuestionList({ formData ,onCreateLink}) {
   const [loading, setLoading] = useState(true);
   const [questionList, setQuestionList] = useState([]);
   const {user} = useUser();
     const [saving, setSaving] = useState(false);
+    
 
   // Move this function OUTSIDE onFinish so useEffect can call it
   const GenerateQuestionList = async () => {
@@ -87,6 +91,7 @@ function QuestionList({ formData }) {
         .select();
 
     setSaving(false);
+    onCreateLink(interview_id);
 
     if (error) {
       console.error('Error saving interview:', error);
@@ -125,7 +130,9 @@ function QuestionList({ formData }) {
       )}
 
       <div className='flex justify-end mt-10'>
-        <Button onClick={onFinish}>Finish</Button>
+        <Button onClick={() => onFinish()} disabled={saving}>
+          {saving&& <Loader className='animate-spin h-4 w-4 mr-2' />}
+          Create Interview Link & Finish</Button>
 
       </div>
     </div>
