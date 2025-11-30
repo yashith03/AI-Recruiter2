@@ -1,3 +1,7 @@
+//app/interview/_components/InterviewHeader.jsx
+
+import Image from 'next/image'
+
 import React from 'react'
 
 function InterviewHeader() {

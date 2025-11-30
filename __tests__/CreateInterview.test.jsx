@@ -45,8 +45,15 @@ jest.mock(
   () => (props) => (
     <div data-testid="question-list">
       Loaded Questions for {props.formData.jobPosition}
+      <button data-testid="create-link-btn" onClick={() => props.onCreateLink('link-xyz')}>Create Link</button>
     </div>
   )
+);
+
+// Mock InterviewLink to avoid DOM clipboard calls while testing CreateInterview flow
+jest.mock(
+  "@/app/(main)/dashboard/create-interview/_components/InterviewLink",
+  () => (props) => <div data-testid="interview-link">Interview Link: {props.interview_id}</div>
 );
 
 jest.mock("sonner", () => ({
@@ -80,6 +87,21 @@ describe("CreateInterview Page", () => {
     fireEvent.click(screen.getByTestId("fill-btn"));
     fireEvent.click(screen.getByTestId("next-btn"));
     expect(screen.getByTestId("question-list")).toBeInTheDocument();
+  });
+
+  test("creates interview link and shows InterviewLink (step 3)", () => {
+    render(<CreateInterview />);
+    fireEvent.click(screen.getByTestId("fill-btn"));
+    fireEvent.click(screen.getByTestId("next-btn"));
+
+    // Now in step 2 (QuestionList)
+    expect(screen.getByTestId("question-list")).toBeInTheDocument();
+
+    // Click create link inside QuestionList -> advances to step3 and shows InterviewLink
+    fireEvent.click(screen.getByTestId("create-link-btn"));
+
+    expect(screen.getByTestId("interview-link")).toBeInTheDocument();
+    expect(screen.getByText(/Interview Link:/i)).toBeInTheDocument();
   });
 
   test("calls router.back() when back arrow clicked", () => {

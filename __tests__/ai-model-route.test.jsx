@@ -82,7 +82,8 @@ describe("POST /api/ai-model", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(500);
-    expect(res.error).toContain("All models failed");
+    // route currently returns a slightly different error string
+    expect(res.error).toContain("All FREE models failed or rate-limited");
   });
 
   test("replaces placeholders correctly in QUESTIONS_PROMPT", async () => {
@@ -98,7 +99,61 @@ describe("POST /api/ai-model", () => {
     await POST(req);
 
     const args = mockCreate.mock.calls[0][0];
-    expect(args.messages[0].content).toContain("DevOps Engineer");
-    expect(args.messages[0].content).toContain("Cloud and CI/CD");
+    // user message lives at index 1 (index 0 is system instruction)
+    expect(args.messages[1].content).toContain("DevOps Engineer");
+    expect(args.messages[1].content).toContain("Cloud and CI/CD");
   });
+
+  test("retries when rate limited then succeeds", async () => {
+    // First call fails with rate limit (status 429), second succeeds
+    mockCreate
+      .mockRejectedValueOnce({ status: 429, message: "Rate limit" })
+      .mockResolvedValueOnce(mockCompletion);
+
+    const req = mockRequest({
+      jobPosition: "Retry Role",
+      jobDescription: "Retry scenario",
+      duration: "15 Min",
+      type: "technical",
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+  });
+
+  test("parses response when no JSON block present gracefully", async () => {
+    const noJsonCompletion = {
+      choices: [{ message: { content: 'some plain text without json' } }],
+    };
+
+    mockCreate.mockResolvedValueOnce(noJsonCompletion);
+
+    const req = mockRequest({
+      jobPosition: "NoJson Role",
+      jobDescription: "No JSON here",
+      duration: "5 Min",
+      type: "technical",
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(res.result).toEqual({});
+  });
+
+  test("returns 500 when req.json throws (unexpected error)", async () => {
+  jest.spyOn(console, "error").mockImplementation(() => {});
+
+  mockCreate.mockResolvedValueOnce(mockCompletion);
+
+  const badReq = { json: async () => { throw new Error('boom'); } };
+
+  const res = await POST(badReq);
+
+  expect(res.status).toBe(500);
+  expect(res.error).toContain("Unexpected error");
+
+  console.error.mockRestore();
+});
+
 });

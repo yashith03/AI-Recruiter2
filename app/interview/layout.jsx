@@ -1,5 +1,7 @@
+//app/interview/layout.jsx
+
 'use client'
-import InterviewHeader from '@/components/InterviewHeader'
+import InterviewHeader from './_components/InterviewHeader'
 import { useState } from 'react'
 import { InterviewDataContext } from '@/context/interviewDataContext'
 import React from 'react'

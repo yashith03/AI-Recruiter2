@@ -112,4 +112,51 @@ describe("Provider Component", () => {
       expect(screen.getByTestId("user-name")).toHaveTextContent("Alice Cooper");
     });
   });
+
+  test("logs error when saving user to DB returns error", async () => {
+    const mockUser = {
+      email: "saveerr@test.com",
+      user_metadata: { name: "save error", picture: "pic.jpg" },
+    };
+
+    // getUser returns user
+    supabase.auth.getUser.mockResolvedValueOnce({ data: { user: mockUser } });
+
+    // Make upsert return an error object to exercise the error branch
+    supabase.from.mockImplementationOnce(() => ({
+      upsert: jest.fn().mockResolvedValue({ error: { message: "DB error" } }),
+    }));
+
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    render(
+      <Provider>
+        <TestConsumer />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith("Error saving user:", "DB error");
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  test("logs error when supabase.auth.getUser throws", async () => {
+    supabase.auth.getUser.mockRejectedValueOnce(new Error("boom"));
+
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    render(
+      <Provider>
+        <TestConsumer />
+      </Provider>
+    );
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalled();
+    });
+
+    consoleSpy.mockRestore();
+  });
 });

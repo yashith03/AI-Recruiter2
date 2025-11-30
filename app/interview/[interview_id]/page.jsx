@@ -1,7 +1,7 @@
-
+//app/interview/[interview_id]/page.jsx
 'use client'
-import { Clock } from 'lucide-react'
-import React, { use } from 'react'
+import { Clock, Loader2 } from 'lucide-react'
+import React from 'react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,8 @@ import { toast } from 'sonner'
 import { useContext } from 'react'
 import { InterviewDataContext } from '@/context/interviewDataContext'
 import QuestionList from '@/app/(main)/dashboard/create-interview/_components/QuestionList'
+import { useRouter } from 'next/navigation'
+
 
 
 
@@ -21,7 +23,7 @@ function Interview() {
     const {interview_id} = useParams();
     console.log(interview_id);
     const [interviewData, setInterviewData] = useState();
-    const [userName, setUserName] = useState();
+    const [userName, setUserName] = useState("");
     const [loading, setLoading] = useState(false);
     const {interviewInfo,setInterviewInfo} = useContext(InterviewDataContext);
     const router=useRouter();
@@ -41,7 +43,7 @@ function Interview() {
             .eq('interview_id', interview_id)
         setInterviewData(interviews[0]); 
          setLoading(false);
-        if(Interviews?.length==0)
+        if (interviews?.length === 0) 
         {
             toast('Incorrect Interview Link');
             return;
@@ -65,7 +67,7 @@ function Interview() {
             console.log(Interviews[0]);
             setInterviewInfo({
                 userName: userName,
-                interviewData: Interview[0]
+                interviewData: Interviews[0]
             });
             router.push('/interview/'+interview_id+'/start');
             setLoading(false);
@@ -90,10 +92,14 @@ function Interview() {
              <h2 className='flex gap-2 items-center text-gray-500 mt-3 '>
                 <Clock className='h-4 w-4'/>{interviewData?.duration}</h2>
 
-             <div className='w-full'>
+            <div className='w-full'>
                 <h2>Enter your full name</h2>
-                <Input placeholder='e.g. John Doe' onChange={(event)=setUserName(event.target.value)}/>
-             </div>
+                 <Input
+                     placeholder='e.g. John Doe'
+                     onChange={(event) => setUserName(event.target.value)}
+                />
+            </div>
+
              <div>
                 <h2>Before you begin</h2>
                 <ul>
@@ -107,10 +113,10 @@ function Interview() {
                 disabled={loading || !userName}
                 onClick= {() => onJoinInterview()}
              >
-                <Video/>{loading && <Loader2Icon/>}Join Interview</Button>
+                     <Video/>{loading && <Loader2 className="ml-2 animate-spin"/>}Join Interview</Button>
         </div>
     </div>
   )
 }
 
-export default page
+export default Interview
