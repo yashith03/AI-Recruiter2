@@ -1,4 +1,4 @@
-// app/api/ai-model/route.jsx
+// app/api/ai-model/route.js
 import { QUESTIONS_PROMPT } from "@/services/Constants";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
@@ -7,8 +7,9 @@ export async function POST(req) {
   try {
     const { jobPosition, jobDescription, duration, type } = await req.json();
 
-    // Ensure `type` is a string (frontend may send an array)
-    const typeString = Array.isArray(type) ? type.join(", ") : (type || "");
+    const typeString = Array.isArray(type)
+      ? type.join(", ")
+      : type || "";
 
     const FINAL_PROMPT = QUESTIONS_PROMPT
       .replace("{{jobTitle}}", jobPosition)
@@ -16,76 +17,84 @@ export async function POST(req) {
       .replace("{{duration}}", duration)
       .replace("{{type}}", typeString);
 
-    console.log(" Prompt sent to model:\n", FINAL_PROMPT);
+    console.log("Prompt sent:\n", FINAL_PROMPT);
 
-    // ✅ Initialize OpenRouter client
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: process.env.OPENROUTER_API_KEY,
     });
 
-    // ✅ Fallback chain — from newest → safest
     const models = [
-      "google/gemma-3-12b-it:free",          //  primary: fast + accurate
-      "google/gemini-2.0-flash-exp:free",   //  fallback: large context
-      "mistralai/mistral-7b-instruct:free", //  backup: reliable baseline
+      "openai/gpt-oss-20b:free",
+      "nvidia/nemotron-nano-9b-v2:free",
+      "kwaipilot/kat-coder-pro-v1:free",
+      "nvidia/nemotron-nano-12b-vl:free",
+      "x-ai/grok-4.1-fast:free"
     ];
 
     let completion = null;
 
     for (const model of models) {
       try {
-        console.log(` Trying model: ${model}`);
+        console.log("Trying:", model);
+
         completion = await openai.chat.completions.create({
           model,
-          messages: [{ role: "user", content: FINAL_PROMPT }],
-          response_format: "json",
+          messages: [
+            {
+              role: "system",
+              content: "Return valid JSON with interviewQuestions array."
+            },
+            {
+              role: "user",
+              content: FINAL_PROMPT
+            }
+          ],
+          max_tokens: 2000,
         });
-        console.log(` Success with model: ${model}`);
-        break; // stop after first success
+
+        console.log("SUCCESS:", model);
+        break;
+
       } catch (err) {
-        console.warn(` Model ${model} failed: ${err.message}`);
+        console.log("FAILED:", model, err.message);
+
         if (err.status === 429) {
-          console.log(" Rate limited, waiting 3 seconds before next model...");
-          await new Promise((r) => setTimeout(r, 3000));
-          continue; // try next model
+          await new Promise(res => setTimeout(res, 1500));
+          continue;
         }
-        // For non-rate errors, move to next model too
-        continue;
       }
     }
 
     if (!completion) {
-      throw new Error("All models failed or rate-limited.");
+      return NextResponse.json(
+        { error: "All FREE models failed or rate-limited." },
+        { status: 500 }
+      );
     }
 
-    const message = completion.choices?.[0]?.message?.content || "No response.";
-    console.log(" Raw AI Output:", message);
+    const raw = completion.choices?.[0]?.message?.content || "";
+    console.log("RAW OUTPUT:", raw);
 
-    //  Try to extract clean JSON if provided
-    let parsedOutput;
+    let parsed = {};
+
     try {
-      const jsonBlock = message.match(/```json([\s\S]*?)```/)?.[1] || "{}";
-      parsedOutput = JSON.parse(jsonBlock);
+      const json = raw.match(/```json([\s\S]*?)```/)?.[1] || "{}";
+      parsed = JSON.parse(json.trim());
     } catch {
-      parsedOutput = { interviewQuestions: [] };
+      parsed = {};
     }
 
-    // Return both the raw message content and the parsed JSON for compatibility
     return NextResponse.json(
-      { content: message, result: parsedOutput },
+      { content: raw, result: parsed },
       { status: 200 }
     );
-  } catch (error) {
-    console.error(" AI Model API Error:", error?.response?.data || error.message);
+
+  } catch (e) {
+   console.error("ERROR:", e.message);
     return NextResponse.json(
-      {
-        error:
-          error?.response?.data ||
-          error?.message ||
-          "Failed to generate interview questions. Please try again later.",
-      },
-      { status: error?.status || 500 }
+      { error: `Unexpected error: ${e.message}` },
+      { status: 500 }
     );
   }
 }
