@@ -59,7 +59,7 @@ function QuestionList({ formData ,onCreateLink}) {
     if (formData && Object.keys(formData).length > 0) {
       GenerateQuestionList();
     }
-  }, [formData]);
+  }, [formData, GenerateQuestionList]);
 
   const onFinish = async () => {
       console.log('🔵 onFinish called');
