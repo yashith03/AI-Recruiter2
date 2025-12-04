@@ -1,4 +1,5 @@
 //app/interview/[interview_id]/page.jsx
+
 'use client'
 import { Clock, Loader2 } from 'lucide-react'
 import React from 'react'
@@ -25,6 +26,7 @@ function Interview() {
     const [interviewData, setInterviewData] = useState();
     const [userName, setUserName] = useState("");
     const [loading, setLoading] = useState(false);
+    const [useremail, setuserEmail] = useState("");
     const {interviewInfo,setInterviewInfo} = useContext(InterviewDataContext);
     const router=useRouter();
     
@@ -38,7 +40,7 @@ function Interview() {
 
         try{
         let { data: interviews, error } = await supabase
-            .from('Interviews')
+            .from('interviews')
             .select("jobPosition, jobDescription, duration, type")
             .eq('interview_id', interview_id)
         setInterviewData(interviews[0]); 
@@ -60,13 +62,14 @@ function Interview() {
         setLoading(true);
 
         let {data : Interviews,error }= await supabase
-            .from('Interviews')
+            .from('interviews')
             .select('*')
             .eq('interview_id',interview_id);
 
             console.log(Interviews[0]);
             setInterviewInfo({
                 userName: userName,
+                userEmail: useremail,
                 interviewData: Interviews[0]
             });
             router.push('/interview/'+interview_id+'/start');
@@ -96,8 +99,13 @@ function Interview() {
                 <h2>Enter your full name</h2>
                  <Input
                      placeholder='e.g. John Doe'
-                     onChange={(event) => setUserName(event.target.value)}
-                />
+                     onChange={(event) => setUserName(event.target.value)}/>
+            </div>
+            <div className='w-full'>
+                <h2>Enter your Email</h2>
+                 <Input
+                     placeholder='e.g. john@gmail.com'
+                     onChange={(event) => setuserEmail(event.target.value)}/>
             </div>
 
              <div>
