@@ -33,7 +33,7 @@ function Interview() {
 
     useEffect(()=>{
         interview_id && GetInterviewDetails();
-    },[interview_id]);
+    },[interview_id, GetInterviewDetails]);
 
     const GetInterviewDetails= async()=>{
         setLoading(true);
