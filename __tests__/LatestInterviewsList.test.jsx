@@ -1,3 +1,5 @@
+// __tests__/LatestInterviewsList.test.jsx
+
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import LatestInterviewsList from "@/app/(main)/dashboard/_components/LatestInterviewsList";

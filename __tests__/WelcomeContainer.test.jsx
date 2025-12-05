@@ -1,3 +1,7 @@
+// __tests__/WelcomeContainer.test.jsx
+
+import React from "react";
+
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import WelcomeContainer from "@/app/(main)/dashboard/_components/WelcomeContainer";

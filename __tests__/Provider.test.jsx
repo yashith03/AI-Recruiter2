@@ -1,4 +1,5 @@
 //__tests_/Provider.test.jsx
+
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import Provider, { useUser } from "@/app/provider";
@@ -112,6 +113,37 @@ describe("Provider Component", () => {
       expect(screen.getByTestId("user-name")).toHaveTextContent("Alice Cooper");
     });
   });
+  test("covers success branch of saveUserToDB", async () => {
+  const mockUser = {
+    email: "success@test.com",
+    user_metadata: { name: "john smith", picture: "pic.png" },
+  };
+
+  // Mock getUser
+  supabase.auth.getUser.mockResolvedValueOnce({
+    data: { user: mockUser }
+  });
+
+  // Mock upsert success
+  supabase.from.mockReturnValue({
+    upsert: jest.fn().mockResolvedValue({ error: null }),
+  });
+
+  const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+  render(
+    <Provider>
+      <div>child</div>
+    </Provider>
+  );
+
+  await waitFor(() => {
+    expect(logSpy).toHaveBeenCalledWith("✅ User saved to DB");
+  });
+
+  logSpy.mockRestore();
+});
+
 
   test("logs error when saving user to DB returns error", async () => {
     const mockUser = {

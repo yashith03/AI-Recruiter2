@@ -1,3 +1,5 @@
+// __tests__/DashboardLayout.test.jsx
+
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import DashboardLayout from "@/app/(main)/layout";

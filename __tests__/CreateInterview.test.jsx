@@ -1,3 +1,5 @@
+// __tests__/CreateInterview.test.jsx
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CreateInterview from "@/app/(main)/dashboard/create-interview/page";
