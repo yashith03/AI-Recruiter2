@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, useRef } from 'react'
 import { InterviewDataContext } from '@/context/interviewDataContext'
 import { Timer } from 'lucide-react'
 import Vapi from "@vapi-ai/web"
@@ -13,21 +13,40 @@ import { toast } from 'sonner'
 function StartInterview() {
 
   const { interviewInfo } = useContext(InterviewDataContext)
-  const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY)
-  const [activeUser, setActiveUser] = useState(false);
-  const [conversation, setConversation] = useState();
+
+  const vapiRef = useRef(new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY))
+
+  const [activeUser, setActiveUser] = useState(false)
+  const [conversation, setConversation] = useState()
 
   useEffect(() => {
-    if (interviewInfo) startCall()
-  }, [interviewInfo])
+    if (!interviewInfo) return;
 
-  const startCall = () => {
-    if (!interviewInfo?.interviewData?.questionList) return;
+    const vapi = vapiRef.current;
 
-    const formattedQuestions =
-      interviewInfo.interviewData.questionList
+    // MOVED HERE → no ESLint warnings
+    const GenerateFeedback = async () => {
+      try {
+        const result = await axios.post('/api/ai-feedback', {
+          conversation: conversation
+        })
+
+        let content = result.data.content
+        const cleanJSON = content.replace("```json", "").replace("```", "")
+        console.log("Final Feedback JSON:", cleanJSON)
+
+      } catch (err) {
+        console.log("Feedback generation failed:", err)
+      }
+    }
+
+    const startCall = async () => {
+      if (!interviewInfo?.interviewData?.questionList) return;
+
+      const formattedQuestions = interviewInfo.interviewData.questionList
         .map((q, i) => `${i + 1}. ${q.question}`)
         .join("\n");
+
 
     const assistantOptions = {
       name: "AI Recruiter",
@@ -121,27 +140,13 @@ Guidelines:
       setConversation(message?.conversation);
     });
   }
+  startCall();
+}, [interviewInfo, conversation]);
 
-  const GenerateFeedback = async () => {
-    try {
-      const result = await axios.post('/api/ai-feedback', {
-        conversation: conversation
-      })
 
-      console.log("Feedback raw:", result.data)
-
-      let content = result.data.content
-      const cleanJSON = content.replace("```json", "").replace("```", "")
-
-      console.log("Final Feedback JSON:", cleanJSON)
-
-    } catch (err) {
-      console.log("Feedback generation failed:", err)
-    }
-  }
 
   const stopInterview = () => {
-    vapi.stop()
+    vapiRef.current.stop()
   }
 
   return (

@@ -19,8 +19,12 @@ function QuestionList({ formData ,onCreateLink}) {
     const [saving, setSaving] = useState(false);
     
 
-  // Move this function OUTSIDE onFinish so useEffect can call it
-  const GenerateQuestionList = async () => {
+
+
+useEffect(() => {
+  if (!formData || Object.keys(formData).length === 0) return;
+
+  async function GenerateQuestionList() {
     setLoading(true);
     try {
       const result = await axios.post('/api/ai-model', {
@@ -32,16 +36,19 @@ function QuestionList({ formData ,onCreateLink}) {
 
       if (payload?.result && typeof payload.result === 'object') {
         setQuestionList(payload.result.interviewQuestions || []);
-      } else if (payload?.content && typeof payload.content === 'string') {
-        const Content = payload.content;
-        const cleaned = Content.replace(/"?```json\s*/i, '').replace(/```/g, '');
+      } 
+      else if (payload?.content && typeof payload.content === 'string') {
+        const cleaned = payload.content
+          .replace(/"?```json\s*/i, '')
+          .replace(/```/g, '');
         try {
           setQuestionList(JSON.parse(cleaned)?.interviewQuestions || []);
         } catch (err) {
           console.warn('Failed to parse AI content string', err);
           setQuestionList([]);
         }
-      } else {
+      } 
+      else {
         console.warn('Unexpected AI payload shape', payload);
         setQuestionList([]);
       }
@@ -52,14 +59,11 @@ function QuestionList({ formData ,onCreateLink}) {
       toast.error(msg);
       setLoading(false);
     }
-  };
+  }
 
-  // useEffect calling the function correctly
-  useEffect(() => {
-    if (formData && Object.keys(formData).length > 0) {
-      GenerateQuestionList();
-    }
-  }, [formData, GenerateQuestionList]);
+  GenerateQuestionList();
+}, [formData]);
+
 
   const onFinish = async () => {
       console.log('🔵 onFinish called');
