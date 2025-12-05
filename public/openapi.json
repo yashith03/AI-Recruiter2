@@ -1,0 +1,147 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI Recruiter API",
+    "version": "1.0.0",
+    "description": "API for generating interview questions and feedback using OpenRouter models, plus Supabase auth callback."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "AI",
+      "description": "AI powered endpoints using OpenRouter"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication and OAuth callbacks"
+    }
+  ],
+  "paths": {
+    "/api/ai-model": {
+      "post": {
+        "tags": ["AI"],
+        "summary": "Generate interview questions",
+        "description": "Uses OpenRouter models to generate interview questions based on job inputs.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "jobPosition": "Frontend Engineer",
+                "jobDescription": "React, TypeScript, testing and accessibility",
+                "duration": "30 Min",
+                "type": ["Video Interview"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interview questions generated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "content": "```json\n{\"interviewQuestions\":[{\"question\":\"Tell me about your experience with React\"}]}\n```",
+                  "result": {
+                    "interviewQuestions": [
+                      { "question": "Tell me about your experience with React" }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "All models failed or unexpected error",
+            "content": {
+              "application/json": {
+                "example": { "error": "All FREE models failed or rate-limited." }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/ai-feedback": {
+      "post": {
+        "tags": ["AI"],
+        "summary": "Generate interview feedback",
+        "description": "Returns AI-generated feedback based on interview conversation transcripts.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "conversation": [
+                  { "role": "assistant", "content": "Tell me about React." },
+                  { "role": "user", "content": "I have built several apps." }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feedback generated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": "Strong understanding of React fundamentals and hooks."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing conversation",
+            "content": {
+              "application/json": {
+                "example": { "error": "Conversation missing" }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "example": { "error": "Something went wrong" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/auth/callback": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Supabase auth callback",
+        "description": "Exchanges OAuth `code` for a session and redirects to dashboard.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Authorization code returned by Supabase."
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to dashboard",
+            "headers": {
+              "Location": {
+                "example": "/dashboard/create-interview"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
