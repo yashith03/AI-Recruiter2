@@ -1,3 +1,5 @@
+// __tests__/Dashboard.test.jsx
+
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Dashboard from "@/app/(main)/dashboard/page";

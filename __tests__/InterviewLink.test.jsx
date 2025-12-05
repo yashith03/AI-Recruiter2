@@ -1,6 +1,6 @@
-/**
- * 1. Mock modules FIRST (before imports)
- */
+// __tests__/InterviewLink.test.jsx
+
+
 jest.mock('next/image', () => (props) => <img {...props} alt={props.alt || 'img'} />)
 const toastMock = jest.fn();
 
@@ -9,9 +9,7 @@ jest.mock('sonner', () => {
 });
 
 
-/**
- * 2. THEN import libs + components
- */
+
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import InterviewLink from '@/app/(main)/dashboard/create-interview/_components/InterviewLink'

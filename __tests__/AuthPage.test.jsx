@@ -1,3 +1,5 @@
+// __tests__/AuthPage.test.jsx
+
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Login from "@/app/auth/page";
