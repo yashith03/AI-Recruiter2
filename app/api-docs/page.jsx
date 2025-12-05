@@ -24,6 +24,7 @@ export default function ApiDocs() {
         </div>
 
         <div className="mt-4 text-sm text-gray-500">
+          <Link href="/openapi.json">View raw OpenAPI JSON</Link>
         </div>
       </div>
     </main>
