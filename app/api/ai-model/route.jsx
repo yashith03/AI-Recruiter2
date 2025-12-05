@@ -1,4 +1,5 @@
 // app/api/ai-model/route.js
+
 import { QUESTIONS_PROMPT } from "@/services/Constants";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
