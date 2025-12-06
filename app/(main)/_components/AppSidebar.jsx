@@ -34,6 +34,7 @@ console.log("path",path);
           alt="logo"
           width={200}
           height={100}
+          priority
           className="w-[150px]"
         />
 

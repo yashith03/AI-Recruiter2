@@ -17,7 +17,8 @@ export default function ApiDocs() {
           Interactive API docs powered by Swagger UI. If the docs don&apos;t load, you can open the raw OpenAPI JSON.
         </p>
 
-        <div style={{ height: '75vh' }}>
+        {/* Let Swagger grow naturally */}
+        <div className="swagger-wrapper">
           <Suspense fallback={<div className="p-4">Loading API docs…</div>}>
             <SwaggerUI url="/openapi.json" />
           </Suspense>

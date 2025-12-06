@@ -26,7 +26,7 @@ function Login() {
         <div className='flex flex-col justify-center items-center border rounded-2xl p-8'>
             <Image src={'/logo.png'} alt="logo" width={400} height={180}/>
             <div className='flex items-center flex-col gap-4 '>
-                <Image src={'/login.png'} alt="login" width={400} height={400}
+                <Image src={'/login.png'} alt="login" width={400} height={400} 
                 className='w-[400px] h-[250px] rounded-2xl'
                 />
                 <h2 className='text-2xl font-bold text-center mt-5'>Welcome to AICruiter</h2>

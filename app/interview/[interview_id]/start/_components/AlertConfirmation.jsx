@@ -1,3 +1,5 @@
+// app/interview/[interview_id]/start/_components/AlertConfirmation.jsx
+
 import React from 'react'
 import {
     AlertDialog,

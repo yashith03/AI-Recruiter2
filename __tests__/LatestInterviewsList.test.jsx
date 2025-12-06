@@ -2,6 +2,11 @@
 
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+// Mock the provider hook so tests run without the Provider wrapper
+jest.mock('@/app/provider', () => ({
+  useUser: () => ({ user: null })
+}));
+
 import LatestInterviewsList from "@/app/(main)/dashboard/_components/LatestInterviewsList";
 
 // Mock lucide-react Video icon
