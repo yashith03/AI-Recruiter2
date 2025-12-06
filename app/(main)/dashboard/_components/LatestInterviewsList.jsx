@@ -11,13 +11,9 @@ function LatestInterviewsList() {
   const [interviewList, setInterviewList] = useState([]);
   const { user } = useUser();
 
-  useEffect(() => {
-    if (user) {
-      GetInterviewList();
-    }
-  }, [user]);
 
-  const GetInterviewList = async () => {
+
+  const GetInterviewList = useCallback(async () => {
     let { data, error } = await supabase
       .from('interviews')
       .select('*')
@@ -29,7 +25,13 @@ function LatestInterviewsList() {
     }
 
     setInterviewList(data || []);
-  };
+  },[user]);
+
+    useEffect(() => {
+    if (user) {
+      GetInterviewList();
+    }
+  }, [user, GetInterviewList]);
 
   return (
     <div className='my-8'> 
