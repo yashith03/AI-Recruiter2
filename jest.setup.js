@@ -23,6 +23,7 @@ jest.mock("next/navigation", () => ({
     back: jest.fn(),
     prefetch: jest.fn(),
   }),
+  useParams: () => ({ interview_id: 'test-interview' }),
   usePathname: () => "/",
   useSearchParams: () => new URLSearchParams(),
 }));

@@ -15,6 +15,7 @@ export async function POST(req) {
       );
     }
 
+    // conversation is an object/array here, so stringify once
     const FINAL_PROMPT = FEEDBACK_PROMPT.replace(
       "{{conversation}}",
       JSON.stringify(conversation)
@@ -30,9 +31,9 @@ export async function POST(req) {
       messages: [{ role: "user", content: FINAL_PROMPT }],
     });
 
-    return NextResponse.json({
-      result: completion.choices?.[0]?.message?.content || "",
-    });
+    const content = completion.choices?.[0]?.message?.content || "";
+
+    return NextResponse.json({ content });
   } catch (e) {
     return NextResponse.json(
       { error: e.message || "Something went wrong" },

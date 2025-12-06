@@ -1,7 +1,7 @@
 // __tests__/StartInterview.test.jsx
 
 import React from 'react'
-import { render, waitFor } from '@testing-library/react'
+import { render, waitFor, fireEvent, screen } from '@testing-library/react'
 import StartInterview from '@/app/interview/[interview_id]/start/page'
 import { InterviewDataContext } from '@/context/interviewDataContext'
 
@@ -18,6 +18,10 @@ jest.mock('@vapi-ai/web', () => {
         if (event === 'call-started' && started) {
           try { cb() } catch (e) {}
         }
+      },
+      off: (event, cb) => {
+        // remove handler only if matches
+        if (handlers[event] === cb) delete handlers[event]
       },
       stop: jest.fn(),
       emit: (event, payload) => {
@@ -73,17 +77,17 @@ describe('StartInterview', () => {
       </InterviewDataContext.Provider>
     )
 
-    // Wait for the mocked vapi.start to cause the toast call
+    // Click the Start Interview button to trigger startCall, then wait for toast
+    fireEvent.click(container.querySelector('button'))
+    // simulate the Vapi speech-start which triggers the 'Interview Started' toast
+    vapiInstance.emitAll('speech-start')
     await waitFor(() => {
-      expect(toast).toHaveBeenCalledWith('Call Connected...')
+      expect(toast).toHaveBeenCalledWith('Interview Started')
     })
 
-    // Simulate call-ended to ensure GenerateFeedback is triggered
-    // Emit a message event with conversation, then wait for state to update
+    // Simulate events: message and speech-end to mark user active
     const convo = { messages: ['hi'] }
-    // Broadcast message and speech events to all instances (effect may re-register)
     vapiInstance.emitAll('message', { conversation: convo })
-    vapiInstance.emitAll('speech-start')
     vapiInstance.emitAll('speech-end')
 
     // Wait for DOM update indicating activeUser became true
@@ -92,11 +96,11 @@ describe('StartInterview', () => {
       expect(greenPing).toBeTruthy()
     })
 
-    // Now end the call; GenerateFeedback should be called (timing of conversation capture can vary)
+    // Now end the call; component shows an 'Interview Ended' toast
     vapiInstance.emitAll('call-ended')
 
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalled()
+      expect(toast).toHaveBeenCalledWith('Interview Ended')
     })
 
     expect(container).toBeTruthy()
@@ -138,9 +142,18 @@ describe('StartInterview', () => {
       </InterviewDataContext.Provider>
     )
 
-    // broadcast events and end call; axios will reject but should be handled
-    vapiInstance.emitAll('message', { conversation: { messages: ['x'] } })
-    vapiInstance.emitAll('call-ended')
+    // Click start, then open the stop confirmation and confirm to trigger stopInterview
+    fireEvent.click(container.querySelector('button'))
+    // ensure handlers registered
+    vapiInstance.emitAll('speech-start')
+
+    // open AlertConfirmation dialog by clicking the trigger
+    const trigger = container.querySelector('[data-slot="alert-dialog-trigger"]')
+    fireEvent.click(trigger)
+
+    // click the Continue action inside the dialog to call stopInterview
+    const continueBtn = screen.getByText('Continue')
+    fireEvent.click(continueBtn)
 
     await waitFor(() => {
       // axios.post was called but rejected
