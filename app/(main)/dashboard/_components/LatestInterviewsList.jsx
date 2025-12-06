@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import { useCallback } from 'react'
 import { Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useUser } from '@/app/provider'
@@ -11,13 +12,7 @@ function LatestInterviewsList() {
   const [interviewList, setInterviewList] = useState([]);
   const { user } = useUser();
 
-  useEffect(() => {
-    if (user) {
-      GetInterviewList();
-    }
-  }, [user]);
-
-  const GetInterviewList = async () => {
+  const GetInterviewList = useCallback(async () => {
     let { data, error } = await supabase
       .from('interviews')
       .select('*')
@@ -29,7 +24,12 @@ function LatestInterviewsList() {
     }
 
     setInterviewList(data || []);
-  };
+  },[user]);
+    useEffect(() => {
+    if (user) {
+      GetInterviewList();
+    }
+  }, [user, GetInterviewList]);
 
   return (
     <div className='my-8'> 
