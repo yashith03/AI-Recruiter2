@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import { useCallback } from 'react'
 import { Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useUser } from '@/app/provider'
@@ -10,8 +11,6 @@ import InterviewCard from './InterviewCard'
 function LatestInterviewsList() {
   const [interviewList, setInterviewList] = useState([]);
   const { user } = useUser();
-
-
 
   const GetInterviewList = useCallback(async () => {
     let { data, error } = await supabase
@@ -26,7 +25,6 @@ function LatestInterviewsList() {
 
     setInterviewList(data || []);
   },[user]);
-
     useEffect(() => {
     if (user) {
       GetInterviewList();
