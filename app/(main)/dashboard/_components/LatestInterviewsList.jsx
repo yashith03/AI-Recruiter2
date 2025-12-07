@@ -1,3 +1,5 @@
+// app/(main)/dashboard/_components/LatestInterviewsList.jsx
+
 "use client"
 
 import React, { useState, useEffect } from 'react'

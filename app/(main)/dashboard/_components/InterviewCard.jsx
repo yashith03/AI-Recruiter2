@@ -1,3 +1,6 @@
+// app/(main)/dashboard/_components/InterviewCard.jsx
+
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Copy, Send } from 'lucide-react'
 import moment from 'moment'

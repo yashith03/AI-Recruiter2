@@ -1,3 +1,5 @@
+// app/api-docs/page.jsx
+
 'use client'
 
 import React, { Suspense } from 'react'
