@@ -1,18 +1,16 @@
-// app/(main)/dashboard/_components/LatestInterviewsList.jsx
-
-"use client"
-
-import React, { useState, useEffect } from 'react'
-import { useCallback } from 'react'
+// app/(main)/all-interviews/page.jsx
+'use client'
+import React from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useUser } from '@/app/provider'
 import { supabase } from '@/services/supabaseClient'
-import InterviewCard from './InterviewCard'
+import InterviewCard from '../dashboard/_components/InterviewCard'
 
-function LatestInterviewsList() {
-  const [interviewList, setInterviewList] = useState([]);
-  const { user } = useUser();
+function AllInterview() {
+    const [interviewList, setInterviewList] = useState([]);
+    const { user } = useUser();
 
   const GetInterviewList = useCallback(async () => {
     let { data, error } = await supabase
@@ -20,7 +18,8 @@ function LatestInterviewsList() {
       .select('*')
       .eq('userEmail', user.email)
       .order('created_at', { ascending: false })
-      .limit(6);
+
+      
 
     if (error) {
       console.error('Supabase error:', error.message);
@@ -39,7 +38,7 @@ function LatestInterviewsList() {
     <div className='my-8'> 
       {/* CHANGED: Added mb-3 for spacing and improved margin */}
       <h2 className='font-bold text-2xl mb-3'>
-        Previously Created Interviews
+        All Previously Created Interviews
       </h2>
 
       {/* CHANGED: Added rounded-xl and shadow */}
@@ -63,4 +62,5 @@ function LatestInterviewsList() {
   );
 }
 
-export default LatestInterviewsList;
+
+export default AllInterview

@@ -2,26 +2,29 @@
 
 "use client"
 
-import React, { useState, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import React, { useState, useCallback, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import FormContainer from './_components/FormContainer'
-import QuestionList from './_components/QuestionList'
-import { toast } from 'sonner';
-import InterviewLink from './_components/InterviewLink'
+import FormContainer from "./_components/FormContainer"
+import QuestionList from "./_components/QuestionList"
+import InterviewLink from "./_components/InterviewLink"
+import { toast } from "sonner"
+import { useUser } from "@/app/provider"
 
 function CreateInterview() {
   const router = useRouter()
+  const { user } = useUser()
+
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({})
-  const [interviewId, setInterviewId] = useState()
+  const [interviewId, setInterviewId] = useState(null)
 
   // Stable callback to pass to child component
   const onHandleInputChange = useCallback((field, value) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }, [])
 
@@ -30,51 +33,73 @@ function CreateInterview() {
     console.log("FormData updated:", formData)
   }, [formData])
 
-  const onGoToNext =()=>{
-    console.log("Form data:", formData); 
+  const onGoToNext = () => {
+    console.log("Form data:", formData)
 
-    if(!formData?.jobPosition||
-      !formData?.jobDescription||
-      !formData?.duration||
+    if (!user) {
+      toast.error("You must be logged in to create an interview")
+      return
+    }
+
+    // Only check credits if the field actually exists
+    if (user?.credits !== undefined && user.credits <= 0) {
+      toast.error(
+        "You have no credits to create an interview. Please top up your credits."
+      )
+      return
+    }
+
+    if (
+      !formData?.jobPosition ||
+      !formData?.jobDescription ||
+      !formData?.duration ||
       !formData?.type ||
-      formData?.type?.length===0)
-      {
-       toast.error('Please fill all the fields') 
-       return ;
-      }
-      setStep(2);
-}
-const onCreateLink = (interview_id)=>{
-  setInterviewId(interview_id);
-  setStep(3);
+      (Array.isArray(formData.type) && formData.type.length === 0)
+    ) {
+      toast.error("Please fill all the fields")
+      return
+    }
 
-}
+    setStep(2)
+  }
+
+  const onCreateLink = createdInterviewId => {
+    setInterviewId(createdInterviewId)
+    setStep(3)
+  }
 
   return (
-    <div className='mt-10 px-10 md:px-24 lg:px-44 xl:px-56'>
+    <div className="mt-10 px-10 md:px-24 lg:px-44 xl:px-56">
       {/* Header */}
-      <div className='flex gap-5 items-center'>
-        <ArrowLeft data-testid="back-arrow"onClick={() => router.back()} className='cursor-pointer' />
-        <h2 className='font-bold text-2xl'>Create New Interview</h2>
+      <div className="flex gap-5 items-center">
+        <ArrowLeft
+          data-testid="back-arrow"
+          onClick={() => router.back()}
+          className="cursor-pointer"
+        />
+        <h2 className="font-bold text-2xl">Create New Interview</h2>
       </div>
 
       {/* Progress bar */}
-      <Progress value={step * 33.33} className='my-5' />
+      <Progress value={step * 33.33} className="my-5" />
 
-      {/* Form container */}
-      {step==1?<FormContainer 
-              onHandleInputChange={onHandleInputChange}
-              GoToNext={onGoToNext} />
-              :step===2?(
-              <QuestionList formData={formData} onCreateLink={(interview_id)=>onCreateLink(interview_id)}/>):
-                step==3? <InterviewLink interview_id={interviewId}/>:null
-              }
-            
-              
-              
+      {/* Steps */}
+      {step === 1 && (
+        <FormContainer
+          onHandleInputChange={onHandleInputChange}
+          GoToNext={onGoToNext}
+        />
+      )}
+
+      {step === 2 && (
+        <QuestionList formData={formData} onCreateLink={onCreateLink} />
+      )}
+
+      {step === 3 && interviewId && (
+        <InterviewLink interview_id={interviewId} formData={formData} />
+      )}
     </div>
   )
 }
-              
 
 export default CreateInterview

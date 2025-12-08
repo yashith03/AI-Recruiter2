@@ -82,3 +82,6 @@ afterAll(() => {
 jest.mock("@vercel/speed-insights/next", () => ({
   SpeedInsights: () => null,
 }));
+jest.mock("uuid", () => ({
+  v4: () => "test-uuid", // ✅ stable ID for tests
+}));
