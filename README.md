@@ -1,36 +1,185 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ✨ AI Recruiter
 
-## Getting Started
+AI Recruiter is a web‑based platform designed to help users **create, schedule, manage, and conduct AI‑powered interviews**. It brings together a structured interview creation workflow, real‑time AI conversation, analytics, and a clean dashboard experience. The system is built with **Next.js (App Router)** and includes modern UI patterns, automated testing, and continuous deployment.
 
-First, run the development server:
+---
+
+## 📌 Overview
+
+AI Recruiter allows recruiters to:
+
+* Create interviews with custom question sets 📝
+* Generate shareable interview links 🔗
+* Let candidates complete interviews through an **AI‑driven voice experience** 🎙️🤖
+* Review responses, track progress, and manage multiple interview sessions through a unified dashboard 📊
+
+The system includes an API documentation viewer, AI feedback routes, confirmation prompts, and a real‑time timer for active interviews. Each feature is modular and separated into clean components and pages for maintainability.
+
+---
+
+## ⭐ Key Features
+
+### 🧩 Interview Creation
+
+* Guided creation wizard ✨
+* Automatic interview link generation 🔗
+* Supports customisable question sets ✍️
+
+### 📋 Interview Management
+
+* Dashboard with recent and ongoing interviews 📌
+* Detailed view for each interview, including candidate interactions 👤
+* Scheduling support for organising sessions 📅
+
+### 🎧 Live AI Interview Experience
+
+* Real‑time voice interview powered by **Vapi** ⚡
+* Timer component for tracking session length ⏱️
+* Alerts and confirmation prompts for start/end actions 🔔
+* Feedback collection at the end of each session 🗒️
+
+### 📚 Documentation & API Integration
+
+* In‑app API documentation viewer 📄
+* Routes for AI model execution and feedback 🧠
+* Supabase authentication integration 🔐
+
+### 🎨 UI System
+
+* Custom UI toolkit: buttons, dialogs, sheets, inputs, progress bars, tooltips, skeletons 🎛️
+* Responsive sidebar navigation 📂
+* Smooth loading states with skeleton components 💨
+
+### 🧪 Testing & Quality
+
+* Jest + React Testing Library test suite 🧪
+* Coverage reporting 📈
+* GitHub Actions workflow for automated CI and Vercel deployment 🚀
+
+---
+
+## 🏗️ Technology Stack
+
+### 🎨 Frontend
+
+* Next.js (App Router)
+* React
+* Tailwind CSS
+* Radix UI primitives (customised components)
+
+### 🔧 Backend (Within Next.js)
+
+* API Routes for model and feedback processing
+* Supabase authentication client
+
+### 🤖 AI Integration
+
+* Vapi SDK for AI‑powered interview conversations
+
+### 🧪 Testing
+
+* Jest
+* React Testing Library
+
+### ☁️ Deployment
+
+* Vercel
+* GitHub Actions CI workflow (`ci-vercel.yml`)
+
+---
+
+## 📂 Project Structure Summary
+
+The folder structure is arranged to maintain clarity between pages, components, tests, and utilities.
+
+### 📁 `app/`
+
+Contains all App Router pages such as dashboard, interview flow, scheduling, auth, API routes, and documentation.
+
+### 🎛️ `components/ui/`
+
+Reusable UI elements: dialogs, buttons, sheets, inputs, tooltips, skeletons, etc.
+
+### 🧩 `context/`
+
+React context providers for user details and interview data.
+
+### 🔧 `services/`
+
+Supabase client and shared constants.
+
+### 🧪 `__tests__/`
+
+Coverage for pages, components, providers, and interview behaviour.
+
+### 🖼️ `public/`
+
+Static assets and the OpenAPI specification.
+
+---
+
+## 🚀 Getting Started
+
+### 📦 Installation
+
+```bash
+npm install
+```
+
+### 🔐 Environment Variables
+
+Create a `.env.local` file:
+
+```
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_key_here
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+```
+
+### ▶️ Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧪 Running Tests
 
-## Learn More
+### Run all tests
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm test
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Run tests with coverage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm test -- --coverage
+```
 
-## Deploy on Vercel
+Test coverage includes:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* Dashboard and routing 🗂️
+* Interview creation flow 📝
+* AI interview behaviour 🎙️
+* API responses 🔧
+* UI and layout rendering 🎨
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🌐 Deployment
+
+Deployment is handled through **Vercel**, with GitHub Actions for automated build, test, and deployment.
+
+### Live Application
+
+🔗 [https://ai-recruiterapp.vercel.app](https://ai-recruiterapp.vercel.app)
+
+
+
+---
+
+If you'd like a **more illustrated**, **portfolio‑optimised**, or **GitHub‑badge‑enhanced** README, it can be generated as well. 🔥
