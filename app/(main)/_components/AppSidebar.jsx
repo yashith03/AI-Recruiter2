@@ -17,7 +17,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar"
-import { use } from 'react'
 import { usePathname } from 'next/navigation'
 
 
@@ -51,7 +50,13 @@ console.log("path",path);
                 <SidebarMenuButton asChild className={`p-5 ${path==option.path && 'bg-blue-50'}`} >
                   <Link href={option.path}>
                     <option.icon  className={` ${path == option.path && 'text-primary'}`}/>
-                    <span className={`text-[16px]  font-medium${path==option.path && 'font-bold, text-primary'}`}>{option.name}</span>
+<span
+  className={`text-[16px] font-medium ${
+    path === option.path ? "font-bold text-primary" : ""
+  }`}
+>
+  {option.name}
+</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

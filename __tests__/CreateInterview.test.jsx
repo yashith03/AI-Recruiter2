@@ -2,31 +2,43 @@
 
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import CreateInterview from "@/app/(main)/dashboard/create-interview/page";
-import { toast } from "sonner";
 import React from "react";
+import CreateInterview from "@/app/(main)/dashboard/create-interview/page";
+import Provider from "@/app/provider";
+import { toast } from "sonner";
 
-// ✅ mock router
+// -------------------------
+// MOCKS
+// -------------------------
+
+jest.mock("sonner", () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
+
+// ✅ Keep Provider real, mock ONLY useUser()
+jest.mock("@/app/provider", () => {
+  const original = jest.requireActual("@/app/provider");
+  return {
+    __esModule: true,
+    ...original,
+    useUser: () => ({ user: { email: "test@mail.com", credits: 1 } })
+  };
+});
+
+// Mock router
 const mockBack = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ back: mockBack }),
+  useRouter: () => ({ back: mockBack })
 }));
 
-// ✅ mock child components
+// Mock Progress
 jest.mock("@/components/ui/progress", () => ({
-  Progress: ({ value }) => <div data-testid="progress">{value}</div>,
+  Progress: ({ value }) => <div data-testid="progress">{value}</div>
 }));
 
+// Mock FormContainer (step 1)
 jest.mock(
   "@/app/(main)/dashboard/create-interview/_components/FormContainer",
   () => (props) => (
     <div data-testid="form-container">
-      <button
-        data-testid="next-btn"
-        onClick={() => props.GoToNext()}
-      >
-        Next
-      </button>
       <button
         data-testid="fill-btn"
         onClick={() => {
@@ -38,79 +50,90 @@ jest.mock(
       >
         Fill Data
       </button>
+      <button data-testid="next-btn" onClick={() => props.GoToNext()}>
+        Next
+      </button>
     </div>
   )
 );
 
+// Mock QuestionList (step 2)
 jest.mock(
   "@/app/(main)/dashboard/create-interview/_components/QuestionList",
   () => (props) => (
     <div data-testid="question-list">
       Loaded Questions for {props.formData.jobPosition}
-      <button data-testid="create-link-btn" onClick={() => props.onCreateLink('link-xyz')}>Create Link</button>
+      <button
+        data-testid="create-link-btn"
+        onClick={() => props.onCreateLink("link-xyz")}
+      >
+        Create
+      </button>
     </div>
   )
 );
 
-// Mock InterviewLink to avoid DOM clipboard calls while testing CreateInterview flow
+// Mock InterviewLink (step 3)
 jest.mock(
   "@/app/(main)/dashboard/create-interview/_components/InterviewLink",
-  () => (props) => <div data-testid="interview-link">Interview Link: {props.interview_id}</div>
+  () => (props) => (
+    <div data-testid="interview-link">
+      Interview Link: {props.interview_id}
+    </div>
+  )
 );
 
-jest.mock("sonner", () => ({
-  toast: { error: jest.fn() },
-}));
+// Helper renderer
+const renderWithProvider = () =>
+  render(
+    <Provider>
+      <CreateInterview />
+    </Provider>
+  );
+
+// -------------------------
+// TESTS
+// -------------------------
 
 describe("CreateInterview Page", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.clearAllMocks());
 
   test("renders title and progress bar", () => {
-    render(<CreateInterview />);
+    renderWithProvider();
     expect(screen.getByText("Create New Interview")).toBeInTheDocument();
     expect(screen.getByTestId("progress")).toHaveTextContent("33.33");
   });
 
   test("renders FormContainer at step 1", () => {
-    render(<CreateInterview />);
+    renderWithProvider();
     expect(screen.getByTestId("form-container")).toBeInTheDocument();
   });
 
   test("shows toast when required fields missing", () => {
-    render(<CreateInterview />);
-    fireEvent.click(screen.getByTestId("next-btn"));
+    renderWithProvider();
+    fireEvent.click(screen.getByTestId("next-btn")); // no fields
     expect(toast.error).toHaveBeenCalledWith("Please fill all the fields");
   });
 
-  test("moves to QuestionList when all fields filled", () => {
-    render(<CreateInterview />);
+  test("moves to QuestionList when filled", () => {
+    renderWithProvider();
     fireEvent.click(screen.getByTestId("fill-btn"));
     fireEvent.click(screen.getByTestId("next-btn"));
     expect(screen.getByTestId("question-list")).toBeInTheDocument();
   });
 
-  test("creates interview link and shows InterviewLink (step 3)", () => {
-    render(<CreateInterview />);
+  test("moves to InterviewLink on Create Link", () => {
+    renderWithProvider();
     fireEvent.click(screen.getByTestId("fill-btn"));
     fireEvent.click(screen.getByTestId("next-btn"));
-
-    // Now in step 2 (QuestionList)
-    expect(screen.getByTestId("question-list")).toBeInTheDocument();
-
-    // Click create link inside QuestionList -> advances to step3 and shows InterviewLink
     fireEvent.click(screen.getByTestId("create-link-btn"));
 
     expect(screen.getByTestId("interview-link")).toBeInTheDocument();
-    expect(screen.getByText(/Interview Link:/i)).toBeInTheDocument();
   });
 
-  test("calls router.back() when back arrow clicked", () => {
-    render(<CreateInterview />);
-    fireEvent.click(screen.getByText("Create New Interview").previousSibling);
-    // safer alternative if lucide icon not accessible by role:
-    // fireEvent.click(screen.getByText("Create New Interview").previousSibling)
+  test("calls router.back on back arrow", () => {
+    renderWithProvider();
+    fireEvent.click(screen.getByTestId("back-arrow"));
     expect(mockBack).toHaveBeenCalled();
   });
 });
