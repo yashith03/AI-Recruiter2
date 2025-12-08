@@ -17,11 +17,17 @@ function InterviewCard({ interview, viewDetail = false }) {
     toast("Copied");
   };
 
-  const onSend = () => {
-    window.location.href =
-      "mailto:accounts@yashithc.dev@gmail.com?subject=AI Recruiter Interview Link&body=Interview Link " +
-      url;
-  };
+const onSend = () => {
+  const mailto =
+    "mailto:accounts@yashithc.dev@gmail.com" +
+    "?subject=AI Recruiter Interview Link" +
+    "&body=Interview Link " +
+    url;
+
+  window.open(mailto, "_self");
+};
+
+
 
   return (
     <div className="p-5 bg-white w-full rounded-xl border shadow-sm hover:shadow-md transition min-h-[220px] flex flex-col">
