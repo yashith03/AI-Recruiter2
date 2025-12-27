@@ -181,5 +181,3 @@ Deployment is handled through **Vercel**, with GitHub Actions for automated buil
 
 
 ---
-
-If you'd like a **more illustrated**, **portfolio‑optimised**, or **GitHub‑badge‑enhanced** README, it can be generated as well. 🔥
