@@ -24,16 +24,14 @@ describe("WelcomeContainer Component", () => {
     jest.clearAllMocks();
   });
 
-  test("renders welcome message with user name and avatar", () => {
+  test("renders welcome message with user name", () => {
     useUser.mockReturnValue({
       user: { name: "Inupama", picture: "/avatar.jpg" },
     });
 
     render(<WelcomeContainer />);
 
-    expect(screen.getByText("Welcome Back Inupama")).toBeInTheDocument();
-    expect(screen.getByText("AI-Driven Interviews, Hassel-Free Hiring")).toBeInTheDocument();
-    expect(screen.getByTestId("mocked-image")).toHaveAttribute("src", "/avatar.jpg");
+    expect(screen.getByText(/Welcome back, Inupama/i)).toBeInTheDocument();
   });
 
   test("renders fallback message when no user exists", () => {
@@ -41,7 +39,6 @@ describe("WelcomeContainer Component", () => {
 
     render(<WelcomeContainer />);
 
-    expect(screen.getByText("Welcome Back")).toBeInTheDocument();
-    expect(screen.queryByTestId("mocked-image")).not.toBeInTheDocument();
+    expect(screen.getByText(/Welcome back, User/i)).toBeInTheDocument();
   });
 });

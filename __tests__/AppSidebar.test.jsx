@@ -23,11 +23,20 @@ jest.mock("@/services/Constants", () => ({
   ],
 }));
 
+// ---- Mock provider ----
+jest.mock("@/app/provider", () => ({
+  useUser: jest.fn(),
+}));
+
 describe("AppSidebar", () => {
   const { usePathname } = require("next/navigation");
+  const { useUser } = require("@/app/provider");
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useUser.mockReturnValue({
+      user: { name: "Test User", email: "test@example.com", picture: "/avatar.png" },
+    });
   });
 
   // ✅ Helper: render with SidebarProvider wrapper
@@ -42,7 +51,7 @@ describe("AppSidebar", () => {
 
   test("renders logo and create button", () => {
     renderWithProvider("/home");
-    expect(screen.getByAltText("logo")).toBeInTheDocument();
+    expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
     expect(screen.getByText("Create New Interview")).toBeInTheDocument();
   });
 
@@ -56,5 +65,12 @@ describe("AppSidebar", () => {
     renderWithProvider("/settings");
     const activeLink = screen.getByText("Settings");
     expect(activeLink.closest("a")).toHaveAttribute("href", "/settings");
+  });
+
+  test("renders user profile info", () => {
+    renderWithProvider("/home");
+    expect(screen.getByAltText("Profile")).toBeInTheDocument();
+    expect(screen.getByText("Test User")).toBeInTheDocument();
+    expect(screen.getByText("test@example.com")).toBeInTheDocument();
   });
 });

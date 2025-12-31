@@ -14,8 +14,7 @@ jest.mock("sonner", () => ({
   Toaster: () => <div data-testid="toaster" />,
 }));
 jest.mock("next/font/google", () => ({
-  Geist: jest.fn(() => ({ variable: "--font-geist-sans" })),
-  Geist_Mono: jest.fn(() => ({ variable: "--font-geist-mono" })),
+  Outfit: jest.fn(() => ({ variable: "--font-outfit" })),
 }));
 jest.mock("@vercel/speed-insights/next", () => ({
   SpeedInsights: () => <div data-testid="speed-insights" />,
@@ -35,8 +34,7 @@ describe("RootLayout", () => {
     expect(root.nodeName.toLowerCase()).toBe("html");
     expect(root.getAttribute("lang")).toBe("en");
     expect(body).toHaveClass("antialiased");
-    expect(body.className).toContain("--font-geist-sans");
-    expect(body.className).toContain("--font-geist-mono");
+    expect(body.className).toContain("--font-outfit");
   });
 
   test("wraps children inside Provider and includes Toaster", () => {

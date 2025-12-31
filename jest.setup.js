@@ -60,6 +60,17 @@ jest.mock("@/services/supabaseClient", () => ({
   },
 }));
 
+// Mock fetch globally
+global.fetch = jest.fn();
+
+// Mock next/font/google
+jest.mock("next/font/google", () => ({
+  Outfit: () => ({
+    variable: "--font-outfit",
+    className: "font-outfit",
+  }),
+}));
+
 // Suppress noisy React DOM nesting warnings
 const originalError = console.error;
 beforeAll(() => {

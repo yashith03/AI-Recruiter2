@@ -18,19 +18,18 @@ describe("Login Page", () => {
     jest.clearAllMocks();
   });
 
-  test("renders logo, login image, texts, and button", () => {
+  test("renders logo icon, header, texts, and button", () => {
     render(<Login />);
 
-    expect(screen.getByAltText("logo")).toBeInTheDocument();
-    expect(screen.getByAltText("login")).toBeInTheDocument();
+    expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
     expect(
       screen.getByText("Welcome to AICruiter")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Sign In With Google Authentication")
+      screen.getByText(/Sign In With Google/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /login with google/i })
+      screen.getByRole("button", { name: /continue with google/i })
     ).toBeInTheDocument();
   });
 
@@ -39,14 +38,14 @@ describe("Login Page", () => {
 
     render(<Login />);
 
-    const loginButton = screen.getByRole("button", { name: /login with google/i });
+    const loginButton = screen.getByRole("button", { name: /continue with google/i });
     fireEvent.click(loginButton);
 
     await waitFor(() => {
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: "google",
         options: {
-          redirectTo: `http://localhost/auth/callback`,
+          redirectTo: expect.stringContaining("/auth/callback"),
         },
       });
     });
@@ -60,7 +59,7 @@ describe("Login Page", () => {
 
     render(<Login />);
 
-    const loginButton = screen.getByRole("button", { name: /login with google/i });
+    const loginButton = screen.getByRole("button", { name: /continue with google/i });
     fireEvent.click(loginButton);
 
     await waitFor(() => {

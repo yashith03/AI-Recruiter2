@@ -12,62 +12,20 @@ import { useUser } from "@/app/provider"
 import { v4 as uuidv4 } from "uuid"
 import { supabase } from "@/services/supabaseClient"
 
-function QuestionList({ formData, onCreateLink }) {
-  const [loading, setLoading] = useState(true)
-  const [questionList, setQuestionList] = useState([])
+function QuestionList({ formData, onCreateLink, initialQuestionList }) {
+  const [loading, setLoading] = useState(!initialQuestionList || initialQuestionList.length === 0)
+  const [questionList, setQuestionList] = useState(initialQuestionList || [])
   const [saving, setSaving] = useState(false)
   const { user } = useUser()
 
   useEffect(() => {
-    if (!formData || Object.keys(formData).length === 0) return
-
-    async function generateQuestionList() {
-      setLoading(true)
-      try {
-        const result = await axios.post("/api/ai-model", {
-          ...formData,
-        })
-
-        const payload = result.data
-        console.log("AI API payload:", payload)
-
-        if (payload?.result && typeof payload.result === "object") {
-          setQuestionList(payload.result.interviewQuestions || [])
-        } else if (payload?.content && typeof payload.content === "string") {
-          const cleaned = payload.content
-            .replace(/"?```json\s*/i, "")
-            .replace(/```/g, "")
-
-          try {
-            setQuestionList(JSON.parse(cleaned)?.interviewQuestions || [])
-          } catch (err) {
-            console.warn("Failed to parse AI content string", err)
-            setQuestionList([])
-          }
-        } else {
-          console.warn("Unexpected AI payload shape", payload)
-          setQuestionList([])
-        }
-      } catch (e) {
-        const msg =
-          e.response?.data?.error ||
-          "Server is busy, please try again later."
-        toast.error(msg)
-        setQuestionList([])
-      } finally {
-        setLoading(false)
-      }
+    if (initialQuestionList && initialQuestionList.length > 0) {
+      setQuestionList(initialQuestionList)
+      setLoading(false)
     }
-
-    generateQuestionList()
-  }, [formData])
+  }, [initialQuestionList])
 
   const onFinish = async () => {
-    console.log("onFinish called")
-    console.log("User:", user)
-    console.log("FormData:", formData)
-    console.log("QuestionList:", questionList)
-
     if (!user?.email) {
       toast.error("User not logged in. Please sign in first.")
       return
@@ -88,7 +46,6 @@ function QuestionList({ formData, onCreateLink }) {
           jobPosition: formData.jobPosition,
           jobDescription: formData.jobDescription,
           duration: formData.duration,
-          // keep as array so detail page can handle it
           type: Array.isArray(formData.type) ? formData.type : [formData.type],
           questionList,
           userEmail: user.email,
@@ -104,58 +61,45 @@ function QuestionList({ formData, onCreateLink }) {
       return
     }
 
-    // Optional: credits update, only if field exists
-    if (user.credits !== undefined) {
-      const { error: creditsError } = await supabase
-        .from("users")
-        .update({ credits: Number(user.credits) - 1 })
-        .eq("email", user.email)
-
-      if (creditsError) {
-        console.error("Error updating credits:", creditsError)
-      }
-    }
-
-    console.log("Interview saved:", data)
     toast.success("Interview created successfully!")
     setSaving(false)
     onCreateLink(interview_id)
   }
 
   return (
-    <div>
-      {loading && (
-        <div className="p-5 bg-blue-50 rounded-xl border border-primary flex gap-5 items-center">
-          <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
-          <div>
-            <h2 className="font-medium">Generating Interview Questions</h2>
-            <p className="text-primary">
-              Our AI is crafting personalized questions based on your job
-              position
-            </p>
+    <div className="flex flex-col gap-6">
+      {loading ? (
+        <div className="p-8 bg-primary/5 rounded-2xl border border-primary/10 flex gap-6 items-center animate-pulse">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <Loader2 className="animate-spin h-7 w-7 text-primary" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-h3 text-slate-900 font-bold leading-tight">Finalizing Questions</h2>
+            <p className="text-body text-slate-500">Please wait while we prepare your assessment...</p>
           </div>
         </div>
-      )}
-
-      {!loading && questionList.length > 0 && (
-        <QuestionsListContainer questionList={questionList} />
-      )}
-
-      {!loading && questionList.length === 0 && (
-        <div className="p-5">
-          <p className="text-sm text-muted-foreground">
-            No questions generated. Try adjusting the job description or
-            retrying.
-          </p>
-        </div>
-      )}
-
-      <div className="flex justify-end mt-10">
-        <Button onClick={onFinish} disabled={saving}>
-          {saving && (
-            <Loader className="animate-spin h-4 w-4 mr-2" />
+      ) : (
+        <>
+          {questionList.length > 0 ? (
+            <QuestionsListContainer questionList={questionList} />
+          ) : (
+            <div className="p-10 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+              <p className="text-body text-slate-500 italic">No questions generated. Please go back and try again.</p>
+            </div>
           )}
-          Create Interview Link and Finish
+        </>
+      )}
+
+      <div className="flex justify-end pt-8 border-t border-slate-50 mt-4">
+        <Button 
+          onClick={onFinish} 
+          disabled={saving || loading || questionList.length === 0} 
+          className="h-12 px-10 rounded-xl bg-primary hover:bg-primary-dark text-body font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2"
+        >
+          {saving && (
+            <Loader2 className="animate-spin h-5 w-5" />
+          )}
+          Create Interview Link & Finish
         </Button>
       </div>
     </div>

@@ -13,6 +13,9 @@ jest.mock("next/link", () => {
 jest.mock("lucide-react", () => ({
   Video: (props) => <svg data-testid="video-icon" {...props} />,
   Phone: (props) => <svg data-testid="phone-icon" {...props} />,
+  Plus: (props) => <svg data-testid="plus-icon" {...props} />,
+  LineChart: (props) => <svg data-testid="line-chart-icon" {...props} />,
+  ArrowRight: (props) => <svg data-testid="arrow-right-icon" {...props} />,
 }));
 
 describe("CreateOptions Component", () => {
@@ -21,14 +24,14 @@ describe("CreateOptions Component", () => {
 
     // Titles
     expect(screen.getByText("Create New Interview")).toBeInTheDocument();
-    expect(screen.getByText("Create Phone Screening Call")).toBeInTheDocument();
+    expect(screen.getByText("Phone Screening")).toBeInTheDocument();
 
     // Descriptions
     expect(
-      screen.getByText(/Create AI Interviews and schedule then with Candidates/i)
+      screen.getByText(/Set up a new AI-driven interview session/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Schedule a Phone Screening Call with Candidates/i)
+      screen.getByText(/Configure a quick automated phone screen/i)
     ).toBeInTheDocument();
   });
 
@@ -40,7 +43,7 @@ describe("CreateOptions Component", () => {
 
   test("link navigates to create interview page", () => {
     render(<CreateOptions />);
-    const link = screen.getByRole("link", { name: /Create New Interview/i });
+    const link = screen.getByRole("link", { name: /Get Started/i });
     expect(link).toHaveAttribute("href", "/dashboard/create-interview");
   });
 });

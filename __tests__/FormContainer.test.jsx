@@ -60,7 +60,7 @@ describe("FormContainer Component", () => {
     expect(screen.getByText("Job Description")).toBeInTheDocument();
     expect(screen.getByText("Interview Duration")).toBeInTheDocument();
     expect(screen.getByText("Interview Type")).toBeInTheDocument();
-    expect(screen.getByText("Generate Question")).toBeInTheDocument();
+    expect(screen.getByText(/Generate Questions/i)).toBeInTheDocument();
   });
 
   test("calls onHandleInputChange when job position and description are changed", () => {

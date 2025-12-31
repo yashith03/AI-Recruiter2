@@ -115,20 +115,31 @@ describe("CreateInterview Page", () => {
     expect(toast.error).toHaveBeenCalledWith("Please fill all the fields");
   });
 
-  test("moves to QuestionList when filled", () => {
+  test("moves to QuestionList when filled", async () => {
+    global.fetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ result: { interviewQuestions: [{ question: "Q1", answer: "A1" }] } })
+    });
+
     renderWithProvider();
     fireEvent.click(screen.getByTestId("fill-btn"));
     fireEvent.click(screen.getByTestId("next-btn"));
-    expect(screen.getByTestId("question-list")).toBeInTheDocument();
+
+    expect(await screen.findByTestId("question-list")).toBeInTheDocument();
   });
 
-  test("moves to InterviewLink on Create Link", () => {
+  test("moves to InterviewLink on Create Link", async () => {
+    global.fetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ result: { interviewQuestions: [{ question: "Q1", answer: "A1" }] } })
+    });
+
     renderWithProvider();
     fireEvent.click(screen.getByTestId("fill-btn"));
     fireEvent.click(screen.getByTestId("next-btn"));
-    fireEvent.click(screen.getByTestId("create-link-btn"));
+    
+    const createBtn = await screen.findByTestId("create-link-btn");
+    fireEvent.click(createBtn);
 
-    expect(screen.getByTestId("interview-link")).toBeInTheDocument();
+    expect(await screen.findByTestId("interview-link")).toBeInTheDocument();
   });
 
   test("calls router.back on back arrow", () => {
