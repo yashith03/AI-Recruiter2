@@ -1,0 +1,515 @@
+﻿node.exe : FAIL 
+__tests__/HomePage.test.jsx
+At C:\Users\user\AppData\Roa
+ming\npm\npx.ps1:24 char:5
++     & "node$exe"  "$basedi
+r/node_modules/npm/bin/npx-c
+li.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (FAIL   
+  __tests__/HomePage.test   
+ .jsx:String) [], Remote    
+Exception
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+  Home Page
+    ├ù renders without 
+crashing (185 ms)
+    ΓêÜ matches basic 
+structure (25 ms)
+
+  ΓùÅ Home Page ΓÇ║ renders 
+without crashing
+
+    
+TestingLibraryElementError: 
+Found multiple elements 
+with the text: /AI 
+Recruiter/i
+
+    Here are the matching 
+elements:
+
+    Ignored nodes: 
+comments, script, style
+    [36m<h2[39m
+      [33mclass[39m=[32m"
+text-h3"[39m
+    [36m>[39m
+      [0mAI Recruiter[0m
+    [36m</h2>[39m
+
+    Ignored nodes: 
+comments, script, style
+    [36m<h2[39m
+      [33mclass[39m=[32m"
+text-h1 text-[#0d141c] 
+text-center mb-16"[39m
+    [36m>[39m
+      [0mWho is AI 
+Recruiter For?[0m
+    [36m</h2>[39m
+
+    Ignored nodes: 
+comments, script, style
+    [36m<h2[39m
+      [33mclass[39m=[32m"
+text-h3"[39m
+    [36m>[39m
+      [0mAI Recruiter[0m
+    [36m</h2>[39m
+
+    Ignored nodes: 
+comments, script, style
+    [36m<p[39m
+      [33mclass[39m=[32m"
+text-label 
+text-slate-400"[39m
+    [36m>[39m
+      [0m┬⌐ 2024 AI 
+Recruiter Inc. All rights 
+reserved.[0m
+    [36m</p>[39m
+
+    (If this is 
+intentional, then use the 
+`*AllBy*` variant of the 
+query (like 
+`queryAllByText`, 
+`getAllByText`, or 
+`findAllByText`)).
+
+    Ignored nodes: 
+comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[
+32m"font-body 
+bg-background-light 
+text-[#0d141c] 
+overflow-x-hidden"[39m
+        [36m>[39m
+          [36m<nav[39m
+            
+[33mclass[39m=[32m"fixed 
+top-0 w-full bg-white/80 
+backdrop-blur-md border-b 
+border-[#cedbe8] z-50"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39
+m=[32m"max-w-7xl mx-auto 
+px-4 sm:px-6 lg:px-8 h-12 
+md:h-16 flex items-center 
+justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mclass[39m=[32m"flex 
+items-center gap-8 
+md:gap-12"[39m
+              [36m>[39m
+                
+[36m<div[39m
+                  
+[33mclass[39m=[32m"flex 
+items-center gap-2 
+text-[#0d141c]"[39m
+                [36m>[39m
+                  
+[36m<div[39m
+                    [33mcla
+ss[39m=[32m"text-primary"
+[39m
+                  
+[36m>[39m
+                    
+[36m<span[39m
+                      [33mc
+lass[39m=[32m"material-sym
+bols-outlined"[39m
+                      [33ms
+tyle[39m=[32m"font-size: 
+28px;"[39m
+                    
+[36m>[39m
+                      
+[0mgraphic_eq[0m
+                    
+[36m</span>[39m
+                  
+[36m</div>[39m
+                  
+[36m<h2[39m
+                    [33mcla
+ss[39m=[32m"text-h3"[39m
+                  
+[36m>[39m
+                    [0mAI 
+Recruiter[0m
+                  
+[36m</h2>[39m
+                
+[36m</div>[39m
+                
+[36m<div[39m
+                  [33mclass
+[39m=[32m"hidden md:flex 
+items-center gap-8"[39m
+                [36m>[39m
+                  
+[36m<a[39m
+                    [33mcla
+ss[39m=[32m"text-body 
+font-bold 
+hover:text-primary 
+transition-colors"[39m
+                    [33mhre
+f[39m=[32m"#features"[39m
+                  
+[36m>[39m
+                    
+[0mFeatures[0m
+                  
+[36m</a>[39m
+                  
+[36m<a[39m
+                    [33mcla
+ss[39m=[32m"text-body 
+font-bold 
+hover:text-primary 
+transition-colors"[39m
+                    [33mhre
+f[39m=[32m"#how-it-works"
+[39m
+                  
+[36m>[39m
+                    [0mHow 
+it Works[0m
+                  
+[36m</a>[39m
+                  
+[36m<a[39m
+                    [33mcla
+ss[39m=[32m"text-body 
+font-bold 
+hover:text-primary 
+transition-colors"[39m
+                    [33mhre
+f[39m=[32m"#use-cases"[39
+m
+                  
+[36m>[39m
+                    [0mUse 
+Cases[0m
+                  
+[36m</a>[39m
+                
+[36m</div>[39m
+              
+[36m</div>[39m
+              [36m<div[39m
+                
+[33mclass[39m=[32m"flex 
+items-center gap-4"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mhref
+[39m=[32m"/dashboard"[39m
+                [36m>[39m
+                  
+[36m<button[39m
+                    [33mcla
+ss[39m=[32m"hidden 
+sm:flex h-9 items-center 
+justify-center rounded-lg 
+px-4 bg-transparent 
+text-body font-bold 
+text-[#0d141c] 
+hover:bg-slate-100 
+transition-colors"[39m
+                  
+[36m>[39m
+                    [0mLog 
+in[0m
+                  
+[36m</button>[39m
+                
+[36m</a>[39m
+                [36m<a[39m
+                  [33mhref
+[39m=[32m"/dashboard"[39m
+                [36m>[39m
+                  
+[36m<button[39m
+                    
+[33mclass[39m=[32m"h-9 
+flex items-center 
+justify-center rounded-lg 
+px-4 bg-primary text-white 
+text-body font-bold 
+hover:bg-primary-dark 
+transition-colors 
+shadow-sm"[39m
+                  
+[36m>[39m
+                    
+[0mSign up[0m
+                  
+[36m</button>[39m
+                
+[36m</a>[39m
+              
+[36m</div>[39m
+            [36m</div>[39m
+          [36m</nav>[39m
+          [36m<section[39m
+            
+[33mclass[39m=[32m"pt-32 
+pb-20 md:pt-48 md:pb-32 
+px-4 sm:px-6 lg:px-8 
+max-w-7xl mx-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mclass[39m=[32m"grid 
+lg:grid-cols-2 gap-12 
+items-center"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mclass[39m=[32m"flex 
+flex-col gap-6 text-center 
+lg:text-left animate-in 
+slide-in-from-left 
+duration-700"[39m
+              [36m>[39m
+                
+[36m<h1[39m
+                  [33mclass
+[39m=[32m"text-h1 
+text-[#0d141c]"[39m
+                [36m>[39m
+                  [0mHire 
+Faster with [0m
+                  
+[36m<span[39m
+                    [33mcla
+ss[39m=[32m"text-primary"
+[39m
+                  
+[36m>[39m
+                    
+[0mAI-Powered[0m
+                  
+[36m</span>[39m
+                  [0m 
+Interviews[0m
+                
+[36m</h1>[39m
+                [36m<p[39m
+                  [33mclass
+[39m=[32m"text-body-lg 
+text-slate-600 max-w-2xl 
+mx-auto lg:mx-0"[39m
+                [36m>[39m
+                  
+[0mStreamline your 
+recruitment process with 
+intelligent AI voice 
+conversations. Create, 
+schedule, and analyze 
+interviews 10x faster than 
+traditional methods.[0m
+                
+[36m</p>[39m
+                
+[36m<div[39m
+                  
+[33mclass[39m=[32m"flex 
+flex-col sm:flex-row gap-4 
+justify-center 
+lg:justify-start pt-4"[39m
+                [36m>[39m
+                  
+[36m<a[39m
+                    [33mhre
+f[39m=[32m"/dashboard"[39
+m
+                  
+[36m>[39m
+                    
+[36m<button[39m
+                      
+[33mclass[39m=[32m"h-12 
+px-8 rounded-lg bg-primary 
+text-white text-body 
+font-bold 
+hover:bg-primary-dark 
+transition-all shadow-lg 
+hover:shadow-xl 
+hover:-translate-y-0.5"[39m
+                    
+[36m>[39m
+                      
+[0mStart Hiring Now[0m
+                    
+[36m</button>[39m
+                  
+[36m</a>[39m
+                  
+[36m<button[39m
+                    
+[33mclass[39m=[32m"h-12 
+px-8 rounded-lg bg-white 
+border border-[#cedbe8] 
+text-[#0d141c] text-body 
+font-bold hover:bg-slate-50 
+transition-colors"[39m
+                  
+[36m>[39m
+                    
+[0mView Demo[0m
+                  
+[36m</button>[39m
+                
+[36m</div>[39m
+                
+[36m<div[39m
+                  
+[33mclass[39m=[32m"flex 
+items-center justify-center 
+lg:justify-start gap-4 pt-4 
+text-helper 
+text-slate-500"[39m
+                [36m>[39m
+                  
+[36m<div[39m
+                    
+[33mclass[39m=[32m"flex 
+items-center gap-1.5"[39m
+                  
+[36m>[39m
+                    
+[36m<span[39m
+                      [33mc
+lass[39m=[32m"material-sym
+bols-outlined 
+text-green-500"[39m
+                      [33ms
+tyle[39m=[32m"font-size: 
+18px;"[39m
+                    
+[36m>[39m
+                      
+[0mcheck_circle[0m
+                    
+[36m</span>[39m
+                    [0mNo 
+credit card required[0m
+                  
+[36m</div>[39m
+                  
+[36m<div[39m
+                    
+[33mclass[39m=[32m"flex 
+items-center gap-1.5"[39m
+                  
+[36m>[39m
+                    
+[36m<span[39m
+                      [33mc
+lass[39m=[32m"material-sym
+bols-outlined 
+text-green-500"[39m
+                      [33ms
+tyle[39m=[32m"font-size: 
+18px;"[39m
+                    
+[36m>[39m
+                      
+[0mcheck_circle[0m
+                    
+[36m</span>[39m
+                    
+[0m14-day free trial[0m
+                  
+[36m</div>[39m
+                
+[36m</div>[39m
+              
+[36m</div>[39m
+              [36m<div[39m
+                [33mclass[
+39m=[32m"relative 
+animate-in zoom-in 
+duration-700 delay-200"[39m
+              [36m>[39m
+                
+[36m<div[39m
+                  [33mclass
+[39m=[32m"aspect-square 
+rounded-...
+
+    [0m [90m 18 |[39m   
+test([32m"renders without 
+crashing"[39m[33m,[39m 
+() [33m=>[39m {
+     [90m 19 |[39m     ren
+der([33m<[39m[33mPage[39
+m [33m/[39m[33m>[39m)[3
+3m;[39m
+    
+[31m[1m>[22m[39m[90m 
+20 |[39m     expect(screen
+[33m.[39mgetByText([35m/AI
+ Recruiter/i[39m))[33m.[3
+9mtoBeInTheDocument()[33m;
+[39m
+     [90m    |[39m        
+           
+[31m[1m^[22m[39m
+     [90m 21 |[39m   
+})[33m;[39m
+     [90m 22 |[39m
+     [90m 23 |[39m   
+test([32m"matches basic 
+structure"[39m[33m,[39m 
+() [33m=>[39m {[0m
+
+      at 
+Object.getElementError (node
+_modules/@testing-library/do
+m/dist/config.js:37:19)
+      at getElementError (no
+de_modules/@testing-library/
+dom/dist/query-helpers.js:20
+:35)
+      at getMultipleElements
+FoundError (node_modules/@te
+sting-library/dom/dist/query
+-helpers.js:23:10)
+      at node_modules/@testi
+ng-library/dom/dist/query-he
+lpers.js:55:13
+      at node_modules/@testi
+ng-library/dom/dist/query-he
+lpers.js:95:19
+      at Object.getByText (_
+_tests__/HomePage.test.jsx:2
+0:19)
+
+Test Suites: 1 failed, 1 
+total
+Tests:       1 failed, 1 
+passed, 2 total
+Snapshots:   0 total
+Time:        1.621 s
+Ran all test suites 
+matching 
+__tests__/HomePage.test.jsx.

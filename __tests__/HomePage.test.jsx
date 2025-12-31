@@ -17,12 +17,12 @@ jest.mock("next/link", () => {
 describe("Home Page", () => {
   test("renders without crashing", () => {
     render(<Page />);
-    expect(screen.getByText(/subscribe to yashith/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/AI Recruiter/i)[0]).toBeInTheDocument();
   });
 
   test("matches basic structure", () => {
     const { container } = render(<Page />);
     expect(container.querySelector("div")).toBeInTheDocument();
-    expect(container.querySelector("h2")).toHaveTextContent("Subscribe to yashith");
+    expect(container.querySelector("h2")).toHaveTextContent("AI Recruiter");
   });
 });

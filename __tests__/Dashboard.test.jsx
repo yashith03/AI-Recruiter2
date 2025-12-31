@@ -18,25 +18,23 @@ jest.mock("@/app/(main)/dashboard/_components/LatestInterviewsList", () => () =>
 ));
 
 describe("Dashboard Page", () => {
-  test("renders title and all main sections", () => {
+  test("renders all main sections", () => {
     render(<Dashboard />);
 
-    // ✅ Main heading
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-
     // ✅ Child sections
+    expect(screen.getByTestId("welcome-container")).toBeInTheDocument();
     expect(screen.getByTestId("create-options")).toBeInTheDocument();
     expect(screen.getByTestId("latest-interviews")).toBeInTheDocument();
   });
 
   test("renders in correct structure order", () => {
     render(<Dashboard />);
-    const heading = screen.getByText("Dashboard");
+    const welcome = screen.getByTestId("welcome-container");
     const createOptions = screen.getByTestId("create-options");
     const latest = screen.getByTestId("latest-interviews");
 
-    // ✅ Ensure correct order (heading → CreateOptions → LatestInterviewsList)
-    expect(heading.compareDocumentPosition(createOptions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // ✅ Ensure correct order (WelcomeContainer → CreateOptions → LatestInterviewsList)
+    expect(welcome.compareDocumentPosition(createOptions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(createOptions.compareDocumentPosition(latest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

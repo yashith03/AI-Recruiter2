@@ -4,7 +4,10 @@ import InterviewCard from "../app/(main)/dashboard/_components/InterviewCard";
 import { toast } from "sonner";
 
 jest.mock("sonner", () => ({
-  toast: jest.fn(),
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
 Object.assign(navigator, {
@@ -40,7 +43,7 @@ describe("InterviewCard Component", () => {
     expect(screen.getByText("Frontend Developer")).toBeInTheDocument();
     expect(screen.getByText("30 Min")).toBeInTheDocument();
     expect(screen.getByText("2 Candidates")).toBeInTheDocument();
-    expect(screen.getByText("01 Jan 2025")).toBeInTheDocument();
+    expect(screen.getByText(/Jan 01/i)).toBeInTheDocument();
   });
 
   test("copies the interview link to clipboard", () => {
@@ -52,36 +55,42 @@ describe("InterviewCard Component", () => {
       "https://test.com/abc123"
     );
 
-    expect(toast).toHaveBeenCalledWith("Copied");
+    expect(toast.success).toHaveBeenCalledWith("Link copied to clipboard");
   });
 
-  test("redirects to mailto link when clicking Send", () => {
+  test("opens invite link when clicking Invite", () => {
     render(<InterviewCard interview={interviewMock} />);
 
-    fireEvent.click(screen.getByText(/Send/i));
+    fireEvent.click(screen.getByText(/Invite/i));
 
     expect(openSpy).toHaveBeenCalledWith(
-      "mailto:accounts@yashithc.dev@gmail.com?subject=AI Recruiter Interview Link&body=Interview Link https://test.com/abc123",
-      "_self"
+      expect.stringContaining("mailto:?subject=AI Recruiter Interview Invite"),
+      "_blank"
     );
   });
 
-  test("shows View Detail button when viewDetail = true", () => {
-    render(<InterviewCard interview={interviewMock} viewDetail />);
+  test("shows View Details button and correct link", () => {
+    render(<InterviewCard interview={interviewMock} />);
 
-    expect(screen.getByText(/View Detail/i)).toBeInTheDocument();
+    expect(screen.getByText(/View Details/i)).toBeInTheDocument();
 
     const detailLink = screen.getByRole("link");
     expect(detailLink).toHaveAttribute(
       "href",
-      "/schedule-interview/abc123/details"
+      "/dashboard/create-interview/abc123/details"
     );
   });
 
-  test("hides Copy and Send buttons when viewDetail = true", () => {
-    render(<InterviewCard interview={interviewMock} viewDetail />);
+  test("shows Resume Draft button when status is DRAFT", () => {
+    const draftMock = { ...interviewMock, status: 'DRAFT' };
+    render(<InterviewCard interview={draftMock} />);
 
-    expect(screen.queryByText(/Copy Link/i)).toBeNull();
-    expect(screen.queryByText(/Send/i)).toBeNull();
+    expect(screen.getByText(/Resume Draft/i)).toBeInTheDocument();
+    
+    const draftLink = screen.getByRole("link");
+    expect(draftLink).toHaveAttribute(
+      "href",
+      "/dashboard/create-interview/abc123"
+    );
   });
 });

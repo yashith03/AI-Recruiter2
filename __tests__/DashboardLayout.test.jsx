@@ -18,7 +18,7 @@ jest.mock("@/app/(main)/dashboard/_components/WelcomeContainer", () => () => (
 ));
 
 describe("DashboardLayout", () => {
-  test("renders DashboardProvider, WelcomeContainer, and children", () => {
+  test("renders DashboardProvider and children", () => {
     render(
       <DashboardLayout>
         <div data-testid="child-content">Child Content</div>
@@ -27,9 +27,6 @@ describe("DashboardLayout", () => {
 
     // ✅ Ensure layout renders wrapper provider
     expect(screen.getByTestId("dashboard-provider")).toBeInTheDocument();
-
-    // ✅ Ensure WelcomeContainer is displayed
-    expect(screen.getByTestId("welcome-container")).toBeInTheDocument();
 
     // ✅ Ensure children are rendered
     expect(screen.getByTestId("child-content")).toBeInTheDocument();
