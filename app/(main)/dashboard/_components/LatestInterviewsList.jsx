@@ -76,7 +76,7 @@ function LatestInterviewsList() {
               <div className="text-center">
                 <h3 className='text-h3 text-slate-800'>No Interviews Created</h3>
                 <p className="text-body text-slate-500 max-w-xs mx-auto mt-1">
-                  You haven't set up any interview pipelines yet. Start by creating one today.
+                  You haven&apos;t set up any interview pipelines yet. Start by creating one today.
                 </p>
               </div>
               <Link href="/dashboard/create-interview">

@@ -3,6 +3,7 @@
 'use client'
 import React from 'react'
 import { supabase } from '@/services/supabaseClient'
+import Image from 'next/image'
 
 function Login() {
   // Used to Sign In with Google
@@ -35,7 +36,7 @@ function Login() {
               <div className="relative h-64 w-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center overflow-hidden">
                 <div className="absolute -left-4 -top-4 h-24 w-24 rounded-full bg-primary/20 blur-xl"></div>
                 <div className="absolute -right-4 -bottom-4 h-32 w-32 rounded-full bg-indigo-500/20 blur-xl"></div>
-                <img 
+                <Image 
                   alt="3D abstract render of connected nodes representing AI network" 
                   className="relative z-10 h-48 w-auto object-contain drop-shadow-lg transition-transform hover:scale-105 duration-500" 
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHX7D3adccK8DKicwUcA4-loKyazpZ8nQov8QnL-0aeqe7LpZjvJ5hhptj_Y3GMtw0jtXMa7RkHDxSn-xPMjtcLAHQgjVrBHu5X9Z-w2M01lqJwS-ufTI_Tpt6w4r5MoJ2FWTcPqUYcFyFSIJUkKZUmzUmLdVpmd9Ji46fltPcueI4SePZqfIY3KKKwUm2me0A1XLHPzPsgjwByCCBLm-1gyrpr0rLQMFEwmHClniOn6ZZ4M"
