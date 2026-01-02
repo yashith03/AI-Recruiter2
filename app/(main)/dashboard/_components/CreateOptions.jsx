@@ -1,3 +1,5 @@
+// app/(main)/dashboard/_components/CreateOptions.jsx
+
 "use client"
 import React from 'react'
 import { Plus, Phone, LineChart, ArrowRight, Video } from 'lucide-react'
@@ -8,7 +10,7 @@ function CreateOptions() {
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
         {/* Create New Interview Card */}
-        <div className="relative group overflow-hidden bg-gradient-to-br from-blue-600 to-blue-500 rounded-3xl p-8 shadow-xl shadow-blue-200 hover:shadow-2xl transition-all animate-in zoom-in duration-500">
+        <div className="relative group overflow-hidden bg-gradient-to-br from-blue-600 to-blue-500 rounded-3xl p-8 shadow-xl shadow-blue-200 hover:shadow-2xl transition-all">
             <div className="absolute top-0 right-0 p-4 opacity-10 -rotate-12 transform scale-150">
                 <Video size={120} />
             </div>
@@ -54,7 +56,7 @@ function CreateOptions() {
         </Link>
 
         {/* Pipeline Overview Card */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group animate-in zoom-in duration-500 delay-200">
+        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">

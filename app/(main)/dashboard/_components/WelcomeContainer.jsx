@@ -1,3 +1,5 @@
+// app/(main)/dashboard/_components/WelcomeContainer.jsx
+
 "use client"
 import React from 'react'
 import { useUser } from '@/app/provider';
@@ -9,7 +11,7 @@ function WelcomeContainer() {
     
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 mt-5">
-            <div className="animate-in fade-in slide-in-from-left duration-700">
+            <div>
                 <h1 className="text-h1 text-slate-900 mb-2">
                     Welcome back, {user?.name?.split(' ')[0] || 'User'}! 👋
                 </h1>

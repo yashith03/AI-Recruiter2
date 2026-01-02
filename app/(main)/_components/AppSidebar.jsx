@@ -23,6 +23,7 @@ import {
 import { usePathname } from 'next/navigation'
 import { useUser } from '@/app/provider'
 
+
 export default function AppSidebar() {
   const { user } = useUser()
   const path = usePathname();

@@ -1,3 +1,5 @@
+// app/(main)/dashboard/_components/LatestInterviewsList.jsx
+
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react'
@@ -38,7 +40,7 @@ function LatestInterviewsList() {
   }, [user, GetInterviewList]);
 
   return (
-    <div className='my-16 space-y-8 animate-in fade-in duration-700 delay-300'> 
+    <div className='my-16 space-y-8'> 
       
       {/* Search and Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

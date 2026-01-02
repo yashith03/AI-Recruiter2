@@ -23,12 +23,12 @@ export default function Page() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/dashboard">
+            <Link href="/auth">
               <button className="hidden sm:flex h-9 items-center justify-center rounded-lg px-4 bg-transparent text-body font-bold text-[#0d141c] hover:bg-slate-100 transition-colors">
                 Log in
               </button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/auth">
               <button className="h-9 flex items-center justify-center rounded-lg px-4 bg-primary text-white text-body font-bold hover:bg-primary-dark transition-colors shadow-sm">
                 Sign up
               </button>

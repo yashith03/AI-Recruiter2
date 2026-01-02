@@ -1,4 +1,6 @@
-import { Outfit, Material_Symbols_Outlined } from "next/font/google";
+// app/layout.js
+
+import { Outfit } from "next/font/google"; // Line 1
 import "./globals.css";
 import Provider from "./provider";
 import { Toaster } from "sonner";
@@ -10,11 +12,6 @@ const outfit = Outfit({
   weight: ["100","200","300","400","500","600","700","800","900"],
 });
 
-const materialSymbols = Material_Symbols_Outlined({
-  variable: "--font-material-symbols",
-  subsets: ["latin"],
-});
-
 export const metadata = {
   title: "AI Recruiter - Hire Faster",
   description:
@@ -24,7 +21,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} ${materialSymbols.variable} antialiased`}>
+      <body className={`${outfit.variable} antialiased`}>
         <Provider>
           {children}
           <Toaster />
