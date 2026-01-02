@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/select"
 
 const PremiumInterviewCard = ({ interview }) => {
-  const url = process.env.NEXT_PUBLIC_BASE_URL + "/" + interview?.interview_id;
+const url = `${process.env.NEXT_PUBLIC_BASE_URL}/interview/${interview?.interview_id}`;
   const candidatesCount = interview["interview-feedback"]?.length || 0;
   
   const copyLink = () => {

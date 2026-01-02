@@ -21,7 +21,7 @@ import moment from "moment";
 import { toast } from "sonner";
 
 function InterviewCard({ interview }) {
-  const url = process.env.NEXT_PUBLIC_BASE_URL + "/" + interview?.interview_id;
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/interview/${interview?.interview_id}`;
   const candidatesCount = interview["interview-feedback"]?.length || 0;
   const status = interview?.status || 'ACTIVE';
 

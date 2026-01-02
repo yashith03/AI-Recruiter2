@@ -31,7 +31,7 @@ describe('InterviewLink component', () => {
 
     render(<InterviewLink interview_id={interviewId} formData={formData} />)
 
-    const expectedUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/${interviewId}`
+    const expectedUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/interview/${interviewId}`
 
     expect(screen.getByDisplayValue(expectedUrl)).toBeInTheDocument()
 
