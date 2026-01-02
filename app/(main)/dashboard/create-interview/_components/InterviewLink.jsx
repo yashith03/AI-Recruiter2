@@ -10,7 +10,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 function InterviewLink({ interview_id, formData }) {
-  const url = `${process.env.NEXT_PUBLIC_HOST_URL}/${interview_id}`;
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/interview/${interview_id}`;
 
   const onCopyLink = async () => {
     await navigator.clipboard.writeText(url);
