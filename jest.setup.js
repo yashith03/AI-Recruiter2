@@ -29,20 +29,16 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock Supabase globally
+// Mock Supabase globally for testing only
 jest.mock("@/services/supabaseClient", () => ({
   supabase: {
     auth: {
+      // ✅ Return null by default (not logged in) for tests
       getUser: jest.fn().mockResolvedValue({
-        data: {
-          user: {
-            email: "mock@example.com",
-            user_metadata: { name: "Mock User", picture: "mock.png" },
-          },
-        },
+        data: { user: null },
       }),
       onAuthStateChange: jest.fn((callback) => {
-        // Immediately call the callback with null to simulate no active session
+        // Simulate no active session
         callback(null, null);
         return {
           data: {
@@ -52,10 +48,11 @@ jest.mock("@/services/supabaseClient", () => ({
           },
         };
       }),
-      signInWithOAuth: jest.fn(),
+      signInWithOAuth: jest.fn().mockResolvedValue({ error: null }),
     },
     from: jest.fn(() => ({
       upsert: jest.fn().mockResolvedValue({ error: null }),
+      select: jest.fn().mockResolvedValue({ data: [], error: null }),
     })),
   },
 }));
@@ -93,6 +90,19 @@ afterAll(() => {
 jest.mock("@vercel/speed-insights/next", () => ({
   SpeedInsights: () => null,
 }));
+
+// Mock sonner toast
+jest.mock("sonner", () => {
+  const mockToast = jest.fn();
+  mockToast.error = jest.fn();
+  mockToast.success = jest.fn();
+  mockToast.loading = jest.fn();
+  return {
+    toast: mockToast,
+    Toaster: () => null,
+  };
+});
+
 jest.mock("uuid", () => ({
   v4: () => "test-uuid", // ✅ stable ID for tests
 }));

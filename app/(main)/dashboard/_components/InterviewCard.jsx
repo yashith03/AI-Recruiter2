@@ -1,3 +1,5 @@
+// app/(main)/dashboard/_components/InterviewCard.jsx
+
 "use client"
 import React from "react";
 import Link from "next/link";
@@ -50,7 +52,7 @@ function InterviewCard({ interview }) {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 hover:shadow-xl transition-all group animate-in slide-in-from-bottom duration-500">
+    <div className="bg-white rounded-3xl border border-slate-100 p-6 hover:shadow-xl transition-all group">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Left Side: Role Info */}
         <div className="flex items-start gap-5">

@@ -16,7 +16,7 @@ import {
 function AlertConfirmation({children, stopInterview}) {
   return (
     <AlertDialog>
-        <AlertDialogTrigger>{children}</AlertDialogTrigger>
+        <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

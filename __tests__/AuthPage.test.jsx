@@ -2,6 +2,7 @@
 
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import Provider from "@/app/provider";
 import Login from "@/app/auth/page";
 
 // Mock next/image to avoid Next.js optimization issues
@@ -19,14 +20,18 @@ describe("Login Page", () => {
   });
 
   test("renders logo icon, header, texts, and button", () => {
-    render(<Login />);
+    render(
+      <Provider>
+        <Login />
+      </Provider>
+    );
 
     expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
     expect(
-      screen.getByText("Welcome to AICruiter")
+      screen.getByText("Welcome to AI Recruiter")
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Sign In With Google/i)
+      screen.getByText(/Continue with Google/i)
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /continue with google/i })
@@ -36,7 +41,11 @@ describe("Login Page", () => {
   test("calls supabase.auth.signInWithOAuth when login button is clicked", async () => {
     supabase.auth.signInWithOAuth.mockResolvedValueOnce({ error: null });
 
-    render(<Login />);
+    render(
+      <Provider>
+        <Login />
+      </Provider>
+    );
 
     const loginButton = screen.getByRole("button", { name: /continue with google/i });
     fireEvent.click(loginButton);
@@ -57,7 +66,11 @@ describe("Login Page", () => {
       error: { message: "Network error" },
     });
 
-    render(<Login />);
+    render(
+      <Provider>
+        <Login />
+      </Provider>
+    );
 
     const loginButton = screen.getByRole("button", { name: /continue with google/i });
     fireEvent.click(loginButton);
