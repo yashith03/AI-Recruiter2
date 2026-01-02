@@ -52,7 +52,7 @@ describe("InterviewCard Component", () => {
     fireEvent.click(screen.getByText(/Copy Link/i));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "https://test.com/abc123"
+      "https://test.com/interview/abc123"
     );
 
     expect(toast.success).toHaveBeenCalledWith("Link copied to clipboard");

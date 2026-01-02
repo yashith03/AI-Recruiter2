@@ -14,7 +14,7 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import InterviewLink from '@/app/(main)/dashboard/create-interview/_components/InterviewLink'
 
-process.env.NEXT_PUBLIC_HOST_URL = 'https://example.com'
+process.env.NEXT_PUBLIC_BASE_URL = 'https://example.com'
 
 describe('InterviewLink component', () => {
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('InterviewLink component', () => {
 
     render(<InterviewLink interview_id={interviewId} formData={formData} />)
 
-    const expectedUrl = `${process.env.NEXT_PUBLIC_HOST_URL}/interview/${interviewId}`
+    const expectedUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/interview/${interviewId}`
 
     expect(screen.getByDisplayValue(expectedUrl)).toBeInTheDocument()
 
