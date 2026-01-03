@@ -60,6 +60,7 @@ import { toast } from 'sonner'
 describe('StartInterview', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY = 'test-key'
   })
 
   it.skip('starts the Vapi call and triggers toast on call-started', async () => {

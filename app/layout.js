@@ -14,6 +14,9 @@ const outfit = Outfit({
 
 export const metadata = {
   title: "AI Recruiter - Hire Faster",
+  icons: {
+    icon: "favicon.avif",
+  },
   description:
     "Streamline your recruitment process from creation to feedback with intelligent AI voice conversations.",
 };

@@ -96,7 +96,10 @@ const renderWithProvider = () =>
 // -------------------------
 
 describe("CreateInterview Page", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.fetch = jest.fn();
+  });
 
   test("renders title and progress bar", () => {
     renderWithProvider();
