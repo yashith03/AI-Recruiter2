@@ -8,58 +8,57 @@ import { OpenAI } from "openai";
 // Helper: Extract clean JSON from model output
 // -------------------------------------------
 function extractJSON(output) {
-  if (!output || typeof output !== "string") return {};
+  if (!output || typeof output !== "string") {
+    return {};
+  }
 
-  // Remove ```json and ``` wrappers
   let cleaned = output
     .replace(/```json/i, "")
     .replace(/```/g, "")
     .trim();
 
-  // Find first {
   const firstBrace = cleaned.indexOf("{");
-  if (firstBrace > 0) cleaned = cleaned.slice(firstBrace);
+  if (firstBrace !== -1) cleaned = cleaned.slice(firstBrace);
 
-  // Find last }
   const lastBrace = cleaned.lastIndexOf("}");
-  if (lastBrace > 0) cleaned = cleaned.slice(0, lastBrace + 1);
+  if (lastBrace !== -1) cleaned = cleaned.slice(0, lastBrace + 1);
 
   try {
-    const parsed = JSON.parse(cleaned);
-
-    // Enforce expected structure ONLY when JSON exists
-    if (!parsed.interviewQuestions || !Array.isArray(parsed.interviewQuestions)) {
-      parsed.interviewQuestions = [];
-    }
-
-    return parsed;
-
-  } catch (err) {
-    console.log("JSON parse failed. Returning empty object:", cleaned);
-    return { interviewQuestions: [] };
+    return JSON.parse(cleaned);
+  } catch {
+    return {};
   }
 }
 
+// -------------------------------------------
+// POST handler
+// -------------------------------------------
 export async function POST(req) {
   try {
-    const { jobPosition, jobDescription, duration, type } = await req.json();
+    let body;
 
-    const typeString = Array.isArray(type) ? type.join(", ") : type || "";
+    try {
+      body = await req.json();
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Unexpected error parsing request" },
+        { status: 500 }
+      );
+    }
 
-    const typeGuide =
-      typeString.toLowerCase().includes("behavioral")
-        ? "Focus on real-world scenarios, past experiences, and decision-making."
-        : "";
+    const { jobPosition, jobDescription } = body || {};
 
-    const FINAL_PROMPT =
-      QUESTIONS_PROMPT
-        .replace("{{jobTitle}}", jobPosition)
-        .replace("{{jobDescription}}", jobDescription)
-        .replace("{{duration}}", duration)
-        .replace("{{type}}", typeString)
-      + `\n\n${typeGuide}`;
+    if (!jobPosition || !jobDescription) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-    console.log("Prompt sent:\n", FINAL_PROMPT);
+    // Build prompt correctly
+    const FINAL_PROMPT = QUESTIONS_PROMPT
+      .replace("{{jobPosition}}", jobPosition)
+      .replace("{{jobDescription}}", jobDescription);
 
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
@@ -71,72 +70,55 @@ export async function POST(req) {
       "nvidia/nemotron-nano-9b-v2:free",
       "kwaipilot/kat-coder-pro-v1:free",
       "nvidia/nemotron-nano-12b-vl:free",
-      "x-ai/grok-4.1-fast:free"
+      "x-ai/grok-4.1-fast:free",
     ];
 
     let completion = null;
 
     for (const model of models) {
       try {
-        console.log("Trying:", model);
-
         completion = await openai.chat.completions.create({
           model,
           messages: [
             {
               role: "system",
-              content: "You must return valid JSON only. Format: {\"interviewQuestions\": [...]}",
+              content:
+                "Return JSON only. Format: { \"interviewQuestions\": [] }",
             },
             {
               role: "user",
               content: FINAL_PROMPT,
             },
           ],
-          max_tokens: 2000,
+          max_tokens: 1000,
         });
 
-        console.log("SUCCESS:", model);
         break;
-
       } catch (err) {
-        console.log("FAILED:", model, err.message);
-
         if (err.status === 429) {
-          await new Promise((res) => setTimeout(res, 1500));
+          await new Promise((res) => setTimeout(res, 500));
+          continue;
         }
       }
     }
 
     if (!completion) {
       return NextResponse.json(
-        { error: "All FREE models failed or rate-limited." },
+        { error: "All FREE models failed or rate-limited" },
         { status: 500 }
       );
     }
 
-    const raw = completion.choices?.[0]?.message?.content || "";
-    console.log("RAW OUTPUT:", raw);
-
-    // -------------------------------------------
-    // NEW FIX: If output has NO JSON at all → return {}
-    // -------------------------------------------
-    let parsed;
-    if (!raw.includes("{")) {
-      parsed = {}; // This matches your failing test expectation
-    } else {
-      parsed = extractJSON(raw);
-    }
+    const rawContent = completion.choices?.[0]?.message?.content || "";
+    const parsed = extractJSON(rawContent);
 
     return NextResponse.json(
-      { content: raw, result: parsed },
+      { interviewQuestions: parsed.interviewQuestions || [] },
       { status: 200 }
     );
-
-  } catch (e) {
-    console.error("ERROR:", e.message);
-
+  } catch (err) {
     return NextResponse.json(
-      { error: `Unexpected error: ${e.message}` },
+      { error: "Unexpected error" },
       { status: 500 }
     );
   }

@@ -1,7 +1,6 @@
-// app/interview/[interview_id]/start/page.jsx
+//app/interview/[interview_id]/start/page.jsx
 
 "use client"
-
 import React, { useContext, useEffect, useState, useRef } from "react"
 import { InterviewDataContext } from "@/context/interviewDataContext"
 import {
@@ -15,7 +14,6 @@ import {
   Play,
   Bot as BotIcon,
   User as UserIcon,
-  Phone
 } from "lucide-react"
 import Vapi from "@vapi-ai/web"
 import axios from "axios"
@@ -26,28 +24,38 @@ import { supabase } from "@/services/supabaseClient"
 import TimerComponent from "./_components/TimerComponent"
 
 function StartInterview() {
-  const { interviewInfo } = useContext(InterviewDataContext)
-  const vapiRef = useRef(new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY))
-  const timerStartedRef = useRef(false)
+  const redirectToCompleted = () => {
+   router.replace(`/interview/${interview_id}/completed`)
+  }
 
-  const [activeUser, setActiveUser] = useState(false)
-  const [conversation, setConversation] = useState("")
+  const { interviewInfo } = useContext(InterviewDataContext)
+
+  const vapiRef = useRef(null)
+  const callStartedRef = useRef(false)
+  const timerStartedRef = useRef(false)
+  const hasEndedRef = useRef(false)
+
+  const [conversation, setConversation] = useState([])
+  const [callStarted, setCallStarted] = useState(false)
   const [timerStart, setTimerStart] = useState(false)
   const [timerStop, setTimerStop] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [callStarted, setCallStarted] = useState(false)
+  const [activeUser, setActiveUser] = useState(false)
   const [animationEnabled, setAnimationEnabled] = useState(false)
-
-  const callStartedRef = useRef(false)
 
   const { interview_id } = useParams()
   const router = useRouter()
 
   // ----------------------------------------------------
-  // CAPTURE CONVERSATION MESSAGES
+  // INIT VAPI & EVENT LISTENERS
   // ----------------------------------------------------
-  useEffect(() => {
+ useEffect(() => {
+     if (!vapiRef.current) {
+       vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY)
+     }
+
     const vapi = vapiRef.current
+    if (!vapi) return
 
     const handleMessage = (msg) => {
       if (msg?.conversation) {
@@ -55,10 +63,59 @@ function StartInterview() {
       }
     }
 
+    const handleSpeechStart = () => {
+      if (!timerStartedRef.current) {
+        timerStartedRef.current = true
+        setTimerStart(true)
+        setAnimationEnabled(true)
+        toast("Interview Started")
+      }
+      setActiveUser(false)
+    }
+
+    const handleSpeechEnd = () => setActiveUser(true)
+
+    const handleError = (err) => {
+      console.error("Vapi Error:", err)
+      toast.error("Call error occurred")
+    }
+
+
+const handleCallEnd = async () => {
+      if (hasEndedRef.current) return
+      hasEndedRef.current = true
+
+      toast("Interview Ended")
+      setTimerStop(true)
+      setCallStarted(false)
+      setLoading(true)
+      callStartedRef.current = false
+
+      const isEmptyConversation =
+        !conversation ||
+        (Array.isArray(conversation) && conversation.length === 0) ||
+        (typeof conversation === "string" && conversation.trim() === "")
+
+    if (isEmptyConversation) {
+      redirectToCompleted()
+      return
+    }
+
+    await GenerateFeedback()
+}
+
     vapi.on("message", handleMessage)
+    vapi.on("speech-start", handleSpeechStart)
+    vapi.on("speech-end", handleSpeechEnd)
+    vapi.on("error", handleError)
+    vapi.on("call-ended", handleCallEnd)
 
     return () => {
       vapi.off("message", handleMessage)
+      vapi.off("speech-start", handleSpeechStart)
+      vapi.off("speech-end", handleSpeechEnd)
+      vapi.off("error", handleError)
+      vapi.off("call-ended", handleCallEnd)
     }
   }, [])
 
@@ -67,132 +124,99 @@ function StartInterview() {
   // ----------------------------------------------------
   const GenerateFeedback = async () => {
     try {
-      const result = await axios.post("/api/ai-feedback", {
-        conversation,
-      })
+      const result = await axios.post("/api/ai-feedback", { conversation })
+      const raw = result.data?.content || ""
 
-      const raw = result.data.content
       if (!raw) {
-        console.log("No feedback generated from AI")
+        redirectToCompleted()
         return
       }
 
-      const match = raw.match(/```json([\s\S]*?)```/)
-      const jsonString = match ? match[1].trim() : raw.trim()
-
-      const parsed = JSON.parse(jsonString)
-      console.log("Feedback generated (parsed):", parsed)
+      let parsed
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        parsed = { feedback: raw, recommendation: false }
+      }
 
       await supabase.from("interview-feedback").insert([
         {
-          userName: interviewInfo.userName,
-          userEmail: interviewInfo.userEmail,
+          userName: interviewInfo?.userName || "Unknown",
+          userEmail: interviewInfo?.userEmail || "unknown@example.com",
           interview_id,
           feedback: parsed.feedback,
-          recommendation: false,
+          recommendation: parsed.recommendation || false,
         },
       ])
 
-      router.replace(`/interview/${interview_id}/completed`)
-    } catch (err) {
-      console.log("Feedback generation failed:", err)
-    }
+   redirectToCompleted()
+  } catch (err) {
+    console.error("Feedback error:", err)
+   redirectToCompleted()
   }
+}
 
   // ----------------------------------------------------
   // START CALL
   // ----------------------------------------------------
   const startCall = async () => {
     if (callStartedRef.current) return
+
     callStartedRef.current = true
     setCallStarted(true)
 
     const vapi = vapiRef.current
+    if (!vapi) return
 
-    // Build questions
-    const questionList = interviewInfo?.interviewData?.questionList || []
-    const formattedQuestions = questionList
-      .map((q, i) => `${i + 1}. ${q.question}`)
-      .join("\n")
+    const questions =
+      interviewInfo?.interviewData?.questionList
+        ?.map((q, i) => `${i + 1}. ${q.question}`)
+        .join("\n") || ""
 
-    const assistantOptions = {
+    await vapi.start({
       name: "AI Recruiter",
-      firstMessage: `Hi ${interviewInfo?.userName ?? "there"}, ready for your ${interviewInfo?.interviewData?.jobPosition ?? "interview"} interview?`,
-      transcriber: {
-        provider: "deepgram",
-        model: "nova-2",
-        language: "en-US",
-      },
-      voice: {
-        provider: "playht",
-        voiceId: "jennifer",
-      },
+      firstMessage: `Hi ${interviewInfo?.userName || "there"}, ready to begin?`,
       model: {
         provider: "openai",
-        model: "gpt-4o",
+        model: "gpt-3.5-turbo",
         messages: [
           {
             role: "system",
-            content: `
-You are an AI assistant conducting a technical interview.
-Ask one question at a time from:
-
-${formattedQuestions}
-
-Be friendly. Encourage the candidate. After questions end, finish politely.
-`.trim(),
+            content: `Ask one question at a time:\n${questions}`,
           },
         ],
       },
-    }
-
-    // ---------------- EVENT LISTENERS -----------------
-    vapi.on("speech-start", () => {
-      if (!timerStartedRef.current) {
-        timerStartedRef.current = true
-        setTimerStart(true)
-        setAnimationEnabled(true)
-        toast("Interview Started")
-      }
-      setActiveUser(false)
     })
-
-    vapi.on("speech-end", () => setActiveUser(true))
-
-    vapi.on("error", (err) => {
-      console.log("Vapi Error:", err)
-      toast.error("Call error occurred")
-    })
-
-    vapi.on("call-ended", () => {
-      toast("Interview Ended")
-      setTimerStop(true)
-    })
-
-    // ---------------- START CALL ----------------------
-    try {
-      await vapi.start(assistantOptions)
-    } catch (err) {
-      console.log("Start call error:", err)
-      toast.error("Could not start call")
-    }
   }
 
   // ----------------------------------------------------
   // STOP INTERVIEW
   // ----------------------------------------------------
-  const stopInterview = async () => {
-    setLoading(true)
-    setTimerStop(true)
+const stopInterview = async () => {
+  if (loading) return // prevent double click
 
-    try {
+  setLoading(true)
+  setTimerStop(true)
+
+  // 🔑 Safety fallback: never hang forever
+  const forceExitTimeout = setTimeout(() => {
+    console.warn("Force exit: redirecting to completed page")
+    router.replace(`/interview/${interview_id}/completed`)
+  }, 5000)
+
+  try {
+    if (vapiRef.current) {
       await vapiRef.current.stop()
-    } catch (err) {
-      console.log("Stop failed:", err)
+      // call-ended SHOULD fire and clear this timeout
     }
-
-    await GenerateFeedback()
+  } catch (err) {
+    console.error("Stop interview error:", err)
+    clearTimeout(forceExitTimeout)
+    redirectToCompleted()
   }
+}
+
+
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] flex flex-col font-sans text-gray-900">
@@ -204,7 +228,7 @@ Be friendly. Encourage the candidate. After questions end, finish politely.
             <div className="bg-blue-600 rounded-lg p-1.5 shadow-sm">
                <BotIcon className="w-5 h-5 text-white" />
             </div>
-            <h1 className="font-bold text-lg tracking-tight text-gray-900">AI Hiring App</h1>
+            <h1 className="font-bold text-lg tracking-tight text-gray-900">AI Recruiter</h1>
           </div>
 
           <div className="flex items-center gap-6">

@@ -2,25 +2,48 @@
 
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function TimerComponent({ start, stop }) {
   const [seconds, setSeconds] = useState(0);
   const intervalRef = useRef(null);
 
+  // --------------------------------------------------
+  // START TIMER
+  // --------------------------------------------------
   useEffect(() => {
-    if (start) {
-      intervalRef.current = setInterval(() => {
-        setSeconds(prev => prev + 1);
-      }, 1000);
+    if (!start) return;
+
+    // ✅ FIX: clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
-    return () => clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
+      setSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null; // ✅ FIX: cleanup ref
+    };
   }, [start]);
 
+  // --------------------------------------------------
+  // STOP TIMER
+  // --------------------------------------------------
   useEffect(() => {
-    if (stop) clearInterval(intervalRef.current);
+    if (!stop) return;
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null; // ✅ FIX: prevent reuse
+    }
   }, [stop]);
 
+  // --------------------------------------------------
+  // FORMAT TIME
+  // --------------------------------------------------
   const formatTime = () => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);

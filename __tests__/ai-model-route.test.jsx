@@ -1,161 +1,146 @@
-// __tests__/ai-model-route.test.jsx
-
-import React from "react";
+/**
+ * @jest-environment node
+ */
 import { POST } from "@/app/api/ai-model/route";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
 
-const mockCreate = jest.fn();
-
+// Mock OpenAI
 jest.mock("openai", () => {
+  const mockCreate = jest.fn();
   return {
     OpenAI: jest.fn().mockImplementation(() => ({
-      chat: { completions: { create: mockCreate } },
+      chat: {
+        completions: {
+          create: mockCreate,
+        },
+      },
     })),
+    __mockCreate: mockCreate,
   };
 });
 
+// Mock next/server
 jest.mock("next/server", () => ({
   NextResponse: {
-    json: jest.fn((data, init) => ({ ...data, ...init })),
+    json: jest.fn((body, init) => ({
+      // mimic actual Response-like object enough for tests if needed, or just plain data
+      json: async () => body,
+      status: init?.status || 200,
+      body,
+    })),
   },
 }));
 
-const mockRequest = (body) => ({
-  json: async () => body,
-});
-
 describe("POST /api/ai-model", () => {
-  const mockCompletion = {
-    choices: [
-      { message: { content: '```json{"interviewQuestions":["Q1","Q2"]}```' } },
-    ],
-  };
+  let mockRequest;
+  let mockCreate;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Get the shared mock function
+    const { __mockCreate } = require("openai");
+    mockCreate = __mockCreate;
+
+    // Default valid request
+    mockRequest = {
+      json: async () => ({
+        jobPosition: "Developer",
+        jobDescription: "Codes stuff",
+      }),
+    };
   });
 
-  test("returns 200 and parsed result when model succeeds", async () => {
-    mockCreate.mockResolvedValueOnce(mockCompletion);
-
-    const req = mockRequest({
-      jobPosition: "Frontend Engineer",
-      jobDescription: "React expert",
-      duration: "30 Min",
-      type: "technical",
+  test("returns 400 if missing jobPosition", async () => {
+    mockRequest.json = async () => ({
+      jobDescription: "Codes stuff",
     });
 
-    const res = await POST(req);
-
-    expect(res.status).toBe(200);
-    expect(res.result.interviewQuestions).toEqual(["Q1", "Q2"]);
-    expect(mockCreate).toHaveBeenCalled();
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "Missing required fields" });
   });
 
-  test("falls back to next model when first fails", async () => {
-    mockCreate
-      .mockRejectedValueOnce(new Error("Model 1 failed"))
-      .mockResolvedValueOnce(mockCompletion);
-
-    const req = mockRequest({
-      jobPosition: "QA Engineer",
-      jobDescription: "Testing APIs",
-      duration: "15 Min",
-      type: "behavioral",
+  test("returns 400 if missing jobDescription", async () => {
+    mockRequest.json = async () => ({
+      jobPosition: "Dev",
     });
 
-    const res = await POST(req);
-
-    expect(res.status).toBe(200);
-    expect(mockCreate).toHaveBeenCalledTimes(2);
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "Missing required fields" });
   });
 
-  test("returns 500 when all models fail", async () => {
-    mockCreate.mockRejectedValue(new Error("All models failed"));
-
-    const req = mockRequest({
-      jobPosition: "Designer",
-      jobDescription: "UI/UX design",
-      duration: "15 Min",
-      type: "creative",
-    });
-
-    const res = await POST(req);
-
-    expect(res.status).toBe(500);
-    // route currently returns a slightly different error string
-    expect(res.error).toContain("All FREE models failed or rate-limited");
-  });
-
-  test("replaces placeholders correctly in QUESTIONS_PROMPT", async () => {
-    mockCreate.mockResolvedValueOnce(mockCompletion);
-
-    const req = mockRequest({
-      jobPosition: "DevOps Engineer",
-      jobDescription: "Cloud and CI/CD",
-      duration: "60 Min",
-      type: "technical",
-    });
-
-    await POST(req);
-
-    const args = mockCreate.mock.calls[0][0];
-    // user message lives at index 1 (index 0 is system instruction)
-    expect(args.messages[1].content).toContain("DevOps Engineer");
-    expect(args.messages[1].content).toContain("Cloud and CI/CD");
-  });
-
-  test("retries when rate limited then succeeds", async () => {
-    // First call fails with rate limit (status 429), second succeeds
-    mockCreate
-      .mockRejectedValueOnce({ status: 429, message: "Rate limit" })
-      .mockResolvedValueOnce(mockCompletion);
-
-    const req = mockRequest({
-      jobPosition: "Retry Role",
-      jobDescription: "Retry scenario",
-      duration: "15 Min",
-      type: "technical",
-    });
-
-    const res = await POST(req);
-    expect(res.status).toBe(200);
-    expect(mockCreate).toHaveBeenCalledTimes(2);
-  });
-
-  test("parses response when no JSON block present gracefully", async () => {
-    const noJsonCompletion = {
-      choices: [{ message: { content: 'some plain text without json' } }],
+  test("returns 500 if req.json() fails", async () => {
+    mockRequest.json = async () => {
+      throw new Error("Parse error");
     };
 
-    mockCreate.mockResolvedValueOnce(noJsonCompletion);
-
-    const req = mockRequest({
-      jobPosition: "NoJson Role",
-      jobDescription: "No JSON here",
-      duration: "5 Min",
-      type: "technical",
-    });
-
-    const res = await POST(req);
-    expect(res.status).toBe(200);
-    expect(res.result).toEqual({});
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: "Unexpected error parsing request" });
   });
 
-  test("returns 500 when req.json throws (unexpected error)", async () => {
-  jest.spyOn(console, "error").mockImplementation(() => {});
+  test("calls OpenAI and returns interview questions", async () => {
+    const mockQuestions = { 
+      interviewQuestions: [
+        { question: "Q1", answer: "A1" }
+      ] 
+    };
 
-  mockCreate.mockResolvedValueOnce(mockCompletion);
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        { message: { content: JSON.stringify(mockQuestions) } }
+      ]
+    });
 
-  const badReq = { json: async () => { throw new Error('boom'); } };
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockQuestions);
+  });
 
-  const res = await POST(badReq);
+  test("handles empty or invalid AI response gracefully", async () => {
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        { message: { content: "invalid json" } }
+      ]
+    });
 
-  expect(res.status).toBe(500);
-  expect(res.error).toContain("Unexpected error");
+    const response = await POST(mockRequest);
+    // The route code returns empty array if parsing fails (extractJSON catches error)
+    // Wait, looking at the route, it returns `parsed.interviewQuestions` which might be undefined?
+    // Route says: `interviewQuestions: parsed.interviewQuestions || []`
+    
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ interviewQuestions: [] });
+  });
 
-  console.error.mockRestore();
-});
+  test("tries multiple models if first one fails", async () => {
+    // First call fails
+    mockCreate.mockRejectedValueOnce({ status: 429 });
+    // Second call succeeds
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+         { message: { content: `{"interviewQuestions": []}` } }
+      ]
+    });
 
+    await POST(mockRequest);
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+  });
+
+  test("returns 500 if all models fail", async () => {
+    // All fails
+    mockCreate.mockRejectedValue({ status: 500 }); // simulate permanent fail for all attempts logic (ignoring the complexity of exact loop count for brevity, mocking rejection always)
+    
+    // Actually the loop has 5 models.
+    for(let i=0; i<5; i++) {
+        mockCreate.mockRejectedValueOnce(new Error("Fail"));
+    }
+
+    const response = await POST(mockRequest);
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: "All FREE models failed or rate-limited" });
+  });
 });

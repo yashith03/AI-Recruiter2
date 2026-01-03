@@ -106,7 +106,7 @@ function Interview() {
                     <div className="bg-primary/10 p-2 rounded-lg text-primary">
                         <Sparkles size={20} fill="currentColor" className="text-primary" />
                     </div>
-                    <span className="text-xl font-bold text-slate-900 tracking-tight">AI-Recruit</span>
+                    <span className="text-xl font-bold text-slate-900 tracking-tight">AI Recruiter</span>
                 </div>
                 <div className="flex items-center gap-6">
                     <Link href="#" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
