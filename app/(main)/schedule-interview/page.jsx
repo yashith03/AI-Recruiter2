@@ -220,6 +220,15 @@ export default function ScheduleInterviewPage() {
                   className="min-h-[120px] rounded-2xl border-slate-100 bg-slate-50/50 focus-visible:ring-primary p-5 text-body font-medium text-slate-600"
                 />
               </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="ghost" className="rounded-xl px-6 h-12 text-body text-slate-500 font-bold hover:bg-slate-50" onClick={() => window.history.back()}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSendInvitation} className="rounded-xl px-8 h-12 bg-primary hover:bg-primary-dark text-white text-body font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 flex gap-2">
+                  <Send size={18} /> Send Invitation
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -269,18 +278,7 @@ export default function ScheduleInterviewPage() {
               </div>
             </div>
 
-            {/* AI Insight Box */}
-            <div className="mx-6 mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 flex gap-4 animate-in slide-in-from-right duration-500">
-              <div className="text-primary mt-1 shrink-0">
-                <Plus size={18} className="text-primary rotate-45" />
-              </div>
-              <div>
-                <span className="text-label text-primary block mb-1">AI Insight</span>
-                <p className="text-helper text-blue-700/80 leading-relaxed font-bold">
-                  Candidate is likely most responsive between <span className="text-blue-900">10:00 AM</span> and <span className="text-blue-900">1:00 PM</span> based on email activity.
-                </p>
-              </div>
-            </div>
+         
 
             <div className="p-8 pt-0 space-y-4">
               <div className="flex items-center justify-between mb-4">
@@ -322,17 +320,7 @@ export default function ScheduleInterviewPage() {
         </div>
       </div>
 
-      {/* Sticky Footer */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-7xl px-4 md:px-10 z-50">
-        <div className="bg-white/80 backdrop-blur-xl border border-slate-100 p-4 rounded-3xl shadow-[0_-20px_50px_-15px_rgba(0,0,0,0.1)] flex items-center justify-end gap-3">
-          <Button variant="ghost" className="rounded-xl px-8 h-12 text-body text-slate-500 font-bold hover:bg-slate-50" onClick={() => window.history.back()}>
-            Cancel
-          </Button>
-          <Button onClick={handleSendInvitation} className="rounded-xl px-12 h-12 bg-primary hover:bg-primary-dark text-white text-body font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 flex gap-2">
-            <Send size={18} /> Send Invitation
-          </Button>
-        </div>
-      </div>
+
     </div>
   )
 }
