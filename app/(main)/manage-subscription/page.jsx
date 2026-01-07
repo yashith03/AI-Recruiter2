@@ -34,8 +34,8 @@ const plans = [
     current: true,
   },
   {
-    name: 'Pro',
-    price: '$99',
+    name: 'Monthly',
+    price: '1000LKR',
     description: 'For growing companies needing automation.',
     features: [
       { name: 'Unlimited Jobs', included: true },
@@ -43,20 +43,22 @@ const plans = [
       { name: 'Resume Parsing', included: true },
       { name: 'Priority Email Support', included: true },
     ],
-    buttonText: 'Upgrade to Pro',
+    buttonText: 'Upgrade to Monthly Plan',
     popular: true,
   },
   {
-    name: 'Enterprise',
-    price: 'Custom',
+    name: 'Yearly',
+    price: '10,000LKR',
     description: 'Custom solutions for high-volume recruitment.',
     features: [
-      { name: 'Custom Integrations', included: true },
-      { name: 'Dedicated Account Manager', included: true },
-      { name: 'SSO / SAML', included: true },
-      { name: 'Custom SLA', included: true },
+   { name: 'Unlimited Jobs', included: true },
+      { name: 'Advanced AI Scoring', included: true },
+      { name: 'Resume Parsing', included: true },
+      { name: 'Priority Email Support', included: true }
     ],
-    buttonText: 'Contact Sales',
+    buttonText: 'Upgrade to Yearly Plan',
+    popular: true,
+    saveLabel: 'SAVE 20%'
   },
 ]
 
@@ -117,26 +119,7 @@ export default function ManageSubscription() {
         </div>
       </div>
 
-      {/* Billing Toggle */}
-      <div className="flex justify-center mb-12">
-        <div className="bg-slate-100/50 p-1.5 rounded-2xl flex items-center gap-1 border border-slate-100">
-          <button 
-            onClick={() => setBillingCycle('Monthly')}
-            className={`px-8 py-2.5 rounded-xl text-body font-bold transition-all ${billingCycle === 'Monthly' ? 'bg-white shadow-sm text-slate-900 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Monthly
-          </button>
-          <button 
-            onClick={() => setBillingCycle('Yearly')}
-            className={`px-8 py-2.5 rounded-xl text-body font-bold transition-all flex items-center gap-2 ${billingCycle === 'Yearly' ? 'bg-white shadow-sm text-slate-900 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Yearly
-            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-widest">
-              SAVE 20%
-            </span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 items-stretch">
@@ -156,6 +139,11 @@ export default function ManageSubscription() {
             )}
 
             <div className="mb-8">
+              {plan.saveLabel && (
+                 <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-widest mb-3 inline-block">
+                  {plan.saveLabel}
+                </span>
+              )}
               <h3 className="text-h3 font-black text-slate-900 mb-2">{plan.name}</h3>
               <p className="text-body text-slate-500 leading-relaxed">{plan.description}</p>
             </div>
@@ -193,26 +181,7 @@ export default function ManageSubscription() {
         ))}
       </div>
 
-      {/* Compare Features Accordion */}
-      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden mb-16">
-        <button 
-          onClick={() => setIsCompareOpen(!isCompareOpen)}
-          className="w-full px-10 py-8 flex items-center justify-between group hover:bg-slate-50/50 transition-colors"
-        >
-          <span className="text-h3 font-black text-slate-900">Compare all features</span>
-          <div className={`p-2 rounded-xl border border-slate-100 text-slate-400 group-hover:text-primary group-hover:border-primary/20 transition-all ${isCompareOpen ? 'rotate-180' : ''}`}>
-            <ChevronDown size={24} />
-          </div>
-        </button>
-        
-        {isCompareOpen && (
-            <div className="px-10 pb-10 animate-in slide-in-from-top-4 duration-500">
-                <div className="pt-6 border-t border-slate-50 space-y-4">
-                    <p className="text-body text-slate-500 italic">Detailed comparison table coming soon...</p>
-                </div>
-            </div>
-        )}
-      </div>
+   
 
       {/* Bottom Footer Section */}
       <div className="text-center space-y-6">
