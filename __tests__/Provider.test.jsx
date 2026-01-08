@@ -53,6 +53,19 @@ describe("Provider Component", () => {
       },
     });
 
+    // Mock DB fetch for user details
+    const fromMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+             data: { phone: "123", job: "Dev", company: "TestCo" }
+          }),
+        }),
+      }),
+      upsert: jest.fn().mockResolvedValue({ error: null }),
+    });
+    supabase.from = fromMock;
+
     render(
       <Provider>
         <TestConsumer />
@@ -90,6 +103,19 @@ describe("Provider Component", () => {
     supabase.auth.getUser.mockResolvedValueOnce({
       data: { user: mockUser },
     });
+    
+    // Mock DB fetch
+    const fromMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+             data: { phone: "999", job: "Manager", company: "AliceCo" }
+          }),
+        }),
+      }),
+      upsert: jest.fn().mockResolvedValue({ error: null }),
+    });
+    supabase.from = fromMock;
 
     supabase.auth.onAuthStateChange.mockImplementationOnce((callback) => {
       // Call the callback with the mock user
@@ -113,34 +139,42 @@ describe("Provider Component", () => {
       expect(screen.getByTestId("user-name")).toHaveTextContent("Alice Cooper");
     });
   });
+
   test("covers success branch of saveUserToDB", async () => {
-  const mockUser = {
-    email: "success@test.com",
-    user_metadata: { name: "john smith", picture: "pic.png" },
-  };
+    const mockUser = {
+      email: "success@test.com",
+      user_metadata: { name: "john smith", picture: "pic.png" },
+    };
 
-  // Mock getUser
-  supabase.auth.getUser.mockResolvedValueOnce({
-    data: { user: mockUser }
+    // Mock getUser
+    supabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: mockUser }
+    });
+
+    // Mock DB fetch AND upsert success
+    const fromMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+             data: { phone: "000", job: "Tester", company: "SmithCo" }
+          }),
+        }),
+      }),
+      upsert: jest.fn().mockResolvedValue({ error: null }),
+    });
+    supabase.from = fromMock;
+
+    render(
+      <Provider>
+        <TestConsumer />
+      </Provider>
+    );
+
+    // User should be set after async loadUser completes
+    await waitFor(() => {
+      expect(screen.getByTestId("user-name")).toHaveTextContent("John Smith");
+    });
   });
-
-  // Mock upsert success
-  supabase.from.mockReturnValue({
-    upsert: jest.fn().mockResolvedValue({ error: null }),
-  });
-
-  render(
-    <Provider>
-      <TestConsumer />
-    </Provider>
-  );
-
-  // User should be set after async loadUser completes
-  await waitFor(() => {
-    expect(screen.getByTestId("user-name")).toHaveTextContent("John Smith");
-  });
-});
-
 
   test("logs error when saving user to DB returns error", async () => {
     const mockUser = {
@@ -151,10 +185,22 @@ describe("Provider Component", () => {
     // getUser returns user
     supabase.auth.getUser.mockResolvedValueOnce({ data: { user: mockUser } });
 
+    // Mock DB fetch successful but upsert failed 
+    // Note: The provider calls 'select' then 'upsert'. We need to handle both calls.
+    // However, for simplicity here we can make from() return an object with both methods.
+    
     // Make upsert throw an error to exercise the error branch
-    supabase.from.mockImplementationOnce(() => ({
+    const fromMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+             data: { phone: "111", job: "Err", company: "ErrCo" }
+          }),
+        }),
+      }),
       upsert: jest.fn().mockRejectedValue(new Error("DB error")),
-    }));
+    });
+    supabase.from = fromMock;
 
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 

@@ -9,7 +9,7 @@ function DashboardProvider({ children }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <div className='w-full bg-[#f8fafc] min-h-screen'>
+      <div className='w-full bg-background min-h-screen'>
         <div className="p-4 md:p-10">
           <div className="flex items-center mb-8 md:hidden">
             <SidebarTrigger className="text-slate-500" />

@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useContext, createContext } from "react";
 import { supabase } from "@/services/supabaseClient";
+import { ThemeProvider } from "next-themes";
 
 export const UserDetailContext = createContext();
 
@@ -48,22 +49,30 @@ function Provider({ children }) {
      * Initial auth check
      */
     const loadUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      const sessionUser = data?.user;
+  const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
-      if (!sessionUser) {
-        setUser(null); // explicitly NOT logged in
-        return;
-      }
+  if (!sessionUser) {
+    setUser(null);
+    return;
+  }
 
-      setUser({
-        name: formatName(sessionUser.user_metadata?.name),
-        email: sessionUser.email,
-        picture: sessionUser.user_metadata?.picture,
-      });
+  const { data } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', sessionUser.email)
+    .single();
 
-      saveUserToDB(sessionUser);
-    };
+  setUser({
+    name: formatName(sessionUser.user_metadata?.name),
+    email: sessionUser.email,
+    picture: sessionUser.user_metadata?.picture,
+    phone: data?.phone,
+    job: data?.job,
+    company: data?.company,
+  });
+
+  saveUserToDB(sessionUser);
+};
 
     loadUser();
 
@@ -71,7 +80,7 @@ function Provider({ children }) {
      * Listen for login / logout events
      */
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_, session) => {
+    async (_, session) => {
         const sessionUser = session?.user;
 
         if (!sessionUser) {
@@ -79,10 +88,19 @@ function Provider({ children }) {
           return;
         }
 
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', sessionUser.email)
+          .single();
+
         setUser({
           name: formatName(sessionUser.user_metadata?.name),
           email: sessionUser.email,
           picture: sessionUser.user_metadata?.picture,
+          phone: userData?.phone,
+          job: userData?.job,
+          company: userData?.company
         });
 
         saveUserToDB(sessionUser);
@@ -94,7 +112,9 @@ function Provider({ children }) {
 
   return (
     <UserDetailContext.Provider value={{ user, setUser }}>
-      {children}
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        {children}
+      </ThemeProvider>
     </UserDetailContext.Provider>
   );
 }

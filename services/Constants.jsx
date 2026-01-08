@@ -1,6 +1,6 @@
 // services/Constants.jsx
 
-import { LayoutDashboard, List, CreditCard, BriefcaseBusinessIcon, LayoutBriefcaseBusinessIcon, Code2Icon, Puzzle, User2Icon , Star, Calendar, Settings } from "lucide-react"
+import { LayoutDashboard, List, CreditCard, BriefcaseBusinessIcon, LayoutBriefcaseBusinessIcon, Code2Icon, Puzzle, User2Icon , Star, Calendar, Settings, Bell } from "lucide-react"
 
 export const SideBarOptions = [
   {
@@ -18,7 +18,11 @@ export const SideBarOptions = [
     icon: List,
     path: "/all-interviews",
   },
-
+  {
+    name: "Notifications",
+    icon: Bell,
+    path: "/notifications",
+  },
   {
     name: "Billing",
     icon: CreditCard,
@@ -29,6 +33,7 @@ export const SideBarOptions = [
     icon: Settings,
     path: "/settings",
   },
+
 ]
 export const InterviewType = [
   {

@@ -57,11 +57,16 @@ export default function AppSidebar() {
                     ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/5 shadow-primary/10" 
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}>
-                    <Link href={item.path} className="flex items-center gap-3 px-3">
+                    <Link href={item.path} className="flex items-center gap-3 px-3 w-full">
                       <item.icon size={20} className={`${path === item.path ? "text-primary" : "text-slate-400 group-hover:text-slate-600"} transition-colors`} />
-                      <span className={`text-body transition-all ${path === item.path ? "font-bold" : "font-semibold"}`}>
+                      <span className={`text-body transition-all flex-1 ${path === item.path ? "font-bold" : "font-semibold"}`}>
                         {item.name}
                       </span>
+                      {item.name === "Notifications" && (
+                        <div className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm shadow-primary/20">
+                          3
+                        </div>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
