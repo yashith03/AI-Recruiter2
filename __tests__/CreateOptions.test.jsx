@@ -24,21 +24,16 @@ describe("CreateOptions Component", () => {
 
     // Titles
     expect(screen.getByText("Create New Interview")).toBeInTheDocument();
-    expect(screen.getByText("Phone Screening")).toBeInTheDocument();
 
     // Descriptions
     expect(
       screen.getByText(/Set up a new AI-driven interview session/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Configure a quick automated phone screen/i)
     ).toBeInTheDocument();
   });
 
   test("renders icons", () => {
     render(<CreateOptions />);
     expect(screen.getByTestId("video-icon")).toBeInTheDocument();
-    expect(screen.getByTestId("phone-icon")).toBeInTheDocument();
   });
 
   test("link navigates to create interview page", () => {

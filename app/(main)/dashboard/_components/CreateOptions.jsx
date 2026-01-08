@@ -2,7 +2,7 @@
 
 "use client"
 import React from 'react'
-import { Plus, Phone, LineChart, ArrowRight, Video } from 'lucide-react'
+import { Plus, LineChart, ArrowRight, Video } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -35,25 +35,7 @@ function CreateOptions() {
             </div>
         </div>
 
-        {/* Phone Screening Card */}
-        <Link href='/dashboard/phone-screening' className="block translate-y-0 hover:-translate-y-1 transition-transform">
-            <div className="bg-white h-full rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col gap-6">
-                <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
-                    <Phone size={24} />
-                </div>
-                
-                <div className="flex-1">
-                    <h2 className='text-h2 text-slate-800 mb-2'>Phone Screening</h2>
-                    <p className='text-body text-slate-500'>
-                        Configure a quick automated phone screen to filter candidates before the main interview.
-                    </p>
-                </div>
 
-                <Button variant="outline" className="w-full border-purple-100 text-purple-600 hover:bg-purple-50 font-bold h-12 rounded-xl group/btn">
-                    Create Call <Plus size={18} className="ml-1 group-hover/btn:rotate-90 transition-transform" />
-                </Button>
-            </div>
-        </Link>
 
         {/* Pipeline Overview Card */}
         <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
