@@ -19,6 +19,7 @@ jest.mock("next/image", () => (props) => <img {...props} />);
 jest.mock("@/services/Constants", () => ({
   SideBarOptions: [
     { name: "Home", path: "/home", icon: () => <svg data-testid="home-icon" /> },
+    { name: "Notifications", path: "/notifications", icon: () => <svg data-testid="notifications-icon" /> },
     { name: "Settings", path: "/settings", icon: () => <svg data-testid="settings-icon" /> },
   ],
 }));
@@ -58,7 +59,13 @@ describe("AppSidebar", () => {
   test("renders sidebar options", () => {
     renderWithProvider("/home");
     expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.getByText("Notifications")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
+  });
+
+  test("renders notification badge for Notifications item", () => {
+    renderWithProvider("/home");
+    expect(screen.getByText("3")).toBeInTheDocument();
   });
 
   test("highlights the active path", () => {
