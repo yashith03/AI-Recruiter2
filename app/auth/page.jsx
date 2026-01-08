@@ -1,3 +1,5 @@
+//app/(main)/auth/page.jsx
+
 'use client'
 
 import React, { useEffect } from 'react'
