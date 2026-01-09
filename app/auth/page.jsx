@@ -31,8 +31,39 @@ function Login() {
     if (error) console.log('Error: ', error.message)
   }
 
-  // Prevent UI flash while checking auth
-  if (user === undefined) return null
+  // Prevent UI flash while checking auth - only show nothing if loading
+  if (user === undefined) {
+    return (
+      <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased transition-colors duration-200">
+        <div className="flex min-h-screen flex-col">
+          {/* Header */}
+          <header className="flex w-full items-center justify-between border-b border-slate-200 bg-white/80 dark:bg-slate-900/80 dark:border-slate-800 px-6 py-4 backdrop-blur-md sticky top-0 z-50">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <span className="material-symbols-outlined text-[28px]">smart_toy</span>
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                AI Recruiter
+              </h2>
+            </div>
+          </header>
+          {/* Loading skeleton */}
+          <main className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md space-y-8">
+              <div className="overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10">
+                <div className="h-64 w-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 animate-pulse"></div>
+                <div className="px-8 py-12 space-y-4">
+                  <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4 mx-auto"></div>
+                  <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse mt-8"></div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased transition-colors duration-200">
