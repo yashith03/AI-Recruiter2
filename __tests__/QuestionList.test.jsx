@@ -89,6 +89,7 @@ describe("QuestionList Component", () => {
 
   test("handles supabase insert error", async () => {
     const { supabase } = require("@/services/supabaseClient");
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     supabase.from.mockImplementationOnce(() => ({
       insert: jest.fn(() => ({
@@ -107,5 +108,7 @@ describe("QuestionList Component", () => {
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Failed to save interview: DB failure")
     );
+
+    consoleSpy.mockRestore();
   });
 });

@@ -12,8 +12,20 @@ jest.mock("next/navigation", () => ({
 }));
 
 // ---- Mock Next.js Link and Image ----
-jest.mock("next/link", () => ({ href, children }) => <a href={href}>{children}</a>);
-jest.mock("next/image", () => (props) => <img {...props} />);
+jest.mock("next/link", () => {
+  const MockLink = React.forwardRef(({ href, children, ...props }, ref) => (
+    <a href={href} ref={ref} {...props}>{children}</a>
+  ));
+  MockLink.displayName = "MockLink";
+  return MockLink;
+});
+jest.mock("next/image", () => {
+  const MockImage = React.forwardRef((props, ref) => (
+    <img {...props} ref={ref} alt={props.alt || "mocked image"} />
+  ));
+  MockImage.displayName = "MockImage";
+  return MockImage;
+});
 
 // ---- Mock Constants file ----
 jest.mock("@/services/Constants", () => ({

@@ -5,10 +5,21 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Provider from "@/app/provider";
 import Login from "@/app/auth/page";
 
-// Mock next/image to avoid Next.js optimization issues
-jest.mock("next/image", () => (props) => (
-  <img {...props} alt={props.alt || "mocked image"} />
-));
+// ---- Mock Next.js Link and Image ----
+jest.mock("next/link", () => {
+  const MockLink = React.forwardRef(({ href, children, ...props }, ref) => (
+    <a href={href} ref={ref} {...props}>{children}</a>
+  ));
+  MockLink.displayName = "MockLink";
+  return MockLink;
+});
+jest.mock("next/image", () => {
+  const MockImage = React.forwardRef((props, ref) => (
+    <img {...props} ref={ref} />
+  ));
+  MockImage.displayName = "MockImage";
+  return MockImage;
+});
 
 // Mock Supabase client (already mocked in jest.setup.js)
 
