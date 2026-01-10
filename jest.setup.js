@@ -37,6 +37,9 @@ jest.mock("@/services/supabaseClient", () => ({
       getUser: jest.fn().mockResolvedValue({
         data: { user: null },
       }),
+      getSession: jest.fn().mockResolvedValue({
+        data: { session: null },
+      }),
       onAuthStateChange: jest.fn((callback) => {
         // Simulate no active session
         callback(null, null);
