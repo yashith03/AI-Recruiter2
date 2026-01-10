@@ -120,7 +120,7 @@ describe("CreateInterview Page", () => {
 
   test("moves to QuestionList when filled", async () => {
     global.fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ result: { interviewQuestions: [{ question: "Q1", answer: "A1" }] } })
+      json: () => Promise.resolve({ interviewQuestions: [{ question: "Q1", answer: "A1" }] })
     });
 
     renderWithProvider();
@@ -132,7 +132,7 @@ describe("CreateInterview Page", () => {
 
   test("moves to InterviewLink on Create Link", async () => {
     global.fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve({ result: { interviewQuestions: [{ question: "Q1", answer: "A1" }] } })
+      json: () => Promise.resolve({ interviewQuestions: [{ question: "Q1", answer: "A1" }] })
     });
 
     renderWithProvider();

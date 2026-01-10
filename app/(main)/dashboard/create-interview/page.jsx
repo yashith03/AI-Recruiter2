@@ -71,15 +71,24 @@ function CreateInterview() {
       console.log("AI API payload:", payload)
 
       let generatedQuestions = []
-      if (payload?.result && typeof payload.result === "object") {
-        generatedQuestions = payload.result.interviewQuestions || []
-      } else if (payload?.content && typeof payload.content === "string") {
+      
+      // Direct access to interviewQuestions (matches current API response structure)
+      if (payload?.interviewQuestions && Array.isArray(payload.interviewQuestions)) {
+        generatedQuestions = payload.interviewQuestions
+      }
+      // Fallback for legacy response format
+      else if (payload?.result?.interviewQuestions) {
+        generatedQuestions = payload.result.interviewQuestions
+      }
+      // String content fallback (for non-JSON responses)
+      else if (payload?.content && typeof payload.content === "string") {
         const cleaned = payload.content
-          .replace(/"?```json\s*/i, "")
+          .replace(/\"?```json\s*/i, "")
           .replace(/```/g, "")
 
         try {
-          generatedQuestions = JSON.parse(cleaned)?.interviewQuestions || []
+          const parsed = JSON.parse(cleaned)
+          generatedQuestions = parsed?.interviewQuestions || []
         } catch (err) {
           console.warn("Failed to parse AI content string", err)
         }

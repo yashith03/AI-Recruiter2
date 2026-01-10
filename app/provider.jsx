@@ -49,30 +49,39 @@ function Provider({ children }) {
      * Initial auth check
      */
     const loadUser = async () => {
-  const { data: { user: sessionUser } } = await supabase.auth.getUser();
+      // 1. Use getSession for instant UI response (reads from local storage)
+      const { data: { session } } = await supabase.auth.getSession();
+      const sessionUser = session?.user;
 
-  if (!sessionUser) {
-    setUser(null);
-    return;
-  }
+      if (!sessionUser) {
+        setUser(null);
+        return;
+      }
 
-  const { data } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', sessionUser.email)
-    .single();
+      // 2. Set user immediately with data from session metadata
+      // This allows the Auth page to redirect instantly
+      setUser({
+        name: formatName(sessionUser.user_metadata?.name),
+        email: sessionUser.email,
+        picture: sessionUser.user_metadata?.picture,
+      });
 
-  setUser({
-    name: formatName(sessionUser.user_metadata?.name),
-    email: sessionUser.email,
-    picture: sessionUser.user_metadata?.picture,
-    phone: data?.phone,
-    job: data?.job,
-    company: data?.company,
-  });
+      // 3. Fetch extended profile info from DB in the background
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', sessionUser.email)
+        .single();
 
-  saveUserToDB(sessionUser);
-};
+      if (userData) {
+        setUser(prev => ({
+          ...prev,
+          ...userData, // Spread all fields including credits, phone, job, company, etc.
+        }));
+      }
+
+      saveUserToDB(sessionUser);
+    };
 
     loadUser();
 
@@ -88,20 +97,26 @@ function Provider({ children }) {
           return;
         }
 
+        // Set basic data immediately
+        setUser({
+          name: formatName(sessionUser.user_metadata?.name),
+          email: sessionUser.email,
+          picture: sessionUser.user_metadata?.picture,
+        });
+
+        // Background fetch for extended data
         const { data: userData } = await supabase
           .from('users')
           .select('*')
           .eq('email', sessionUser.email)
           .single();
 
-        setUser({
-          name: formatName(sessionUser.user_metadata?.name),
-          email: sessionUser.email,
-          picture: sessionUser.user_metadata?.picture,
-          phone: userData?.phone,
-          job: userData?.job,
-          company: userData?.company
-        });
+        if (userData) {
+          setUser(prev => ({
+            ...prev,
+            ...userData, // Spread all fields including credits, phone, job, company, etc.
+          }));
+        }
 
         saveUserToDB(sessionUser);
       }

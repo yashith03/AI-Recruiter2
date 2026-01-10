@@ -27,9 +27,9 @@ describe("Provider Component", () => {
     expect(screen.getByText("Child Component")).toBeInTheDocument();
   });
 
-  test("calls supabase.auth.getUser on mount", async () => {
-    supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: null },
+  test("calls supabase.auth.getSession on mount", async () => {
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: null },
     });
 
     render(
@@ -39,16 +39,18 @@ describe("Provider Component", () => {
     );
 
     await waitFor(() => {
-      expect(supabase.auth.getUser).toHaveBeenCalledTimes(1);
+      expect(supabase.auth.getSession).toHaveBeenCalledTimes(1);
     });
   });
 
   test("sets and formats user correctly when Supabase returns data", async () => {
-    supabase.auth.getUser.mockResolvedValueOnce({
+    supabase.auth.getSession.mockResolvedValueOnce({
       data: {
-        user: {
-          email: "test@example.com",
-          user_metadata: { name: "john doe", picture: "profile.png" },
+        session: {
+          user: {
+            email: "test@example.com",
+            user_metadata: { name: "john doe", picture: "profile.png" },
+          },
         },
       },
     });
@@ -78,8 +80,8 @@ describe("Provider Component", () => {
   });
 
   test("does not set user if Supabase returns null", async () => {
-    supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: null },
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: null },
     });
 
     render(
@@ -99,9 +101,9 @@ describe("Provider Component", () => {
       user_metadata: { name: "alice cooper", picture: "pic.jpg" },
     };
 
-    // Mock both getUser and onAuthStateChange to return the same user
-    supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: mockUser },
+    // Mock both getSession and onAuthStateChange to return the same user
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: { user: mockUser } },
     });
     
     // Mock DB fetch
@@ -146,9 +148,9 @@ describe("Provider Component", () => {
       user_metadata: { name: "john smith", picture: "pic.png" },
     };
 
-    // Mock getUser
-    supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: mockUser }
+    // Mock getSession
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: { user: mockUser } }
     });
 
     // Mock DB fetch AND upsert success
@@ -182,8 +184,8 @@ describe("Provider Component", () => {
       user_metadata: { name: "save error", picture: "pic.jpg" },
     };
 
-    // getUser returns user
-    supabase.auth.getUser.mockResolvedValueOnce({ data: { user: mockUser } });
+    // getSession returns user
+    supabase.auth.getSession.mockResolvedValueOnce({ data: { session: { user: mockUser } } });
 
     // Mock DB fetch successful but upsert failed 
     // Note: The provider calls 'select' then 'upsert'. We need to handle both calls.
@@ -218,14 +220,11 @@ describe("Provider Component", () => {
   });
 
   test("handles auth loading state correctly", async () => {
-    // The provider's initial state should be user === undefined
-    // After auth check completes, it should be either null or an object
-    
-    supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: null },
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: null },
     });
 
-    const { rerender } = render(
+    render(
       <Provider>
         <TestConsumer />
       </Provider>
@@ -233,5 +232,75 @@ describe("Provider Component", () => {
 
     // Initially loading
     expect(screen.getByTestId("user-name")).toHaveTextContent("No user");
+  });
+
+  test("updates user data on auth state change (login)", async () => {
+    let authCallback;
+    supabase.auth.onAuthStateChange.mockImplementation((callback) => {
+      authCallback = callback;
+      return { data: { subscription: { unsubscribe: jest.fn() } } };
+    });
+
+    supabase.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+    render(
+      <Provider>
+        <TestConsumer />
+      </Provider>
+    );
+
+    const mockSessionUser = {
+      email: "new@test.com",
+      user_metadata: { name: "new user", picture: "new.png" },
+    };
+
+    // Mock DB response for the background fetch
+    const fromMock = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: { credits: 50, phone: "555" }
+          }),
+        }),
+      }),
+      upsert: jest.fn().mockResolvedValue({ error: null }),
+    });
+    supabase.from = fromMock;
+
+    // Trigger auth change
+    await act(async () => {
+      authCallback("SIGNED_IN", { user: mockSessionUser });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user-name")).toHaveTextContent("New User");
+    });
+  });
+
+  test("handles null session in onAuthStateChange (logout)", async () => {
+    let authCallback;
+    supabase.auth.onAuthStateChange.mockImplementation((callback) => {
+      authCallback = callback;
+      return { data: { subscription: { unsubscribe: jest.fn() } } };
+    });
+
+    supabase.auth.getSession.mockResolvedValue({ 
+      data: { session: { user: { email: "test@test.com" } } } 
+    });
+
+    render(
+      <Provider>
+        <TestConsumer />
+      </Provider>
+    );
+
+    // Trigger logout
+    await act(async () => {
+      authCallback("SIGNED_OUT", null);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user-name")).toHaveTextContent("No user");
+    });
   });
 });

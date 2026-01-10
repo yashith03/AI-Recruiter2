@@ -26,19 +26,25 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
   }, [initialQuestionList])
 
   const onFinish = async () => {
+    console.log("onFinish triggered. User:", user?.email, "Questions:", questionList.length);
+    
     if (!user?.email) {
+      console.warn("Save aborted: User email missing");
       toast.error("User not logged in. Please sign in first.")
       return
     }
 
     if (!questionList.length) {
+      console.warn("Save aborted: No questions");
       toast.error("No questions generated yet.")
       return
     }
 
     setSaving(true)
     const interview_id = uuidv4()
+    console.log("Generated interview_id:", interview_id);
 
+    console.log("Starting Supabase insert...");
     const { data, error } = await supabase
       .from("interviews")
       .insert([
@@ -55,14 +61,16 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
       .select()
 
     if (error) {
-      console.error("Error saving interview:", error)
+      console.error("Supabase insert error:", error)
       toast.error("Failed to save interview: " + error.message)
       setSaving(false)
       return
     }
 
+    console.log("Supabase insert success. Response data:", data);
     toast.success("Interview created successfully!")
     setSaving(false)
+    console.log("Calling onCreateLink...");
     onCreateLink(interview_id)
   }
 
