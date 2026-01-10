@@ -113,7 +113,7 @@ export default function ManageSubscription() {
                 <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/30 via-transparent to-transparent animate-pulse" />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-                <zap className="text-primary w-24 h-24" />
+                <Zap className="text-primary w-24 h-24" />
             </div>
           </div>
         </div>

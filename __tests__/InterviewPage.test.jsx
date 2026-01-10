@@ -100,6 +100,8 @@ describe('Interview page', () => {
 
   test('shows toast when supabase error', async () => {
     const { supabase } = require('@/services/supabaseClient');
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     supabase.from.mockReturnValueOnce({
       select: () => ({
         eq: () => Promise.reject(new Error('fail')),
@@ -118,5 +120,7 @@ describe('Interview page', () => {
     await waitFor(() => {
       expect(toastMock.error).toHaveBeenCalledWith(expect.stringContaining('error occurred'));
     });
+
+    consoleSpy.mockRestore();
   });
 });
