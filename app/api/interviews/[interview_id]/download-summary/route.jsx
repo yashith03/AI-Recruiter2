@@ -1,11 +1,9 @@
 // app/api/interviews/[interview_id]/download-summary/route.jsx
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-
+import { supabase } from "@/services/supabaseClient";
 export async function GET(req, { params }) {
   try {
-    const supabase = createClient(); 
     const { interview_id } = params;
     
     // Server-side environment check

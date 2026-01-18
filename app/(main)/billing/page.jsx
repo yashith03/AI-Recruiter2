@@ -21,7 +21,9 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  Filter
+  Filter,
+   Brain, 
+   Briefcase
 } from 'lucide-react'
 
 export default function BillingPage() {
@@ -89,9 +91,9 @@ export default function BillingPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
-                  <span className="material-symbols-outlined text-[20px]">psychology</span>
-                </div>
+              <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
+  <Brain size={20} strokeWidth={1.75} />
+</div>
                 <span className="text-body font-bold text-slate-700">AI Candidate Matches</span>
               </div>
               <span className="text-body font-black text-slate-900 font-mono">450 <span className="text-slate-300 font-normal">/ 500</span></span>
@@ -103,9 +105,10 @@ export default function BillingPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
-                  <span className="material-symbols-outlined text-[20px]">work</span>
-                </div>
+             <div className="p-2 bg-slate-50 text-slate-500 rounded-lg">
+  <Briefcase size={20} strokeWidth={1.75} />
+</div>
+
                 <span className="text-body font-bold text-slate-700">Active Job Posts</span>
               </div>
               <span className="text-body font-black text-slate-900 font-mono">12 <span className="text-slate-300 font-normal">/ 20</span></span>
