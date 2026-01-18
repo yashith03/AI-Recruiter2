@@ -61,6 +61,21 @@ export default function SettingsPage() {
     }
   }, [user])
 
+  const handleLogout = async () => {
+  // Confirmation
+  if (!confirm("Are you sure you want to log out?")) return
+
+  try {
+    await supabase.auth.signOut()
+    setUser(null)
+    toast.success("Logged out successfully")
+    window.location.href = "/auth"
+  } catch (error) {
+    console.error("Logout error:", error)
+    toast.error("Failed to log out")
+  }
+}
+
 const handleSave = async () => {
   if (!user?.email) {
     toast.error("User not authenticated")
@@ -341,14 +356,16 @@ const handleSave = async () => {
             </div>
           </section>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-4 pt-6">
-            <Button variant="ghost" className="text-body text-muted-foreground font-bold hover:bg-muted h-11 px-6">Cancel</Button>
-            <Button className="bg-primary hover:bg-primary-dark text-primary-foreground font-bold h-11 px-8 shadow-lg shadow-primary/20 transition-all active:scale-95">
-              Save Changes
-            </Button>
-          </div>
-
+<div className="flex items-center justify-end pt-6">
+  <Button
+    onClick={handleLogout}
+    variant="outline"
+    className="h-11 px-6 font-bold text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 flex items-center gap-2"
+  >
+    <LogOut size={16} />
+    Log out
+  </Button>
+</div>
       </div>
     </div>
   )

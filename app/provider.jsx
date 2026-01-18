@@ -22,10 +22,16 @@ function Provider({ children }) {
     const formatName = (name) => {
       if (!name) return "";
       return name
-        .split(" ")
+        .split(/\s+/) // Use regex to handle multiple spaces
+        .filter(w => w.length > 0) // Remove empty strings
         .map(w => w[0].toUpperCase() + w.slice(1).toLowerCase())
         .join(" ");
     };
+
+    // Safety Timeout: If auth check takes > 5 seconds, stop showing skeleton
+    const timeout = setTimeout(() => {
+      setUser(prev => (prev === undefined ? null : prev));
+    }, 5000);
 
     /**
      * Save user to database (runs only after login)
@@ -49,38 +55,52 @@ function Provider({ children }) {
      * Initial auth check
      */
     const loadUser = async () => {
-      // 1. Use getSession for instant UI response (reads from local storage)
-      const { data: { session } } = await supabase.auth.getSession();
-      const sessionUser = session?.user;
+      try {
+        console.log("AuthProvider: Loading user...");
+        // 1. Use getSession for instant UI response (reads from local storage)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
 
-      if (!sessionUser) {
-        setUser(null);
-        return;
+        const sessionUser = session?.user;
+        console.log("AuthProvider: Session user:", sessionUser ? "Found" : "Not Found");
+
+        if (!sessionUser) {
+          setUser(null);
+          return;
+        }
+
+        // 2. Set user immediately with data from session metadata
+        const basicUser = {
+          name: formatName(sessionUser.user_metadata?.name),
+          email: sessionUser.email,
+          picture: sessionUser.user_metadata?.picture,
+        };
+        setUser(basicUser);
+
+        // 3. Fetch extended profile info from DB in the background
+        const { data: userData, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', sessionUser.email)
+          .single();
+
+        if (dbError) {
+          console.warn("AuthProvider: DB fetch warning (non-critical):", dbError.message);
+        }
+
+        if (userData) {
+          setUser(prev => ({
+            ...prev,
+            ...userData,
+          }));
+        }
+
+        await saveUserToDB(sessionUser);
+      } catch (err) {
+        console.error("AuthProvider: Critical load error:", err);
+        setUser(null); // Fallback to not-logged-in state so UI shows
       }
-
-      // 2. Set user immediately with data from session metadata
-      // This allows the Auth page to redirect instantly
-      setUser({
-        name: formatName(sessionUser.user_metadata?.name),
-        email: sessionUser.email,
-        picture: sessionUser.user_metadata?.picture,
-      });
-
-      // 3. Fetch extended profile info from DB in the background
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', sessionUser.email)
-        .single();
-
-      if (userData) {
-        setUser(prev => ({
-          ...prev,
-          ...userData, // Spread all fields including credits, phone, job, company, etc.
-        }));
-      }
-
-      saveUserToDB(sessionUser);
     };
 
     loadUser();
@@ -122,7 +142,10 @@ function Provider({ children }) {
       }
     );
 
-    return () => listener?.subscription?.unsubscribe();
+    return () => {
+      listener?.subscription?.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   return (

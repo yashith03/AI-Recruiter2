@@ -31,12 +31,16 @@ export default function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="flex flex-col gap-4 items-start p-6">
-        <div className="flex items-center gap-2 text-[#0d141c]">
-          <div className="text-primary">
-            <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>graphic_eq</span>
-          </div>
-          <h2 className="text-h3 text-slate-800">AI Recruiter</h2>
-        </div>
+<div className="flex items-center">
+  <Image
+    src="/logo.png"
+    alt="AI Recruiter Logo"
+    width={140}
+    height={32}
+    priority
+  />
+</div>
+
 
         <Link href={'/dashboard/create-interview'} className="w-full">
           <Button className="w-full text-body font-bold h-11 rounded-xl shadow-lg shadow-primary/20">

@@ -44,34 +44,56 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
     const interview_id = uuidv4()
     console.log("Generated interview_id:", interview_id);
 
-    console.log("Starting Supabase insert...");
-    const { data, error } = await supabase
-      .from("interviews")
-      .insert([
-        {
-          jobPosition: formData.jobPosition,
-          jobDescription: formData.jobDescription,
-          duration: formData.duration,
-          type: Array.isArray(formData.type) ? formData.type : [formData.type],
-          questionList,
-          userEmail: user.email,
-          interview_id,
-        },
-      ])
-      .select()
+    try {
+      console.log("Starting Supabase insert with payload:", {
+        jobPosition: formData.jobPosition,
+        userEmail: user.email,
+        interview_id,
+      });
 
-    if (error) {
-      console.error("Supabase insert error:", error)
-      toast.error("Failed to save interview: " + error.message)
+      // Wrap supabase call in a timeout to detect hangs
+      const insertPromise = supabase
+        .from("interviews")
+        .insert([
+          {
+            jobPosition: formData.jobPosition,
+            jobDescription: formData.jobDescription,
+            duration: formData.duration,
+            type: Array.isArray(formData.type) ? formData.type : [formData.type],
+            questionList,
+            userEmail: user.email,
+            interview_id,
+          },
+        ]);
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Supabase insert timeout after 10s")), 10000)
+      );
+
+      console.log("Waiting for Supabase response (without .select())...");
+      const result = await Promise.race([insertPromise, timeoutPromise]);
+      console.log("Supabase promise resolved!", result);
+
+      const { data, error } = result;
+
+      if (error) {
+        console.error("Supabase insert error returned:", error)
+        toast.error("Failed to save interview: " + (error.message || "Unknown error"))
+        setSaving(false)
+        return
+      }
+
+      console.log("Supabase insert success. Result:", result);
+      toast.success("Interview created successfully!")
       setSaving(false)
-      return
+      console.log("Calling onCreateLink with ID:", interview_id);
+      onCreateLink(interview_id)
+      
+    } catch (err) {
+      console.error("onFinish Catch Global Error:", err);
+      toast.error("An unexpected error occurred while saving: " + err.message);
+      setSaving(false);
     }
-
-    console.log("Supabase insert success. Response data:", data);
-    toast.success("Interview created successfully!")
-    setSaving(false)
-    console.log("Calling onCreateLink...");
-    onCreateLink(interview_id)
   }
 
   return (

@@ -89,6 +89,31 @@ interviewQuestions = [
 The goal is to create a structured, relevant, and time-optimized interview plan for a {{jobTitle}} role.
 `;
 
+export const CANDIDATE_SUMMARY_PROMPT = `
+Based on the following interview conversation between an AI interviewer and a candidate, generate a professional, constructive, and neutral interview summary suitable for the candidate.
+
+Conversation:
+{{conversation}}
+
+Return only valid JSON with the following structure:
+{
+  "overallFeedback": "One professional paragraph (3-5 sentences) summarizing the interview performance in a neutral, constructive, and supportive tone. Do not include hiring decisions or internal scoring details.",
+  "score": 7.5,
+  "improvements": [
+    "Actionable improvement point 1",
+    "Actionable improvement point 2",
+    "Actionable improvement point 3"
+  ]
+}
+
+Rules:
+- score must be a number between 0 and 10 with maximum one decimal place.
+- improvements must contain 3 to 5 actionable and encouraging bullet points.
+- Avoid harsh or negative language.
+- Do not include emojis.
+- Return only the JSON object, no extra text.
+`;
+
 export const FEEDBACK_PROMPT = `
 {{conversation}}
 Based on the above interview conversation between assistant and user,
