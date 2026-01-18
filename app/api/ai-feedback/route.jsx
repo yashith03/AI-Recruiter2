@@ -1,4 +1,4 @@
-// app/api/ai-feedback/route.js
+// app/api/ai-feedback/route.jsx
 
 import { NextResponse } from "next/server";
 import { FEEDBACK_PROMPT } from "@/services/Constants";
@@ -6,7 +6,19 @@ import OpenAI from "openai";
 
 export async function POST(req) {
   try {
-    const { conversation } = await req.json();
+        let body;
+
+    try {
+      body = await req.json();
+    } catch (err) {
+      console.error("Request JSON parse error:", err);
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const { conversation } = body || {};
 
     if (!conversation) {
       return NextResponse.json(
@@ -27,14 +39,28 @@ export async function POST(req) {
     });
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model:  "openai/gpt-oss-20b:free",
       messages: [{ role: "user", content: FINAL_PROMPT }],
+      max_tokens: 800,
     });
 
     const content = completion.choices?.[0]?.message?.content || "";
 
-    return NextResponse.json({ content });
+     if (!content) {
+      console.error("AI returned empty feedback");
+      return NextResponse.json(
+        { error: "AI returned empty feedback" },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json(
+      { content },
+      { status: 200 }
+    );
+
   } catch (e) {
+   console.error("AI FEEDBACK ERROR:", e);
     return NextResponse.json(
       { error: e.message || "Something went wrong" },
       { status: 500 }

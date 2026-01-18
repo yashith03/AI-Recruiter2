@@ -1,3 +1,5 @@
+// app/(main)/dashboard/create-interview/[interview_id]/details/page.jsx
+
 "use client";
 
 import React, { useState } from "react";
