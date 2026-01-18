@@ -1,5 +1,11 @@
+// app/api/interviews/[interview_id]/download-summary/route.jsx
+
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
 export async function GET(req, { params }) {
   try {
+    const supabase = createClient(); 
     const { interview_id } = params;
     
     // Server-side environment check
@@ -9,7 +15,9 @@ export async function GET(req, { params }) {
     console.log("SERVER: Supabase Config - URL existing:", !!url, "Key existing:", !!key);
 
     if (!url || !key) {
-        return NextResponse.json({ error: "Supabase environment variables missing on server" }, { status: 500 });
+        return NextResponse.json(
+          { error: "Supabase environment variables missing on server" }, 
+          { status: 500 });
     }
 
     // 1. Check if the table even exists or is accessible

@@ -1,3 +1,5 @@
+// app/(main)/dashboard/layout.jsx
+
 "use client";
 
 import { useEffect } from "react";

@@ -1,4 +1,4 @@
-// app/api/ai-model/route.js
+// app/api/ai-model/route.jsx
 
 import { QUESTIONS_PROMPT } from "@/services/Constants";
 import { NextResponse } from "next/server";
@@ -8,27 +8,30 @@ import { OpenAI } from "openai";
 // Helper: Extract clean JSON from model output
 // -------------------------------------------
 function extractJSON(output) {
-  if (!output || typeof output !== "string") {
-    return {};
-  }
-
-  let cleaned = output
-    .replace(/```json/i, "")
-    .replace(/```/g, "")
-    .trim();
-
-  const firstBrace = cleaned.indexOf("{");
-  if (firstBrace !== -1) cleaned = cleaned.slice(firstBrace);
-
-  const lastBrace = cleaned.lastIndexOf("}");
-  if (lastBrace !== -1) cleaned = cleaned.slice(0, lastBrace + 1);
-
   try {
-    return JSON.parse(cleaned);
-  } catch {
+    let cleaned = output
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const firstBrace = cleaned.indexOf("{");
+    if (firstBrace !== -1) {
+      cleaned = cleaned.slice(firstBrace);
+    }
+
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (lastBrace !== -1) {
+      cleaned = cleaned.slice(0, lastBrace + 1);
+    }
+
+const parsed = JSON.parse(cleaned);
+return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch (err) {
+    console.error("JSON parse failed:", err);
     return {};
   }
 }
+
 
 // -------------------------------------------
 // POST handler
@@ -40,15 +43,18 @@ export async function POST(req) {
     try {
       body = await req.json();
     } catch (err) {
+      console.error("Request JSON parse error:", err);
       return NextResponse.json(
         { error: "Unexpected error parsing request" },
         { status: 500 }
       );
     }
+    console.log("AI API REQUEST BODY:", body);
 
-    const { jobPosition, jobDescription } = body || {};
 
-    if (!jobPosition || !jobDescription) {
+const { jobPosition, jobDescription, duration, type } = body || {};
+
+    if (!jobPosition || !jobDescription || !duration || !type) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -57,8 +63,13 @@ export async function POST(req) {
 
     // Build prompt correctly
     const FINAL_PROMPT = QUESTIONS_PROMPT
-      .replace("{{jobPosition}}", jobPosition)
-      .replace("{{jobDescription}}", jobDescription);
+      .replace("{{jobTitle}}", jobPosition)
+      .replace("{{jobDescription}}", jobDescription)
+      .replace("{{duration}}", duration)
+      .replace("{{type}}", Array.isArray(type) ? type.join(", ") : type);
+
+    console.log("FINAL PROMPT SENT TO AI:\n", FINAL_PROMPT);
+
 
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
@@ -77,24 +88,22 @@ export async function POST(req) {
 
     for (const model of models) {
       try {
+        console.log("Trying model:", model);
         completion = await openai.chat.completions.create({
           model,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Return JSON only. Format: { \"interviewQuestions\": [] }",
-            },
-            {
-              role: "user",
-              content: FINAL_PROMPT,
-            },
-          ],
+messages: [
+  {
+    role: "user",
+    content: FINAL_PROMPT,
+  },
+],
+
           max_tokens: 1000,
         });
 
         break;
       } catch (err) {
+        console.error(`Model failed (${model}):`, err?.status || err?.message);
         if (err.status === 429) {
           await new Promise((res) => setTimeout(res, 500));
           continue;
@@ -109,16 +118,31 @@ export async function POST(req) {
       );
     }
 
-    const rawContent = completion.choices?.[0]?.message?.content || "";
-    const parsed = extractJSON(rawContent);
+const rawContent = String(
+  completion.choices?.[0]?.message?.content || ""
+);
+    console.log("RAW AI RESPONSE:", rawContent);
 
-    return NextResponse.json(
-      { interviewQuestions: parsed.interviewQuestions || [] },
-      { status: 200 }
-    );
+    const parsed = extractJSON(rawContent);
+    console.log("PARSED JSON:", parsed);
+
+
+const questions = Array.isArray(parsed.interviewQuestions)
+  ? parsed.interviewQuestions
+  : [];
+console.log("QUESTION COUNT:", questions.length);
+
+return NextResponse.json(
+  { interviewQuestions: questions },
+  { status: 200 }
+  
+);
+
+
   } catch (err) {
+    console.error("AI MODEL API ERROR:", err);
     return NextResponse.json(
-      { error: "Unexpected error" },
+      { error: "Unexpected server error" },
       { status: 500 }
     );
   }

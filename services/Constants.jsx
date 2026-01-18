@@ -76,15 +76,17 @@ Ensure the questions match the tone and structure of a real-life {{type}} interv
 
 Format your response in JSON format with an array list of questions:
 Format:
-interviewQuestions = [
-  {
-    question: "",
-    type: "Technical/Behavioral/Experience/Problem Solving/Leadership"
-  },
-  {
-    ...
-  }
-]
+{
+  "interviewQuestions": [
+    {
+      "question": "string",
+      "type": "Technical | Behavioral | Experience | Problem Solving | Leadership"
+    },
+    {
+      ...
+    }
+  ]
+}
 
 The goal is to create a structured, relevant, and time-optimized interview plan for a {{jobTitle}} role.
 `;

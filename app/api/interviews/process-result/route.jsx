@@ -1,18 +1,43 @@
 // app/api/interviews/process-result/route.jsx
 
 import { NextResponse } from "next/server";
-import { supabase } from "@/services/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 import puppeteer from "puppeteer";
 import { CANDIDATE_SUMMARY_PROMPT } from "@/services/Constants";
 import moment from "moment";
 
+// Required for Puppeteer
+export const runtime = "nodejs";
+
+function normalizeQuestion(q) {
+  if (typeof q === "string") return q;
+  if (q && typeof q === "object" && typeof q.question === "string") return q.question;
+  return "";
+}
+
 export async function POST(req) {
   try {
-    const { interview_id, conversation, userName, userEmail } = await req.json();
+    const supabase = createClient();
+    let body;
+    try {
+      body = await req.json();
+    } catch (err) {
+      console.error("Request JSON parse error:", err);
+      return NextResponse.json(
+        { error: "Unexpected error parsing request" },
+        { status: 500 }
+      );
+    }
+    console.log("AI API REQUEST BODY:", body);
+
+    const { interview_id, conversation, userName, userEmail } = body || {};
 
     if (!interview_id || !conversation || !userName || !userEmail) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     // 1. Fetch Interview Data (System data)
@@ -23,7 +48,9 @@ export async function POST(req) {
       .single();
 
     if (interviewError || !interview) {
-      return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Interview not found" }, 
+        { status: 404 });
     }
 
     // 2. Generate Candidate Summary via AI
@@ -42,24 +69,25 @@ export async function POST(req) {
 
     while (retries > 0) {
       const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "openai/gpt-oss-20b:free",
         messages: [{ role: "user", content: FINAL_PROMPT }],
+        max_tokens: 900,
       });
 
       const content = completion.choices?.[0]?.message?.content || "";
       
       try {
-        summaryJson = JSON.parse(content);
-        // Validation
+        const parsed = JSON.parse(content.trim());
         if (
-          summaryJson.overallFeedback &&
-          typeof summaryJson.score === "number" &&
-          summaryJson.score >= 0 &&
-          summaryJson.score <= 10 &&
-          Array.isArray(summaryJson.improvements) &&
-          summaryJson.improvements.length >= 1
+          parsed.overallFeedback &&
+          typeof parsed.score === "number" &&
+          parsed.score >= 0 &&
+          parsed.score <= 10 &&
+          Array.isArray(parsed.improvements) &&
+          parsed.improvements.length >= 1
         ) {
-          break; // success
+          summaryJson = parsed;
+          break;
         }
       } catch (e) {
         console.error("AI Response Parsing/Validation Failed:", content);
@@ -68,7 +96,10 @@ export async function POST(req) {
     }
 
     if (!summaryJson) {
-      throw new Error("Failed to generate valid AI summary after retries");
+      return NextResponse.json(
+        { error: "Failed to generate valid AI summary" },
+        { status: 502 }
+      );
     }
 
     // 3. Prepare PDF Content
@@ -77,9 +108,16 @@ export async function POST(req) {
     const startTime = moment().format("hh:mm A"); // We could pass this from frontend if tracked
     const durationStr = "15 minutes 30 seconds"; // We should probably pass actual duration
 
-    const askedQuestions = interview.questionList || [];
+       const askedQuestionsRaw = Array.isArray(interview.questionList)
+      ? interview.questionList
+      : [];
+
+    const askedQuestions = askedQuestionsRaw
+      .map(normalizeQuestion)
+      .filter(Boolean);
+    
     const questionsHtml = askedQuestions
-      .map((q, i) => `<li>${q.question}</li>`)
+      .map((text, i) => `<li>${text}</li>`)
       .join("");
 
     const improvementsHtml = summaryJson.improvements
@@ -148,7 +186,7 @@ export async function POST(req) {
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
-    await page.setContent(htmlContent);
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({ 
       format: "A4",
       printBackground: true,
@@ -170,18 +208,31 @@ export async function POST(req) {
         upsert: true,
       });
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
-      // Fallback: If storage fails, we still have the summary JSON.
-    }
-
-    const { data: { publicUrl } } = supabase.storage
+ if (uploadError) {
+  return NextResponse.json(
+    { error: "Failed to upload interview summary PDF" },
+    { status: 500 }
+  );
+}
+    const { data: publicData } = supabase.storage
       .from("interview-summaries")
       .getPublicUrl(filePath);
 
+    const publicUrl = publicData?.publicUrl;
+
+    if (!publicUrl) {
+      console.error("Failed to generate public PDF URL for", filePath);
+  return NextResponse.json(
+    { error: "Failed to generate interview summary PDF URL" },
+    { status: 500 }
+  );
+}
+
     // 6. Save Summary and PDF URL to Database
     console.log("Saving to interview-feedback table...");
-    const { error: feedbackError } = await supabase.from("interview-feedback").insert([
+    const { error: feedbackError } = await supabase
+    .from("interview-feedback")
+    .insert([
       {
         userName,
         userEmail,
@@ -190,7 +241,7 @@ export async function POST(req) {
         recommendation: summaryJson.score >= 7,
         candidate_summary: summaryJson,
         pdf_url: publicUrl,
-        asked_questions: askedQuestions.map(q => q.question),
+        asked_questions: askedQuestions,
         interview_date: moment().format("YYYY-MM-DD"),
         start_time: startTime,
         duration: durationStr,
@@ -199,7 +250,9 @@ export async function POST(req) {
 
     if (feedbackError) {
       console.error("Database Save Error:", feedbackError);
-      return NextResponse.json({ error: "Failed to save feedback data" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to save feedback data" }, 
+        { status: 500 });
     }
 
     console.log("Process complete for", interview_id);
