@@ -4,7 +4,6 @@
 
 import React, { useEffect, useState } from "react"
 import { Loader, Loader2 } from "lucide-react"
-import axios from "axios"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import QuestionsListContainer from "./QuestionsListContainer"
@@ -59,7 +58,9 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
             jobPosition: formData.jobPosition,
             jobDescription: formData.jobDescription,
             duration: formData.duration,
-            type: Array.isArray(formData.type) ? formData.type : [formData.type],
+            type: Array.isArray(formData.type)
+              ? formData.type.join(", ")
+              : formData.type,
             questionList,
             userEmail: user.email,
             interview_id,
@@ -67,7 +68,7 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
         ]);
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Supabase insert timeout after 10s")), 10000)
+        setTimeout(() => reject(new Error("Supabase insert timeout after 10s")), 20000)
       );
 
       console.log("Waiting for Supabase response (without .select())...");

@@ -27,6 +27,14 @@ export async function POST(req) {
       );
     }
 
+    const models = [
+      "openai/gpt-oss-20b:free",
+      "nvidia/nemotron-nano-9b-v2:free",
+      "kwaipilot/kat-coder-pro-v1:free",
+      "nvidia/nemotron-nano-12b-vl:free",
+      "x-ai/grok-4.1-fast:free",
+    ];
+
     // conversation is an object/array here, so stringify once
     const FINAL_PROMPT = FEEDBACK_PROMPT.replace(
       "{{conversation}}",
@@ -38,15 +46,46 @@ export async function POST(req) {
       apiKey: process.env.OPENROUTER_API_KEY,
     });
 
-    const completion = await openai.chat.completions.create({
-      model:  "openai/gpt-oss-20b:free",
+let completion = null;
+let lastError = null;
+
+for (const model of MODELS) {
+  try {
+    console.log("Trying model:", model);
+
+    completion = await openai.chat.completions.create({
+      model,
       messages: [{ role: "user", content: FINAL_PROMPT }],
       max_tokens: 800,
     });
 
+    // success → stop loop
+    if (completion?.choices?.length) {
+      console.log("Model succeeded:", model);
+      break;
+    }
+  } catch (err) {
+    console.error(`Model failed (${model}):`, err?.status || err?.message);
+    lastError = err;
+
+    // small delay helps OpenRouter rate limits
+    if (err?.status === 429) {
+      await new Promise(res => setTimeout(res, 500));
+    }
+  }
+}
+
+if (!completion) {
+  return NextResponse.json(
+    { error: "All AI models failed", details: lastError?.message },
+    { status: 502 }
+  );
+}
+
+
     const content = completion.choices?.[0]?.message?.content || "";
 
-     if (!content) {
+     if (!content.trim()) {
       console.error("AI returned empty feedback");
       return NextResponse.json(
         { error: "AI returned empty feedback" },

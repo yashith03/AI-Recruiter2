@@ -1,7 +1,7 @@
 // app/api/interviews/process-result/route.jsx
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { supabaseServer as supabase } from "@/services/supabaseServer";
 import OpenAI from "openai";
 import puppeteer from "puppeteer";
 import { CANDIDATE_SUMMARY_PROMPT } from "@/services/Constants";
@@ -18,7 +18,8 @@ function normalizeQuestion(q) {
 
 export async function POST(req) {
   try {
-    const supabase = createClient();
+    console.log("▶️ process-result API called");
+
     let body;
     try {
       body = await req.json();
@@ -33,12 +34,22 @@ export async function POST(req) {
 
     const { interview_id, conversation, userName, userEmail } = body || {};
 
+    console.log(" interview_id:", interview_id);
+    console.log(" userName:", userName);
+    console.log(" userEmail:", userEmail);
+    console.log(
+      " conversation length:",
+      Array.isArray(conversation) ? conversation.length : "not-array"
+    );
     if (!interview_id || !conversation || !userName || !userEmail) {
+      console.warn(" Missing required fields");
+
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
+    console.log(" Fetching interview from Supabase:", interview_id);
 
     // 1. Fetch Interview Data (System data)
     const { data: interview, error: interviewError } = await supabase
@@ -48,12 +59,23 @@ export async function POST(req) {
       .single();
 
     if (interviewError || !interview) {
+      console.error(" Interview fetch failed:", interviewError);
+
       return NextResponse.json(
         { error: "Interview not found" }, 
         { status: 404 });
     }
 
     // 2. Generate Candidate Summary via AI
+
+    const MODELS = [
+  "openai/gpt-oss-20b:free",
+  "nvidia/nemotron-nano-9b-v2:free",
+  "kwaipilot/kat-coder-pro-v1:free",
+  "nvidia/nemotron-nano-12b-vl:free",
+  "x-ai/grok-4.1-fast:free",
+];
+
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: process.env.OPENROUTER_API_KEY,
@@ -63,50 +85,107 @@ export async function POST(req) {
       "{{conversation}}",
       JSON.stringify(conversation)
     );
+    console.log(" AI prompt length:", FINAL_PROMPT.length);
+    console.log(" AI models order:", MODELS);
 
-    let summaryJson = null;
-    let retries = 2;
+   let summaryJson = null;
+let retries = 2;
 
-    while (retries > 0) {
-      const completion = await openai.chat.completions.create({
-        model: "openai/gpt-oss-20b:free",
+while (retries > 0 && !summaryJson) {
+  console.log(" AI attempt, retries left:", retries);
+
+  let completion = null;
+  let lastError = null;
+
+  // 1. Try models in order
+  for (const model of MODELS) {
+    try {
+      console.log("Trying model:", model);
+
+      completion = await openai.chat.completions.create({
+        model,
         messages: [{ role: "user", content: FINAL_PROMPT }],
         max_tokens: 900,
       });
 
-      const content = completion.choices?.[0]?.message?.content || "";
-      
-      try {
-        const parsed = JSON.parse(content.trim());
-        if (
-          parsed.overallFeedback &&
-          typeof parsed.score === "number" &&
-          parsed.score >= 0 &&
-          parsed.score <= 10 &&
-          Array.isArray(parsed.improvements) &&
-          parsed.improvements.length >= 1
-        ) {
-          summaryJson = parsed;
-          break;
-        }
-      } catch (e) {
-        console.error("AI Response Parsing/Validation Failed:", content);
+      if (completion?.choices?.length) {
+        console.log("Model succeeded:", model);
+        break;
       }
-      retries--;
-    }
+    } catch (err) {
+      console.error(`Model failed (${model}):`, err?.status || err?.message);
+      lastError = err;
 
-    if (!summaryJson) {
-      return NextResponse.json(
-        { error: "Failed to generate valid AI summary" },
-        { status: 502 }
-      );
+      if (err?.status === 429) {
+        await new Promise(res => setTimeout(res, 500));
+      }
     }
+  }
+
+  if (!completion) {
+    console.error(" All models failed:", lastError);
+    return NextResponse.json(
+      { error: "All AI models failed", details: lastError?.message },
+      { status: 502 }
+    );
+  }
+
+  // 2. Extract content
+  const content = completion.choices?.[0]?.message?.content || "";
+  console.log("Raw AI content:", content);
+
+  if (!content.trim()) {
+    console.error("Empty AI response");
+    retries--;
+    continue;
+  }
+
+  // 3. Parse + validate JSON
+  try {
+    console.log("Cleaning Ai output")
+const cleaned = content
+  .replace(/```json/gi, "")
+  .replace(/```/g, "")
+  .trim();
+
+          console.log(" Cleaned preview:", cleaned.slice(0, 200));
+
+const parsed = JSON.parse(cleaned);
+        console.log("Parsed keys:", Object.keys(parsed));
+
+
+    if (
+      parsed.overallFeedback &&
+      typeof parsed.score === "number" &&
+      parsed.score >= 0 &&
+      parsed.score <= 10 &&
+      Array.isArray(parsed.improvements) &&
+      parsed.improvements.length >= 1
+    ) {
+      summaryJson = parsed;
+      break;
+    } else {
+      console.warn("AI response failed validation", parsed);
+    }
+  } catch (e) {
+    console.error("AI JSON parse failed:", e.message);
+  }
+
+  retries--;
+}
+
+if (!summaryJson) {
+  return NextResponse.json(
+    { error: "Failed to generate valid AI summary after retries" },
+    { status: 502 }
+  );
+}
 
     // 3. Prepare PDF Content
     const position = interview.jobPosition || "Candidate";
     const date = moment().format("MMMM Do, YYYY");
     const startTime = moment().format("hh:mm A"); // We could pass this from frontend if tracked
-    const durationStr = "15 minutes 30 seconds"; // We should probably pass actual duration
+    const durationStr = interview.duration || "Unknown";
 
        const askedQuestionsRaw = Array.isArray(interview.questionList)
       ? interview.questionList
