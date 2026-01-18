@@ -29,7 +29,7 @@ function Interview() {
     const [interviewData, setInterviewData] = useState();
     const [userName, setUserName] = useState("");
     const [userEmail, setUserEmail] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const { setInterviewInfo } = useContext(InterviewDataContext);
     const router = useRouter();
@@ -39,24 +39,38 @@ function Interview() {
 
         async function GetInterviewDetails() {
             setLoading(true);
+            console.log("Fetching interview details for ID:", interview_id);
             try {
-                let { data: interviews, error } = await supabase
+                // Wrap in timeout to detect connection hangs
+                const fetchPromise = supabase
                     .from('interviews')
                     .select("jobPosition, jobDescription, duration, type")
-                    .eq('interview_id', interview_id)
+                    .eq('interview_id', interview_id);
+
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Supabase request timed out after 10s")), 10000)
+                );
+
+                console.log("Waiting for Supabase response...");
+                const result = await Promise.race([fetchPromise, timeoutPromise]);
+                console.log("Supabase resolved:", result);
+
+                const { data: interviews, error } = result;
 
                 if (error || !interviews || interviews.length === 0) {
+                    console.error("Interview not found or error:", error);
                     toast.error('Incorrect Interview Link');
                     setLoading(false);
                     return;
                 }
 
                 setInterviewData(interviews[0]);
+                console.log("Interview data set successfully");
                 setLoading(false);
             } catch (e) {
-                console.error(e);
+                console.error("GetInterviewDetails Catch Global Error:", e);
                 setLoading(false);
-                toast.error('An error occurred while fetching interview details');
+                toast.error('Connection timeout or error fetching details. Please refresh.');
             }
         }
 

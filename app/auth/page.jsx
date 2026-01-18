@@ -12,12 +12,8 @@ function Login() {
   const router = useRouter()
   const { user } = useUser()
 
-  // ✅ If already logged in → skip auth page
- useEffect(() => {
-    if (user !== undefined && user !== null) {
-      router.replace('/dashboard')
-    }
-  }, [user, router])
+  // No automatic redirect here, allowing users to manually click "Continue with Google"
+  // even if they have an active session, which is useful for account switching.
 
   // Used to Sign In with Google
   const signInWithGoogle = async () => {
@@ -26,6 +22,9 @@ function Login() {
       options: {
         // ✅ Redirect to callback handler, NOT directly to dashboard
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          prompt: 'select_account',
+        },
       },
     })
     if (error) console.log('Error: ', error.message)
@@ -38,14 +37,16 @@ function Login() {
         <div className="flex min-h-screen flex-col">
           {/* Header */}
           <header className="flex w-full items-center justify-between border-b border-slate-200 bg-white/80 dark:bg-slate-900/80 dark:border-slate-800 px-6 py-4 backdrop-blur-md sticky top-0 z-50">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <span className="material-symbols-outlined text-[28px]">smart_toy</span>
-              </div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                AI Recruiter
-              </h2>
-            </div>
+<div className="flex items-center">
+  <Image
+    src="/logo.png"
+    alt="AI Recruiter"
+    width={140}
+    height={32}
+    priority
+  />
+</div>
+
           </header>
           {/* Loading skeleton */}
           <main className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">

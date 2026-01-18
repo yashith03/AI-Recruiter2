@@ -1,5 +1,6 @@
 //app/(main)/interview/[interview_id]/completed/page.jsx
 
+
 "use client"
 
 import React from "react"
@@ -16,13 +17,59 @@ import {
   Download,
   Sparkles,
 } from "lucide-react"
+import { supabase } from "@/services/supabaseClient"
+import moment from "moment"
 
 export default function InterviewComplete() {
   const { interview_id } = useParams()
+  const [loading, setLoading] = React.useState(true)
+  const [feedbackData, setFeedbackData] = React.useState(null)
+  const [pdfReady, setPdfReady] = React.useState(false)
 
-  // Mock data for display - in a real app these typically come from DB or context
-  const currentDate = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  // Fetch feedback data and poll for PDF
+  React.useEffect(() => {
+    if (!interview_id) return
+
+    const checkStatus = async () => {
+      const { data, error } = await supabase
+        .from("interview-feedback")
+        .select("*")
+        .eq("interview_id", interview_id)
+        .maybeSingle()
+
+      if (data) {
+        setFeedbackData(data)
+        if (data.pdf_url) {
+          setPdfReady(true)
+          setLoading(false)
+          return true // stop polling
+        }
+      }
+      return false
+    }
+
+    checkStatus()
+    
+    const interval = setInterval(async () => {
+      const isDone = await checkStatus()
+      if (isDone) clearInterval(interval)
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [interview_id])
+
+  const handleDownload = () => {
+    if (pdfReady) {
+      window.location.href = `/api/interviews/${interview_id}/download-summary`
+    }
+  }
+
+  const currentDate = feedbackData?.interview_date 
+    ? moment(feedbackData.interview_date).format("MMM DD")
+    : moment().format("MMM DD")
   
+  const duration = feedbackData?.duration || "15m 30s"
+
   return (
          <div className="min-h-screen bg-slate-50 flex flex-col font-display">
             {/* Header */}
@@ -60,7 +107,7 @@ export default function InterviewComplete() {
             <p className="text-gray-500 font-medium mb-6">Thank you for completing your interview</p>
             
             <p className="text-gray-600 text-sm leading-relaxed max-w-sm mx-auto mb-8">
-              Your interview has been successfully recorded. Our system is now generating feedback for the recruiter.
+              Your interview has been successfully recorded. {pdfReady ? "Your summary is ready for download." : "Our system is now generating feedback for the recruiter."}
             </p>
 
             {/* Session Stats */}
@@ -73,7 +120,7 @@ export default function InterviewComplete() {
               </div>
               <div className="flex flex-col items-center border-l border-gray-200">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Duration</span>
-                <span className="text-xs font-bold text-gray-900">15m 30s</span>
+                <span className="text-xs font-bold text-gray-900">{duration}</span>
               </div>
               <div className="flex flex-col items-center border-l border-gray-200">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Date</span>
@@ -95,25 +142,35 @@ export default function InterviewComplete() {
               </div>
               
               {/* Step 2: Analyzing */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-blue-100 bg-blue-50/30">
+              <div className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-500 ${pdfReady ? 'border-green-100 bg-green-50/30' : 'border-blue-100 bg-blue-50/30'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-500 ${pdfReady ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                    {pdfReady ? <CheckCircle2 className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
                   </div>
-                  <span className="text-sm font-semibold text-slate-700">Analyzing feedback</span>
+                  <span className="text-sm font-semibold text-slate-700">
+                    {pdfReady ? 'Summary ready' : 'Analyzing feedback'}
+                  </span>
                 </div>
-                <div className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wide">
-                  In Progress
-                </div>
+                {pdfReady ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <div className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wide">
+                    In Progress
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Actions */}
             <div className="w-full space-y-3">
-             
-              
               <button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl transition-colors cursor-not-allowed flex items-center justify-center gap-2"
+                onClick={handleDownload}
+                disabled={!pdfReady}
+                className={`w-full font-semibold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg ${
+                  pdfReady 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 active:scale-[0.98]' 
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                }`}
               >
                 <Download className="w-4 h-4" />
                 Download Interview Summary

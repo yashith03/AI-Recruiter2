@@ -81,10 +81,11 @@ function StartInterview() {
     }
 
 
-const handleCallEnd = async () => {
+    const handleCallEnd = async () => {
       if (hasEndedRef.current) return
       hasEndedRef.current = true
 
+      console.log("Vapi Call Ended - starting processing...");
       toast("Interview Ended")
       setTimerStop(true)
       setCallStarted(false)
@@ -97,6 +98,7 @@ const handleCallEnd = async () => {
         (typeof conversation === "string" && conversation.trim() === "")
 
     if (isEmptyConversation) {
+      console.warn("Conversation is empty - skipping feedback");
       redirectToCompleted()
       return
     }
@@ -124,37 +126,21 @@ const handleCallEnd = async () => {
   // ----------------------------------------------------
   const GenerateFeedback = async () => {
     try {
-      const result = await axios.post("/api/ai-feedback", { conversation })
-      const raw = result.data?.content || ""
-
-      if (!raw) {
-        redirectToCompleted()
-        return
-      }
-
-      let parsed
-      try {
-        parsed = JSON.parse(raw)
-      } catch {
-        parsed = { feedback: raw, recommendation: false }
-      }
-
-      await supabase.from("interview-feedback").insert([
-        {
-          userName: interviewInfo?.userName || "Unknown",
-          userEmail: interviewInfo?.userEmail || "unknown@example.com",
-          interview_id,
-          feedback: parsed.feedback,
-          recommendation: parsed.recommendation || false,
-        },
-      ])
-
-   redirectToCompleted()
-  } catch (err) {
-    console.error("Feedback error:", err)
-   redirectToCompleted()
+      // 🚀 New unified processing: generating candidate summary + PDF + recruiter feedback
+      const result = await axios.post("/api/interviews/process-result", { 
+        interview_id,
+        conversation,
+        userName: interviewInfo?.userName || "Unknown",
+        userEmail: interviewInfo?.userEmail || "unknown@example.com"
+      })
+      
+      console.log("Process Result Success:", result.data);
+      redirectToCompleted()
+    } catch (err) {
+      console.error("Processing error:", err)
+      redirectToCompleted()
+    }
   }
-}
 
   // ----------------------------------------------------
   // START CALL
@@ -199,10 +185,16 @@ const stopInterview = async () => {
   setTimerStop(true)
 
   // 🔑 Safety fallback: never hang forever
-  const forceExitTimeout = setTimeout(() => {
-    console.warn("Force exit: redirecting to completed page")
-    router.replace(`/interview/${interview_id}/completed`)
-  }, 5000)
+  const forceExitTimeout = setTimeout(async () => {
+    if (hasEndedRef.current) return;
+    console.warn("Force exit: Vapi hung, triggering feedback manually");
+    
+    if (conversation && conversation.length > 0) {
+        await GenerateFeedback();
+    } else {
+        router.replace(`/interview/${interview_id}/completed`);
+    }
+  }, 7000)
 
   try {
     if (vapiRef.current) {
@@ -212,7 +204,7 @@ const stopInterview = async () => {
   } catch (err) {
     console.error("Stop interview error:", err)
     clearTimeout(forceExitTimeout)
-    redirectToCompleted()
+    if (!hasEndedRef.current) redirectToCompleted()
   }
 }
 
