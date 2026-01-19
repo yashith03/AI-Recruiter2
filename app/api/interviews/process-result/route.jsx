@@ -1,7 +1,7 @@
 // app/api/interviews/process-result/route.jsx
 
 import { NextResponse } from "next/server";
-import { supabaseServer as supabase } from "@/services/supabaseServer";
+import { getSupabaseServer } from "@/services/supabaseServer";
 import OpenAI from "openai";
 import puppeteer from "puppeteer";
 import { CANDIDATE_SUMMARY_PROMPT } from "@/services/Constants";
@@ -17,6 +17,7 @@ function normalizeQuestion(q) {
 }
 
 export async function POST(req) {
+  const supabase = getSupabaseServer();
   try {
     console.log("▶️ process-result API called");
 
@@ -69,11 +70,11 @@ export async function POST(req) {
     // 2. Generate Candidate Summary via AI
 
     const MODELS = [
-  "openai/gpt-oss-20b:free",
-  "nvidia/nemotron-nano-9b-v2:free",
-  "kwaipilot/kat-coder-pro-v1:free",
-  "nvidia/nemotron-nano-12b-vl:free",
-  "x-ai/grok-4.1-fast:free",
+     "nvidia/nemotron-nano-9b-v2:free",
+      "kwaipilot/kat-coder-pro-v1:free",
+      "nvidia/nemotron-nano-12b-vl:free",
+      "openai/gpt-oss-20b:free",
+      "x-ai/grok-4.1-fast:free",
 ];
 
     const openai = new OpenAI({

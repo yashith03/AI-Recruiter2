@@ -77,10 +77,10 @@ const { jobPosition, jobDescription, duration, type } = body || {};
     });
 
     const models = [
-      "openai/gpt-oss-20b:free",
       "nvidia/nemotron-nano-9b-v2:free",
       "kwaipilot/kat-coder-pro-v1:free",
       "nvidia/nemotron-nano-12b-vl:free",
+      "openai/gpt-oss-20b:free",
       "x-ai/grok-4.1-fast:free",
     ];
 
