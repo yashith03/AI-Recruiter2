@@ -70,13 +70,14 @@ function Login() {
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white antialiased transition-colors duration-200">
       <div className="flex min-h-screen flex-col">
         <header className="flex w-full items-center justify-between border-b border-slate-200 bg-white/80 dark:bg-slate-900/80 dark:border-slate-800 px-6 py-4 backdrop-blur-md sticky top-0 z-50">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <span className="material-symbols-outlined text-[28px]">smart_toy</span>
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              AI Recruiter
-            </h2>
+          <div className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="AI Recruiter"
+              width={140}
+              height={32}
+              priority
+            />
           </div>
         </header>
 

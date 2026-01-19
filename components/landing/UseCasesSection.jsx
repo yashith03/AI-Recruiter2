@@ -6,7 +6,7 @@ function CaseCard({ title }) {
     <div className="bg-white border border-slate-100 rounded-2xl p-8 hover:shadow-lg transition-all hover:-translate-y-1">
       <h3 className="font-bold text-xl mb-3 text-slate-900">{title}</h3>
       <p className="text-sm text-slate-600 leading-relaxed italic">
-        "Built to scale interviews without extra effort, ensuring quality is never compromised."
+        &quot;Built to scale interviews without extra effort, ensuring quality is never compromised.&quot;
       </p>
     </div>
   )
