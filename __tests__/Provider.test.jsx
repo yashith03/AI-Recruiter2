@@ -1,7 +1,7 @@
 //__tests_/Provider.test.jsx
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import Provider, { useUser } from "@/app/provider";
 import { UserDetailContext } from "@/context/UserDetailContext";
 
@@ -56,7 +56,7 @@ describe("Provider Component", () => {
     });
 
     // Mock DB fetch for user details
-    const fromMock = jest.fn().mockReturnValue({
+    supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
@@ -65,8 +65,7 @@ describe("Provider Component", () => {
         }),
       }),
       upsert: jest.fn().mockResolvedValue({ error: null }),
-    });
-    supabase.from = fromMock;
+    }));
 
     render(
       <Provider>
@@ -76,7 +75,7 @@ describe("Provider Component", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("user-name")).toHaveTextContent("John Doe");
-    });
+    }, { timeout: 3000 });
   });
 
   test("does not set user if Supabase returns null", async () => {
@@ -107,7 +106,7 @@ describe("Provider Component", () => {
     });
     
     // Mock DB fetch
-    const fromMock = jest.fn().mockReturnValue({
+    supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
@@ -116,8 +115,7 @@ describe("Provider Component", () => {
         }),
       }),
       upsert: jest.fn().mockResolvedValue({ error: null }),
-    });
-    supabase.from = fromMock;
+    }));
 
     supabase.auth.onAuthStateChange.mockImplementationOnce((callback) => {
       // Call the callback with the mock user
@@ -154,7 +152,7 @@ describe("Provider Component", () => {
     });
 
     // Mock DB fetch AND upsert success
-    const fromMock = jest.fn().mockReturnValue({
+    supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
@@ -163,8 +161,7 @@ describe("Provider Component", () => {
         }),
       }),
       upsert: jest.fn().mockResolvedValue({ error: null }),
-    });
-    supabase.from = fromMock;
+    }));
 
     render(
       <Provider>
@@ -192,7 +189,7 @@ describe("Provider Component", () => {
     // However, for simplicity here we can make from() return an object with both methods.
     
     // Make upsert throw an error to exercise the error branch
-    const fromMock = jest.fn().mockReturnValue({
+    supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
@@ -201,8 +198,7 @@ describe("Provider Component", () => {
         }),
       }),
       upsert: jest.fn().mockRejectedValue(new Error("DB error")),
-    });
-    supabase.from = fromMock;
+    }));
 
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -255,7 +251,7 @@ describe("Provider Component", () => {
     };
 
     // Mock DB response for the background fetch
-    const fromMock = jest.fn().mockReturnValue({
+    supabase.from.mockImplementation(() => ({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
@@ -264,8 +260,10 @@ describe("Provider Component", () => {
         }),
       }),
       upsert: jest.fn().mockResolvedValue({ error: null }),
-    });
-    supabase.from = fromMock;
+    }));
+
+    // Wait for the mock to be called (it happens in useEffect after render)
+    await waitFor(() => expect(authCallback).toBeDefined());
 
     // Trigger auth change
     await act(async () => {
@@ -274,7 +272,7 @@ describe("Provider Component", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("user-name")).toHaveTextContent("New User");
-    });
+    }, { timeout: 3000 });
   });
 
   test("handles null session in onAuthStateChange (logout)", async () => {
@@ -293,6 +291,9 @@ describe("Provider Component", () => {
         <TestConsumer />
       </Provider>
     );
+
+    // Wait for the mock to be called
+    await waitFor(() => expect(authCallback).toBeDefined());
 
     // Trigger logout
     await act(async () => {

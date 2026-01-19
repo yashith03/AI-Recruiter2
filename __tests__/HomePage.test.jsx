@@ -17,12 +17,19 @@ jest.mock("next/link", () => {
 describe("Home Page", () => {
   test("renders without crashing", () => {
     render(<Page />);
+    // Navbar contains "AI Recruiter"
     expect(screen.getAllByText(/AI Recruiter/i)[0]).toBeInTheDocument();
+    
+    // Hero contains "Hire Faster with AI-Powered Interviews"
+    expect(screen.getByText(/Hire Faster with/i)).toBeInTheDocument();
   });
 
   test("matches basic structure", () => {
     const { container } = render(<Page />);
-    expect(container.querySelector("div")).toBeInTheDocument();
-    expect(container.querySelector("h2")).toHaveTextContent("AI Recruiter");
+    expect(container.querySelector("main")).toBeInTheDocument();
+    // Problem section has an h2
+    expect(screen.getByText(/Why traditional hiring fails/i)).toBeInTheDocument();
+    // Solution section has an h2
+    expect(screen.getByText(/Your autonomous AI recruiter/i)).toBeInTheDocument();
   });
 });

@@ -48,6 +48,8 @@ describe("POST /api/ai-model", () => {
       json: async () => ({
         jobPosition: "Developer",
         jobDescription: "Codes stuff",
+        duration: "15 min",
+        type: "Technical",
       }),
     };
   });
@@ -55,6 +57,8 @@ describe("POST /api/ai-model", () => {
   test("returns 400 if missing jobPosition", async () => {
     mockRequest.json = async () => ({
       jobDescription: "Codes stuff",
+      duration: "15 min",
+      type: "Technical",
     });
 
     const response = await POST(mockRequest);
@@ -65,6 +69,8 @@ describe("POST /api/ai-model", () => {
   test("returns 400 if missing jobDescription", async () => {
     mockRequest.json = async () => ({
       jobPosition: "Dev",
+      duration: "15 min",
+      type: "Technical",
     });
 
     const response = await POST(mockRequest);
@@ -97,7 +103,7 @@ describe("POST /api/ai-model", () => {
 
     const response = await POST(mockRequest);
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(mockQuestions);
+    expect(response.body).toEqual({ interviewQuestions: mockQuestions.interviewQuestions });
   });
 
   test("handles empty or invalid AI response gracefully", async () => {
@@ -108,10 +114,6 @@ describe("POST /api/ai-model", () => {
     });
 
     const response = await POST(mockRequest);
-    // The route code returns empty array if parsing fails (extractJSON catches error)
-    // Wait, looking at the route, it returns `parsed.interviewQuestions` which might be undefined?
-    // Route says: `interviewQuestions: parsed.interviewQuestions || []`
-    
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ interviewQuestions: [] });
   });
@@ -122,7 +124,7 @@ describe("POST /api/ai-model", () => {
     // Second call succeeds
     mockCreate.mockResolvedValueOnce({
       choices: [
-         { message: { content: `{"interviewQuestions": []}` } }
+        { message: { content: `{"interviewQuestions": []}` } }
       ]
     });
 
@@ -131,9 +133,6 @@ describe("POST /api/ai-model", () => {
   });
 
   test("returns 500 if all models fail", async () => {
-    // All fails
-    mockCreate.mockRejectedValue({ status: 500 }); // simulate permanent fail for all attempts logic (ignoring the complexity of exact loop count for brevity, mocking rejection always)
-    
     // Actually the loop has 5 models.
     for(let i=0; i<5; i++) {
         mockCreate.mockRejectedValueOnce(new Error("Fail"));

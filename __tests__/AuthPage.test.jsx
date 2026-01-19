@@ -30,23 +30,19 @@ describe("Login Page", () => {
     jest.clearAllMocks();
   });
 
-  test("renders logo icon, header, texts, and button", () => {
+  test("renders logo icon, header, texts, and button", async () => {
     render(
       <Provider>
         <Login />
       </Provider>
     );
 
-    expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
-    expect(
-      screen.getByText("Welcome to AI Recruiter")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Continue with Google/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /continue with google/i })
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
+      expect(screen.getByText("Welcome to AI Recruiter")).toBeInTheDocument();
+      expect(screen.getByText(/Continue with Google/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /continue with google/i })).toBeInTheDocument();
+    });
   });
 
   test("calls supabase.auth.signInWithOAuth when login button is clicked", async () => {
@@ -58,7 +54,7 @@ describe("Login Page", () => {
       </Provider>
     );
 
-    const loginButton = screen.getByRole("button", { name: /continue with google/i });
+    const loginButton = await screen.findByRole("button", { name: /continue with google/i });
     fireEvent.click(loginButton);
 
     await waitFor(() => {
@@ -66,6 +62,9 @@ describe("Login Page", () => {
         provider: "google",
         options: {
           redirectTo: expect.stringContaining("/auth/callback"),
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
     });
@@ -83,7 +82,7 @@ describe("Login Page", () => {
       </Provider>
     );
 
-    const loginButton = screen.getByRole("button", { name: /continue with google/i });
+    const loginButton = await screen.findByRole("button", { name: /continue with google/i });
     fireEvent.click(loginButton);
 
     await waitFor(() => {

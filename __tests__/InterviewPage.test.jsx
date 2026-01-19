@@ -121,7 +121,7 @@ describe('Interview page', () => {
 
     // When an error occurs during fetching, toast.error is called
     await waitFor(() => {
-      expect(toastMock.error).toHaveBeenCalledWith(expect.stringContaining('error occurred'));
+      expect(toastMock.error).toHaveBeenCalledWith(expect.stringContaining('error fetching details'));
     });
 
     consoleSpy.mockRestore();
