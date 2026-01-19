@@ -10,17 +10,16 @@ jobs:
   checks:
     runs-on: ubuntu-latest
 
-    # ✅ Add dummy Supabase environment variables for build-time safety
     env:
       NEXT_PUBLIC_SUPABASE_URL: "https://mock-project.supabase.co"
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key"
+      SUPABASE_SERVICE_ROLE_KEY: "mock-service-role-key"
+      OPENROUTER_API_KEY: "mock-openrouter-key"
       NODE_ENV: "test"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
