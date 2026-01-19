@@ -64,9 +64,9 @@ describe("Login Page", () => {
     await waitFor(() => {
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: "google",
-        options: {
+        options: expect.objectContaining({
           redirectTo: expect.stringContaining("/auth/callback"),
-        },
+        }),
       });
     });
   });

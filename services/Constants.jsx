@@ -122,4 +122,8 @@ Rules:
 
 Return only valid JSON, no extra text.
 `
-;
+
+export const CANDIDATE_SUMMARY_PROMPT = `
+{{conversation}}
+Based on the above conversation, provide a concise summary of the candidate's performance, highlighting key strengths and areas for improvement.
+`;

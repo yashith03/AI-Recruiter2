@@ -1,7 +1,7 @@
 //__tests_/Provider.test.jsx
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import Provider, { useUser } from "@/app/provider";
 import { UserDetailContext } from "@/context/UserDetailContext";
 
@@ -249,6 +249,11 @@ describe("Provider Component", () => {
       </Provider>
     );
 
+    // Wait for initial load to settle
+    await waitFor(() => {
+      expect(screen.getByTestId("user-name")).toHaveTextContent("No user");
+    });
+
     const mockSessionUser = {
       email: "new@test.com",
       user_metadata: { name: "new user", picture: "new.png" },
@@ -285,7 +290,17 @@ describe("Provider Component", () => {
     });
 
     supabase.auth.getSession.mockResolvedValue({ 
-      data: { session: { user: { email: "test@test.com" } } } 
+      data: { session: { user: { email: "test@test.com", user_metadata: { name: "Test User" } } } } 
+    });
+
+    // Mock DB fetch preventing crash
+    supabase.from = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({ data: null })
+        })
+      }),
+      upsert: jest.fn().mockResolvedValue({ error: null }),
     });
 
     render(
@@ -293,6 +308,11 @@ describe("Provider Component", () => {
         <TestConsumer />
       </Provider>
     );
+
+    // Initial state check
+    await waitFor(() => {
+      expect(screen.getByTestId("user-name")).toHaveTextContent("Test User");
+    });
 
     // Trigger logout
     await act(async () => {

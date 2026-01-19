@@ -74,10 +74,13 @@ function Provider({ children }) {
         .single();
 
       if (userData) {
-        setUser(prev => ({
-          ...prev,
-          ...userData, // Spread all fields including credits, phone, job, company, etc.
-        }));
+        setUser(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            ...userData, // Spread all fields including credits, phone, job, company, etc.
+          }
+        });
       }
 
       saveUserToDB(sessionUser);
@@ -112,10 +115,13 @@ function Provider({ children }) {
           .single();
 
         if (userData) {
-          setUser(prev => ({
-            ...prev,
-            ...userData, // Spread all fields including credits, phone, job, company, etc.
-          }));
+          setUser(prev => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              ...userData, // Spread all fields including credits, phone, job, company, etc.
+            }
+          });
         }
 
         saveUserToDB(sessionUser);

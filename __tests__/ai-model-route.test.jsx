@@ -48,6 +48,8 @@ describe("POST /api/ai-model", () => {
       json: async () => ({
         jobPosition: "Developer",
         jobDescription: "Codes stuff",
+        duration: "30 Min",
+        type: "Technical",
       }),
     };
   });

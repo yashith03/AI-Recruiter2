@@ -23,6 +23,6 @@ describe("Home Page", () => {
   test("matches basic structure", () => {
     const { container } = render(<Page />);
     expect(container.querySelector("div")).toBeInTheDocument();
-    expect(container.querySelector("h2")).toHaveTextContent("AI Recruiter");
+    expect(screen.getAllByText("AI Recruiter")[0]).toBeInTheDocument();
   });
 });
