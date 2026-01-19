@@ -56,21 +56,18 @@ function Provider({ children }) {
      */
     const loadUser = async () => {
       try {
-        console.log("AuthProvider: Loading user...");
         // 1. Use getSession for instant UI response (reads from local storage)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) throw sessionError;
 
         const sessionUser = session?.user;
-        console.log("AuthProvider: Session user:", sessionUser ? "Found" : "Not Found");
 
         if (!sessionUser) {
           setUser(null);
           return;
         }
 
-        // 2. Set user immediately with data from session metadata
         const basicUser = {
           name: formatName(sessionUser.user_metadata?.name),
           email: sessionUser.email,
@@ -98,7 +95,6 @@ function Provider({ children }) {
 
         await saveUserToDB(sessionUser);
       } catch (err) {
-        console.error("AuthProvider: Critical load error:", err);
         setUser(null); // Fallback to not-logged-in state so UI shows
       }
     };

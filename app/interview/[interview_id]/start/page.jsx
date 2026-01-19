@@ -34,6 +34,7 @@ function StartInterview() {
   const callStartedRef = useRef(false)
   const timerStartedRef = useRef(false)
   const hasEndedRef = useRef(false)
+  const conversationRef = useRef([])
 
   const [conversation, setConversation] = useState([])
   const [callStarted, setCallStarted] = useState(false)
@@ -60,6 +61,7 @@ function StartInterview() {
     const handleMessage = (msg) => {
       if (msg?.conversation) {
         setConversation(msg.conversation)
+        conversationRef.current = msg.conversation
       }
     }
 
@@ -92,10 +94,12 @@ function StartInterview() {
       setLoading(true)
       callStartedRef.current = false
 
+      const currentConvo = conversationRef.current
+
       const isEmptyConversation =
-        !conversation ||
-        (Array.isArray(conversation) && conversation.length === 0) ||
-        (typeof conversation === "string" && conversation.trim() === "")
+        !currentConvo ||
+        (Array.isArray(currentConvo) && currentConvo.length === 0) ||
+        (typeof currentConvo === "string" && currentConvo.trim() === "")
 
     if (isEmptyConversation) {
       console.warn("Conversation is empty - skipping feedback");
@@ -129,7 +133,7 @@ function StartInterview() {
       // 🚀 New unified processing: generating candidate summary + PDF + recruiter feedback
       const result = await axios.post("/api/interviews/process-result", { 
         interview_id,
-        conversation,
+        conversation: conversationRef.current,
         userName: interviewInfo?.userName || "Unknown",
         userEmail: interviewInfo?.userEmail || "unknown@example.com"
       })
@@ -189,7 +193,8 @@ const stopInterview = async () => {
     if (hasEndedRef.current) return;
     console.warn("Force exit: Vapi hung, triggering feedback manually");
     
-    if (conversation && conversation.length > 0) {
+    const currentConvo = conversationRef.current
+    if (currentConvo && currentConvo.length > 0) {
         await GenerateFeedback();
     } else {
         router.replace(`/interview/${interview_id}/completed`);

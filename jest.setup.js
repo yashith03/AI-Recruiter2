@@ -40,9 +40,7 @@ jest.mock("@/services/supabaseClient", () => ({
       getSession: jest.fn().mockResolvedValue({
         data: { session: null },
       }),
-      onAuthStateChange: jest.fn((callback) => {
-        // Simulate no active session
-        callback(null, null);
+      onAuthStateChange: jest.fn(() => {
         return {
           data: {
             subscription: {
@@ -53,10 +51,17 @@ jest.mock("@/services/supabaseClient", () => ({
       }),
       signInWithOAuth: jest.fn().mockResolvedValue({ error: null }),
     },
-    from: jest.fn(() => ({
-      upsert: jest.fn().mockResolvedValue({ error: null }),
-      select: jest.fn().mockResolvedValue({ data: [], error: null }),
-    })),
+    from: jest.fn(() => {
+      const mock = {
+        upsert: jest.fn().mockResolvedValue({ error: null }),
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      // Make the mock object itself a Promise-like for cases where it's awaited directly
+      // but usually we await the result of the last chainable method.
+      return mock;
+    }),
   },
 }));
 

@@ -1,0 +1,66 @@
+  console.log
+    AuthProvider: Loading user...
+
+      at log (app/provider.jsx:59:17)
+
+  console.log
+    AuthProvider: Session user: Not Found
+
+      at log (app/provider.jsx:66:17)
+
+FAIL __tests__/Provider.test.jsx
+  Provider Component
+    ?? updates user data on auth state change (login) (3092 ms)
+    ??? skipped renders children correctly
+    ??? skipped calls supabase.auth.getSession on mount
+    ??? skipped sets and formats user correctly when Supabase returns data
+    ??? skipped does not set user if Supabase returns null
+    ??? skipped provides context with user and setUser
+    ??? skipped covers success branch of saveUserToDB
+    ??? skipped logs error when saving user to DB returns error
+    ??? skipped handles auth loading state correctly
+    ??? skipped handles null session in onAuthStateChange (logout)
+System.Management.Automation.RemoteException
+  ??? Provider Component ??? updates user data on auth state change (login)
+System.Management.Automation.RemoteException
+    expect(element).toHaveTextContent()
+System.Management.Automation.RemoteException
+    Expected element to have text content:
+      New User
+    Received:
+System.Management.Automation.RemoteException
+System.Management.Automation.RemoteException
+    Ignored nodes: comments, script, style
+    [36m<html[39m
+      [33mclass[39m=[32m"light"[39m
+      [33mstyle[39m=[32m"color-scheme: light;"[39m
+    [36m>[39m
+      [36m<head />[39m
+      [36m<body>[39m
+        [36m<div>[39m
+          [36m<div[39m
+            [33mdata-testid[39m=[32m"user-name"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</body>[39m
+    [36m</html>[39m
+System.Management.Automation.RemoteException
+    [0m [90m 269 |[39m
+     [90m 270 |[39m     [36mawait[39m waitFor(() [33m=>[39m {
+    [31m[1m>[22m[39m[90m 271 |[39m       expect(screen[33m.[39mgetByTestId([32m"user-name"[39m))[33m.[39mtoHaveTextContent([32m"New User"[39m)[33m;[39m
+     [90m     |[39m                                               [31m[1m^[22m[39m
+     [90m 272 |[39m     }[33m,[39m { timeout[33m:[39m [35m3000[39m })[33m;[39m
+     [90m 273 |[39m   })[33m;[39m
+     [90m 274 |[39m[0m
+System.Management.Automation.RemoteException
+      at toHaveTextContent (__tests__/Provider.test.jsx:271:47)
+      at runWithExpensiveErrorDiagnosticsDisabled (node_modules/@testing-library/dom/dist/config.js:47:12)
+      at checkCallback (node_modules/@testing-library/dom/dist/wait-for.js:124:77)
+      at checkRealTimersCallback (node_modules/@testing-library/dom/dist/wait-for.js:118:16)
+      at Timeout.task [as _onTimeout] (node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+System.Management.Automation.RemoteException
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 9 skipped, 10 total
+Snapshots:   0 total
+Time:        4.227 s
+Ran all test suites matching __tests__/Provider.test.jsx with tests matching "updates user data on auth state change".

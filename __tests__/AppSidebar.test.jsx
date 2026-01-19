@@ -64,7 +64,7 @@ describe("AppSidebar", () => {
 
   test("renders logo and create button", () => {
     renderWithProvider("/home");
-    expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
+    expect(screen.getByAltText("AI Recruiter Logo")).toBeInTheDocument();
     expect(screen.getByText("Create New Interview")).toBeInTheDocument();
   });
 

@@ -22,11 +22,9 @@ jest.mock("@/app/provider", () => ({
 jest.mock("@/services/supabaseClient", () => ({
   supabase: {
     from: jest.fn(() => ({
-      insert: jest.fn(() => ({
-        select: jest.fn().mockResolvedValue({
-          data: [{ interview_id: "123" }],
-          error: null,
-        }),
+      insert: jest.fn(() => Promise.resolve({
+        data: [{ interview_id: "123" }],
+        error: null,
       })),
       update: jest.fn(() => ({
         eq: jest.fn().mockResolvedValue({ error: null }),
@@ -92,11 +90,9 @@ describe("QuestionList Component", () => {
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     supabase.from.mockImplementationOnce(() => ({
-      insert: jest.fn(() => ({
-        select: jest.fn().mockResolvedValue({
-          data: null,
-          error: { message: "DB failure" },
-        }),
+      insert: jest.fn(() => Promise.resolve({
+        data: null,
+        error: { message: "DB failure" },
       })),
     }));
 
