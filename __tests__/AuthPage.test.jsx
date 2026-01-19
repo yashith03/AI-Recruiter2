@@ -38,7 +38,7 @@ describe("Login Page", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("AI Recruiter")).toBeInTheDocument();
+      expect(screen.getByAltText("AI Recruiter")).toBeInTheDocument();
       expect(screen.getByText("Welcome to AI Recruiter")).toBeInTheDocument();
       expect(screen.getByText(/Continue with Google/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /continue with google/i })).toBeInTheDocument();
