@@ -67,6 +67,12 @@ function CreateInterview() {
         body: JSON.stringify(formData),
       })
 
+      if (!result.ok) {
+        const errorText = await result.text();
+        console.error("AI API failed:", errorText);
+        throw new Error("AI generation failed or returned 500");
+      }
+
       const payload = await result.json()
       console.log("AI API payload:", payload)
 
@@ -101,8 +107,8 @@ function CreateInterview() {
         toast.error("Failed to generate questions. Please try again.")
       }
     } catch (e) {
-      console.error(e)
-      toast.error("Server is busy, please try again later.")
+      console.error("AI Generation Error:", e)
+      toast.error("All FREE models failed, rate-limited, or returned invalid data. Please wait 10s and try again.")
     } finally {
       setLoading(false)
     }
