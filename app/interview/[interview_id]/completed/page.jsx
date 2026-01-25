@@ -17,7 +17,6 @@ import {
   Download,
   Sparkles,
 } from "lucide-react"
-import { supabase } from "@/services/supabaseClient"
 import moment from "moment"
 
 export default function InterviewComplete() {
@@ -31,21 +30,25 @@ export default function InterviewComplete() {
     if (!interview_id) return
 
     const checkStatus = async () => {
-      const { data, error } = await supabase
-        .from("interview-feedback")
-        .select("*")
-        .eq("interview_id", interview_id)
-        .maybeSingle()
+      try {
+        const response = await fetch(`/api/interviews/${interview_id}/feedback`);
+        if (!response.ok) return false;
 
-      if (data) {
-        setFeedbackData(data)
-        if (data.pdf_url) {
-          setPdfReady(true)
-          setLoading(false)
-          return true // stop polling
+        const data = await response.json();
+
+        if (data) {
+          setFeedbackData(data)
+          if (data.pdf_url) {
+            setPdfReady(true)
+            setLoading(false)
+            return true // stop polling
+          }
         }
+        return false
+      } catch (err) {
+        console.error("CheckStatus Error:", err);
+        return false;
       }
-      return false
     }
 
     checkStatus()

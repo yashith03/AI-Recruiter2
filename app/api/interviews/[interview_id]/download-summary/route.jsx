@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/services/supabaseClient";
 export async function GET(req, { params }) {
   try {
-    const { interview_id } = params;
+    const { interview_id } = await params;
     
     // Server-side environment check
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

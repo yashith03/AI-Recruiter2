@@ -89,6 +89,8 @@ Format:
 }
 
 The goal is to create a structured, relevant, and time-optimized interview plan for a {{jobTitle}} role.
+
+IMPORTANT: Respond ONLY in valid JSON. Do not include any explanations, markdown backticks, or extra text.
 `;
 
 export const CANDIDATE_SUMMARY_PROMPT = `
@@ -114,6 +116,8 @@ Rules:
 - Avoid harsh or negative language.
 - Do not include emojis.
 - Return only the JSON object, no extra text.
+
+IMPORTANT: Respond ONLY in valid JSON. Do not include any explanations, markdown backticks, or extra text.
 `;
 
 export const FEEDBACK_PROMPT = `
