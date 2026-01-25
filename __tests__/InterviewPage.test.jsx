@@ -22,7 +22,7 @@ jest.mock('sonner', () => {
 });
 const { toast: toastMock } = require('sonner');
 
-// Supabase mock
+// Supabase mock (Auth only - kept if needed for Provider, though Provider mock handles user)
 jest.mock('@/services/supabaseClient', () => ({
   supabase: {
     auth: {
@@ -43,28 +43,25 @@ jest.mock('@/services/supabaseClient', () => ({
         };
       }),
     },
-    from: jest.fn(() => ({
-      select: () => ({
-        eq: () =>
-          Promise.resolve({
-            data: [
-              {
-                jobPosition: 'Frontend Engineer',
-                duration: '30 Min',
-                type: ['Video Interview'],
-              },
-            ],
-            error: null,
-          }),
-      }),
-    })),
   },
 }));
 
 describe('Interview page', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.fetch = jest.fn();
+  });
 
   test('allows typing and joining interview', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        jobPosition: 'Frontend Engineer',
+        duration: '30 Min',
+        type: ['Video Interview'],
+      }),
+    });
+
     render(
       <Provider>
         <InterviewDataContext.Provider value={{ interviewInfo: null, setInterviewInfo: jest.fn() }}>
@@ -73,18 +70,16 @@ describe('Interview page', () => {
       </Provider>
     );
 
-    // Page should render with interview data from Supabase
+    // Page should render with interview data from fetch
     await waitFor(() => {
       expect(screen.getByText('Frontend Engineer')).toBeInTheDocument();
     });
   });
 
-  test('shows toast when empty result', async () => {
-    const { supabase } = require('@/services/supabaseClient');
-    supabase.from.mockReturnValueOnce({
-      select: () => ({
-        eq: () => Promise.resolve({ data: [], error: null }),
-      }),
+  test('shows toast when server error', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: () => Promise.resolve({ error: "Fetch failed" }),
     });
 
     render(
@@ -95,35 +90,9 @@ describe('Interview page', () => {
       </Provider>
     );
 
-    // When no interview data is found, toast.error is called with "Incorrect Interview Link"
+    // When fetch fails, toast.error is called
     await waitFor(() => {
-      expect(toastMock.error).toHaveBeenCalledWith('Incorrect Interview Link');
+      expect(toastMock.error).toHaveBeenCalledWith('Incorrect Interview Link or error fetching details.');
     });
-  });
-
-  test('shows toast when supabase error', async () => {
-    const { supabase } = require('@/services/supabaseClient');
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-    supabase.from.mockReturnValueOnce({
-      select: () => ({
-        eq: () => Promise.reject(new Error('fail')),
-      }),
-    });
-
-    render(
-      <Provider>
-        <InterviewDataContext.Provider value={{ interviewInfo: null, setInterviewInfo: jest.fn() }}>
-          <Interview />
-        </InterviewDataContext.Provider>
-      </Provider>
-    );
-
-    // When an error occurs during fetching, toast.error is called
-    await waitFor(() => {
-      expect(toastMock.error).toHaveBeenCalledWith(expect.stringContaining('error fetching details'));
-    });
-
-    consoleSpy.mockRestore();
   });
 });

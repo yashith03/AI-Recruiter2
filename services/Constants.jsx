@@ -102,7 +102,6 @@ Conversation:
 Return only valid JSON with the following structure:
 {
   "overallFeedback": "One professional paragraph (3-5 sentences) summarizing the interview performance in a neutral, constructive, and supportive tone. Do not include hiring decisions or internal scoring details.",
-  "score": 7.5,
   "improvements": [
     "Actionable improvement point 1",
     "Actionable improvement point 2",
@@ -111,7 +110,6 @@ Return only valid JSON with the following structure:
 }
 
 Rules:
-- score must be a number between 0 and 10 with maximum one decimal place.
 - improvements must contain 3 to 5 actionable and encouraging bullet points.
 - Avoid harsh or negative language.
 - Do not include emojis.
@@ -122,35 +120,32 @@ IMPORTANT: Respond ONLY in valid JSON. Do not include any explanations, markdown
 
 export const FEEDBACK_PROMPT = `
 {{conversation}}
-Based on the above interview conversation between assistant and user,
-evaluate the candidate's performance.
 
-Return a JSON object with this exact structure and property names:
+Evaluate the candidate's interview performance.
+
+Return ONLY valid JSON in the following structure:
 
 {
-  "feedback": {
-    "overallScore": 7,
-
-    "rating": {
-      "technicalSkills": 5,   
-      "communication": 6,
-      "problemSolving": 4,
-      "experience": 7         
-    },
-
-    "summary": " ",<in 3 lines>
-    "Recommendation": "Yes",   
-    "RecommendationMsg": "Short sentence explaining whether to hire or not." 
-  }
+  "score": 7.5,
+  "rating": {
+    "technicalSkills": 5,
+    "communication": 6,
+    "problemSolving": 4,
+    "experience": 7
+  },
+  "summary": "The candidate showed decent experience and communication skills, but had weaknesses in problem-solving and technical depth.",
+  "recommendation": "Not Recommended",
+  "recommendationMsg": "The candidate may need more technical training before being considered for hire."
 }
 
 Rules:
-- overallScore is a number from 0 to 10.  
-- Each rating field is a number from 0 to 10.
-- summary must be an array of exactly 3 short sentences. 
-- Recommendation must be either "Yes" or "No".
-- RecommendationMsg is one short sentence explaining the decision.
+- score must be a number between 0 and 10 (max 1 decimal).
+- rating values must be numbers between 0 and 10.
+- summary must be ONE paragraph (2–3 sentences).
+- recommendation must be exactly "Recommended" or "Not Recommended".
+- recommendationMsg must be ONE sentence.
+- Do NOT include extra text, markdown, or explanations.
 
-Return only valid JSON, no extra text.
-`
+IMPORTANT: Return ONLY the JSON object.
+`;
 ;
