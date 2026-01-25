@@ -15,6 +15,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key"
       SUPABASE_SERVICE_ROLE_KEY: "mock-service-role-key"
       OPENROUTER_API_KEY: "mock-openrouter-key"
+      GROQ_API_KEY: "mock-groq-key"
+      NVIDIA_API_KEY: "mock-nvidia-key"
       NODE_ENV: "test"
 
     steps:
