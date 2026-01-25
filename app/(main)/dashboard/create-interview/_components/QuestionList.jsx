@@ -51,40 +51,42 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
       });
 
       // Wrap supabase call in a timeout to detect hangs
-      const insertPromise = supabase
-        .from("interviews")
-        .insert([
-          {
-            jobPosition: formData.jobPosition,
-            jobDescription: formData.jobDescription,
-            duration: formData.duration,
-            type: Array.isArray(formData.type)
-              ? formData.type.join(", ")
-              : formData.type,
-            questionList,
-            userEmail: user.email,
-            interview_id,
-          },
-        ]);
+      console.log("Starting Server-side save with payload...");
+
+      // Call our new API route instead of inserting directly from client
+      const response = await fetch("/api/interviews/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobPosition: formData.jobPosition,
+          jobDescription: formData.jobDescription,
+          duration: formData.duration,
+          type: Array.isArray(formData.type)
+            ? formData.type.join(", ")
+            : formData.type,
+          questionList,
+          userEmail: user.email,
+          interview_id,
+        }),
+      });
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Supabase insert timeout after 10s")), 20000)
+        setTimeout(() => reject(new Error("Save operation timeout after 60s")), 60000)
       );
 
-      console.log("Waiting for Supabase response (without .select())...");
-      const result = await Promise.race([insertPromise, timeoutPromise]);
-      console.log("Supabase promise resolved!", result);
+      console.log("Waiting for Server response...");
+      const result = await Promise.race([
+        response.json().then(data => ({ response, data })),
+        timeoutPromise
+      ]);
+      
+      console.log("Server response received!");
 
-      const { data, error } = result;
-
-      if (error) {
-        console.error("Supabase insert error returned:", error)
-        toast.error("Failed to save interview: " + (error.message || "Unknown error"))
-        setSaving(false)
-        return
+      if (!result.response.ok) {
+        throw new Error(result.data.error || "Failed to save interview");
       }
 
-      console.log("Supabase insert success. Result:", result);
+      console.log("Server save success.");
       toast.success("Interview created successfully!")
       setSaving(false)
       console.log("Calling onCreateLink with ID:", interview_id);
@@ -92,7 +94,11 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
       
     } catch (err) {
       console.error("onFinish Catch Global Error:", err);
-      toast.error("An unexpected error occurred while saving: " + err.message);
+      const isTimeout = err.message.includes("timeout");
+      toast.error(isTimeout 
+        ? "The database is taking too long to respond (cold start). Please try again in a few seconds." 
+        : "An unexpected error occurred while saving: " + err.message
+      );
       setSaving(false);
     }
   }

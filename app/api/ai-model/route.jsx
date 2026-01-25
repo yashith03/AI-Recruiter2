@@ -9,25 +9,27 @@ import { OpenAI } from "openai";
 // -------------------------------------------
 function extractJSON(output) {
   try {
+    // 1. Remove common markdown artifacts
     let cleaned = output
       .replace(/```json/gi, "")
       .replace(/```/g, "")
       .trim();
 
-    const firstBrace = cleaned.indexOf("{");
-    if (firstBrace !== -1) {
-      cleaned = cleaned.slice(firstBrace);
+    // 2. Find the first '{' and last '}' to isolate the JSON object
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+
+    if (start === -1 || end === -1 || end < start) {
+      console.warn("No JSON object boundaries found in AI output.");
+      return {};
     }
 
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (lastBrace !== -1) {
-      cleaned = cleaned.slice(0, lastBrace + 1);
-    }
+    cleaned = cleaned.substring(start, end + 1);
 
-const parsed = JSON.parse(cleaned);
-return typeof parsed === "object" && parsed !== null ? parsed : {};
+    const parsed = JSON.parse(cleaned);
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
   } catch (err) {
-    console.error("JSON parse failed:", err);
+    console.error("extractJSON failed to parse:", err.message);
     return {};
   }
 }
@@ -61,12 +63,12 @@ const { jobPosition, jobDescription, duration, type } = body || {};
       );
     }
 
-    // Build prompt correctly
+    // Build prompt correctly - use replaceAll to catch all instances
     const FINAL_PROMPT = QUESTIONS_PROMPT
-      .replace("{{jobTitle}}", jobPosition)
-      .replace("{{jobDescription}}", jobDescription)
-      .replace("{{duration}}", duration)
-      .replace("{{type}}", Array.isArray(type) ? type.join(", ") : type);
+      .replaceAll("{{jobTitle}}", jobPosition)
+      .replaceAll("{{jobDescription}}", jobDescription)
+      .replaceAll("{{duration}}", duration)
+      .replaceAll("{{type}}", Array.isArray(type) ? type.join(", ") : type);
 
     console.log("FINAL PROMPT SENT TO AI:\n", FINAL_PROMPT);
 
@@ -77,66 +79,53 @@ const { jobPosition, jobDescription, duration, type } = body || {};
     });
 
     const models = [
-      "nvidia/nemotron-nano-9b-v2:free",
-      "kwaipilot/kat-coder-pro-v1:free",
-      "nvidia/nemotron-nano-12b-vl:free",
-      "openai/gpt-oss-20b:free",
-      "x-ai/grok-4.1-fast:free",
+      "google/gemini-2.0-flash-exp:free",
+      "google/gemma-2-9b-it:free",
+      "meta-llama/llama-3.2-3b-instruct:free",
+      "mistralai/mistral-small-24b-instruct-2501:free",
+      "qwen/qwen-2.5-7b-instruct:free",
     ];
 
     let completion = null;
 
-    for (const model of models) {
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
       try {
+        // Add small delay between models to avoid 429 pressure
+        if (i > 0) await new Promise((res) => setTimeout(res, 1000));
+
         console.log("Trying model:", model);
         completion = await openai.chat.completions.create({
           model,
-messages: [
-  {
-    role: "user",
-    content: FINAL_PROMPT,
-  },
-],
-
+          messages: [{ role: "user", content: FINAL_PROMPT }],
           max_tokens: 1000,
         });
 
-        break;
+        const rawContent = String(completion.choices?.[0]?.message?.content || "");
+        console.log(`RAW AI RESPONSE (${model}) preview:`, rawContent.slice(0, 100) + "...");
+
+        const parsed = extractJSON(rawContent);
+        const questions = Array.isArray(parsed.interviewQuestions) ? parsed.interviewQuestions : [];
+
+        if (questions.length > 0) {
+          console.log(`Model ${model} succeeded with ${questions.length} questions.`);
+          return NextResponse.json({ interviewQuestions: questions }, { status: 200 });
+        } else {
+          console.warn(`Model ${model} returned zero questions or invalid JSON. Trying next...`);
+          completion = null; // Reset to continue loop
+        }
       } catch (err) {
         console.error(`Model failed (${model}):`, err?.status || err?.message);
         if (err.status === 429) {
           await new Promise((res) => setTimeout(res, 500));
-          continue;
         }
       }
     }
 
-    if (!completion) {
-      return NextResponse.json(
-        { error: "All FREE models failed or rate-limited" },
-        { status: 500 }
-      );
-    }
-
-const rawContent = String(
-  completion.choices?.[0]?.message?.content || ""
-);
-    console.log("RAW AI RESPONSE:", rawContent);
-
-    const parsed = extractJSON(rawContent);
-    console.log("PARSED JSON:", parsed);
-
-
-const questions = Array.isArray(parsed.interviewQuestions)
-  ? parsed.interviewQuestions
-  : [];
-console.log("QUESTION COUNT:", questions.length);
-
-return NextResponse.json(
-  { interviewQuestions: questions },
-  { status: 200 }
-  
-);
+    return NextResponse.json(
+      { error: "All FREE models failed, rate-limited, or returned invalid data" },
+      { status: 500 }
+    );
 
 
   } catch (err) {

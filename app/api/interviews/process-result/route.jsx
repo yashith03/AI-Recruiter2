@@ -70,70 +70,80 @@ export async function POST(req) {
     // 2. Generate Candidate Summary via AI
 
     const MODELS = [
-     "nvidia/nemotron-nano-9b-v2:free",
-      "kwaipilot/kat-coder-pro-v1:free",
-      "nvidia/nemotron-nano-12b-vl:free",
-      "openai/gpt-oss-20b:free",
-      "x-ai/grok-4.1-fast:free",
-];
+      "google/gemini-2.0-flash-exp:free",
+      "google/gemma-2-9b-it:free",
+      "meta-llama/llama-3.2-3b-instruct:free",
+      "mistralai/mistral-small-24b-instruct-2501:free",
+      "qwen/qwen-2.5-7b-instruct:free",
+    ];
 
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: process.env.OPENROUTER_API_KEY,
     });
 
-    const FINAL_PROMPT = CANDIDATE_SUMMARY_PROMPT.replace(
-      "{{conversation}}",
-      JSON.stringify(conversation)
-    );
-    console.log(" AI prompt length:", FINAL_PROMPT.length);
-    console.log(" AI models order:", MODELS);
+const trimmedConversation = Array.isArray(conversation)
+  ? conversation.slice(-15)
+  : conversation;
+
+const FINAL_PROMPT = CANDIDATE_SUMMARY_PROMPT.replaceAll(
+  "{{conversation}}",
+  JSON.stringify(trimmedConversation)
+);
+
+    console.log("AI prompt length:", FINAL_PROMPT.length);
+    console.log("AI models being tried:", MODELS);
 
    let summaryJson = null;
 let retries = 2;
 
 while (retries > 0 && !summaryJson) {
-  console.log(" AI attempt, retries left:", retries);
+  console.log(`▶️ AI Attempt (Retries left: ${retries})`);
 
   let completion = null;
   let lastError = null;
 
-  // 1. Try models in order
-  for (const model of MODELS) {
+  for (let i = 0; i < MODELS.length; i++) {
+    const model = MODELS[i];
     try {
-      console.log("Trying model:", model);
+      // Add small delay between models to avoid 429 pressure
+      if (i > 0) await new Promise((res) => setTimeout(res, 1000));
+
+      console.log(`..Trying model: ${model}`);
 
       completion = await openai.chat.completions.create({
         model,
         messages: [{ role: "user", content: FINAL_PROMPT }],
-        max_tokens: 900,
+        max_tokens: 1000,
       });
 
-      if (completion?.choices?.length) {
-        console.log("Model succeeded:", model);
+      if (completion?.choices?.[0]?.message?.content) {
+        console.log(`..✅ Model ${model} returned content.`);
         break;
+      } else {
+        console.warn(`..⚠️ Model ${model} returned empty choices.`);
+        completion = null;
       }
     } catch (err) {
-      console.error(`Model failed (${model}):`, err?.status || err?.message);
+      console.error(`..❌ Model ${model} failed:`, err?.status || err?.message);
       lastError = err;
 
       if (err?.status === 429) {
-        await new Promise(res => setTimeout(res, 500));
+        await new Promise(res => setTimeout(res, 1000));
       }
     }
   }
 
   if (!completion) {
-    console.error(" All models failed:", lastError);
+    console.error("Critical: All AI models failed to respond.");
     return NextResponse.json(
-      { error: "All AI models failed", details: lastError?.message },
+      { error: "All AI models failed to respond", details: lastError?.message },
       { status: 502 }
     );
   }
 
-  // 2. Extract content
   const content = completion.choices?.[0]?.message?.content || "";
-  console.log("Raw AI content:", content);
+  console.log("RAW AI CONTENT PREVIEW:", content.slice(0, 150) + "...");
 
   if (!content.trim()) {
     console.error("Empty AI response");
@@ -143,30 +153,31 @@ while (retries > 0 && !summaryJson) {
 
   // 3. Parse + validate JSON
   try {
-    console.log("Cleaning Ai output")
-const cleaned = content
-  .replace(/```json/gi, "")
-  .replace(/```/g, "")
-  .trim();
+    console.log("Cleaning AI output...");
+    let cleaned = content
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
-          console.log(" Cleaned preview:", cleaned.slice(0, 200));
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
 
-const parsed = JSON.parse(cleaned);
-        console.log("Parsed keys:", Object.keys(parsed));
+    if (start !== -1 && end !== -1 && end > start) {
+      cleaned = cleaned.substring(start, end + 1);
+      const parsed = JSON.parse(cleaned);
 
-
-    if (
-      parsed.overallFeedback &&
-      typeof parsed.score === "number" &&
-      parsed.score >= 0 &&
-      parsed.score <= 10 &&
-      Array.isArray(parsed.improvements) &&
-      parsed.improvements.length >= 1
-    ) {
-      summaryJson = parsed;
-      break;
+      if (
+        parsed.overallFeedback &&
+        typeof parsed.score === "number" &&
+        Array.isArray(parsed.improvements)
+      ) {
+        summaryJson = parsed;
+        break;
+      } else {
+        console.warn("AI response failed validation", Object.keys(parsed));
+      }
     } else {
-      console.warn("AI response failed validation", parsed);
+      console.warn("No JSON boundaries found.");
     }
   } catch (e) {
     console.error("AI JSON parse failed:", e.message);

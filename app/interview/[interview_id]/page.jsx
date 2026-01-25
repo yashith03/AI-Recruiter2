@@ -5,7 +5,6 @@ import React, { useEffect, useState, useContext } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/services/supabaseClient'
 import { toast } from 'sonner'
 import { InterviewDataContext } from '@/context/interviewDataContext'
 import { Input } from '@/components/ui/input'
@@ -39,38 +38,35 @@ function Interview() {
 
         async function GetInterviewDetails() {
             setLoading(true);
-            console.log("Fetching interview details for ID:", interview_id);
+            console.log("Fetching interview details via server:", interview_id);
             try {
-                // Wrap in timeout to detect connection hangs
-                const fetchPromise = supabase
-                    .from('interviews')
-                    .select("jobPosition, jobDescription, duration, type")
-                    .eq('interview_id', interview_id);
+                // Call our new server-side API instead of direct Supabase
+                const fetchPromise = fetch(`/api/interviews/${interview_id}/details`);
 
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("Supabase request timed out after 10s")), 10000)
+                    setTimeout(() => reject(new Error("Server request timed out after 60s")), 60000)
                 );
 
-                console.log("Waiting for Supabase response...");
-                const result = await Promise.race([fetchPromise, timeoutPromise]);
-                console.log("Supabase resolved:", result);
-
-                const { data: interviews, error } = result;
-
-                if (error || !interviews || interviews.length === 0) {
-                    console.error("Interview not found or error:", error);
-                    toast.error('Incorrect Interview Link');
-                    setLoading(false);
-                    return;
+                console.log("Waiting for Server response...");
+                const response = await Promise.race([fetchPromise, timeoutPromise]);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Failed to fetch interview details");
                 }
 
-                setInterviewData(interviews[0]);
-                console.log("Interview data set successfully");
+                const data = await response.json();
+                console.log("Interview data received successfully");
+
+                setInterviewData(data);
                 setLoading(false);
             } catch (e) {
                 console.error("GetInterviewDetails Catch Global Error:", e);
                 setLoading(false);
-                toast.error('Connection timeout or error fetching details. Please refresh.');
+                const isTimeout = e.message.includes("timeout");
+                toast.error(isTimeout 
+                    ? "The connection is slow. Please check your internet and try again." 
+                    : "Incorrect Interview Link or error fetching details.");
             }
         }
 
@@ -83,25 +79,21 @@ function Interview() {
             return;
         }
 
-        setJoining(true);
-
-        const { data: interviews } = await supabase
-            .from('interviews')
-            .select('*')
-            .eq('interview_id', interview_id);
-
-        if (interviews && interviews.length > 0) {
-            setInterviewInfo({
-                userName: userName,
-                userEmail: userEmail,
-                interviewData: interviews[0]
-            });
-
-            router.push('/interview/' + interview_id + '/start');
-        } else {
-           toast('Interview not found.');
-            setJoining(false);
+        if (!interviewData) {
+            toast.error("Interview details not loaded yet. Please refresh.");
+            return;
         }
+
+        setJoining(true);
+        console.log("Joining interview with existing data...");
+
+        setInterviewInfo({
+            userName: userName,
+            userEmail: userEmail,
+            interviewData: interviewData
+        });
+
+        router.push('/interview/' + interview_id + '/start');
     }
 
     if (loading) {

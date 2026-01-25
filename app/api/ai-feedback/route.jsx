@@ -4,9 +4,32 @@ import { NextResponse } from "next/server";
 import { FEEDBACK_PROMPT } from "@/services/Constants";
 import OpenAI from "openai";
 
+// Helper: Extract clean JSON from model output
+function extractJSON(output) {
+  try {
+    let cleaned = output
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+
+    if (start === -1 || end === -1 || end < start) {
+      return {};
+    }
+
+    cleaned = cleaned.substring(start, end + 1);
+    const parsed = JSON.parse(cleaned);
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch (err) {
+    return {};
+  }
+}
+
 export async function POST(req) {
   try {
-        let body;
+    let body;
 
     try {
       body = await req.json();
@@ -28,18 +51,22 @@ export async function POST(req) {
     }
 
     const models = [
-      "nvidia/nemotron-nano-9b-v2:free",
-      "kwaipilot/kat-coder-pro-v1:free",
-      "nvidia/nemotron-nano-12b-vl:free",
-       "openai/gpt-oss-20b:free",
-      "x-ai/grok-4.1-fast:free",
+      "google/gemini-2.0-flash-exp:free",
+      "google/gemma-2-9b-it:free",
+      "meta-llama/llama-3.2-3b-instruct:free",
+      "mistralai/mistral-small-24b-instruct-2501:free",
+      "qwen/qwen-2.5-7b-instruct:free",
     ];
 
-    // conversation is an object/array here, so stringify once
-    const FINAL_PROMPT = FEEDBACK_PROMPT.replace(
+    const trimmedConversation = Array.isArray(conversation)
+      ? conversation.slice(-15)
+      : conversation;
+
+    const FINAL_PROMPT = FEEDBACK_PROMPT.replaceAll(
       "{{conversation}}",
-      JSON.stringify(conversation)
+      JSON.stringify(trimmedConversation)
     );
+
 
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
@@ -49,8 +76,12 @@ export async function POST(req) {
 let completion = null;
 let lastError = null;
 
-for (const model of MODELS) {
+for (let i = 0; i < models.length; i++) {
+  const model = models[i];
   try {
+    // Add small delay between models to avoid 429 pressure
+    if (i > 0) await new Promise((res) => setTimeout(res, 1000));
+
     console.log("Trying model:", model);
 
     completion = await openai.chat.completions.create({
@@ -84,17 +115,20 @@ if (!completion) {
 
 
     const content = completion.choices?.[0]?.message?.content || "";
+    console.log("Raw AI content:", content.slice(0, 100) + "...");
 
-     if (!content.trim()) {
-      console.error("AI returned empty feedback");
+    const parsed = extractJSON(content);
+    
+    if (Object.keys(parsed).length === 0) {
+      console.error("AI returned invalid JSON or empty content");
       return NextResponse.json(
-        { error: "AI returned empty feedback" },
+        { error: "AI returned invalid format", raw: content },
         { status: 502 }
       );
     }
 
     return NextResponse.json(
-      { content },
+      { content: JSON.stringify(parsed) },
       { status: 200 }
     );
 
