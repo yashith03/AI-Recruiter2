@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
-  Bell, 
   CheckCheck, 
   Calendar, 
   Bot, 
@@ -11,79 +10,69 @@ import {
   AlertTriangle, 
   ClipboardList,
   ChevronRight,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from 'lucide-react'
+import { supabase } from '@/services/supabaseClient'
+import { useUser } from '@/app/provider'
+import moment from 'moment'
+import Link from 'next/link'
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState('all')
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useUser()
 
-  const notifications = [
-    {
-      id: 1,
-      type: 'interview',
-      title: 'Interview Scheduled: Sarah Jenkins',
-      description: 'Sarah has accepted the invite for 2:00 PM EST today. Prepare for the technical screening.',
-      time: '2 hours ago',
-      isUnread: true,
-      group: 'Today',
-      icon: Calendar,
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-50',
-      actionLabel: 'View Details'
-    },
-    {
-      id: 2,
-      type: 'ai',
-      title: 'AI Screening Complete',
-      description: 'Top 5 candidates identified for Senior Backend Developer role based on resume match.',
-      time: '4 hours ago',
-      isUnread: true,
-      group: 'Today',
-      icon: Bot,
-      iconColor: 'text-purple-600',
-      iconBg: 'bg-purple-50',
-      actionLabel: 'Review Results'
-    },
-    {
-      id: 3,
-      type: 'applicant',
-      title: 'New Applicant: Michael Scott',
-      description: 'Applied for Regional Manager position.',
-      time: 'Yesterday at 9:42 AM',
-      isUnread: false,
-      group: 'Yesterday',
-      icon: UserPlus,
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50'
-    },
-    {
-      id: 4,
-      type: 'subscription',
-      title: 'Subscription Alert',
-      description: 'Your premium job posting quota is running low. Only 2 posts remaining.',
-      time: 'Yesterday at 4:15 PM',
-      isUnread: false,
-      group: 'Yesterday',
-      icon: AlertTriangle,
-      iconColor: 'text-orange-600',
-      iconBg: 'bg-orange-50',
-      actionLabel: 'Upgrade Plan'
-    },
-    {
-      id: 5,
-      type: 'feedback',
-      title: 'Hiring Manager Feedback',
-      description: 'Jim Halpert submitted feedback for candidate Dwight Schrute.',
-      time: 'Mon, Oct 24 at 11:30 AM',
-      isUnread: false,
-      group: 'Earlier this week',
-      icon: ClipboardList,
-      iconColor: 'text-indigo-600',
-      iconBg: 'bg-indigo-50',
-      actionLabel: 'View Feedback',
-      actionIcon: ChevronRight
+  const fetchNotifications = useCallback(async () => {
+    if (!user?.email) return
+    setLoading(true)
+
+    // Fetch real interview completions from interview-feedback table
+    // We join with interviews to filter by the recruiter's email
+    const { data, error } = await supabase
+      .from('interview-feedback')
+      .select('*, interviews!inner(userEmail, jobPosition)')
+      .eq('interviews.userEmail', user.email)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching notifications:', error)
+      setLoading(false)
+      return
     }
-  ]
+
+    // Map the database records to the UI notification format
+    const mappedNotifications = data.map(item => {
+      const createdAt = moment(item.created_at)
+      let group = 'Earlier this week'
+      if (createdAt.isSame(moment(), 'day')) group = 'Today'
+      else if (createdAt.isSame(moment().subtract(1, 'days'), 'day')) group = 'Yesterday'
+
+      return {
+        id: item.id,
+        type: 'feedback',
+        title: `Interview Completed: ${item.userName}`,
+        description: `${item.userName} has finished the interview for the ${item.interviews?.jobPosition || 'Role'}. View the AI-generated feedback now.`,
+        time: createdAt.fromNow(),
+        isUnread: true, // We can implement read/unread in DB later if needed
+        group: group,
+        icon: ClipboardList,
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/5',
+        actionLabel: 'Show feedback',
+        actionIcon: ChevronRight,
+        link: `/schedule-interview/${item.interview_id}/details`
+      }
+    })
+
+    setNotifications(mappedNotifications)
+    setLoading(false)
+  }, [user])
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [fetchNotifications])
 
   const unreadCount = notifications.filter(n => n.isUnread).length
 
@@ -106,7 +95,11 @@ export default function NotificationsPage() {
             <h1 className="text-h1 text-foreground mb-2">Notifications</h1>
             <p className="text-body text-muted-foreground">Stay updated on your hiring pipeline</p>
           </div>
-          <Button variant="outline" className="text-body font-bold border-border h-10 px-4 gap-2 text-muted-foreground hover:text-foreground">
+          <Button 
+            variant="outline" 
+            onClick={() => setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })))}
+            className="text-body font-bold border-border h-10 px-4 gap-2 text-muted-foreground hover:text-foreground"
+          >
             <CheckCheck size={18} />
             Mark all as read
           </Button>
@@ -132,7 +125,7 @@ export default function NotificationsPage() {
                 <div className="flex items-center gap-2">
                   {tab.label}
                   {tab.count > 0 && (
-                    <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full">
+                    <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
                       {tab.count}
                     </span>
                   )}
@@ -147,72 +140,91 @@ export default function NotificationsPage() {
 
         {/* Notification List */}
         <div className="space-y-10">
-          {Object.entries(groupedNotifications).map(([group, items]) => (
-            <div key={group} className="space-y-4">
-              <h2 className="text-h3 text-foreground font-bold">{group}</h2>
-              <div className="space-y-3">
-                {items.map((notification) => (
-                  <div 
-                    key={notification.id}
-                    className={`group relative bg-card rounded-2xl border border-border shadow-sm p-5 transition-all hover:border-primary/20 ${
-                      notification.isUnread ? 'border-l-4 border-l-primary' : ''
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      {/* Icon */}
-                      <div className={`p-3 rounded-xl ${notification.iconBg}`}>
-                        <notification.icon className={`size-6 ${notification.iconColor}`} />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-body font-bold text-foreground">
-                            {notification.title}
-                          </h3>
-                          {notification.isUnread && (
-                            <div className="size-2 rounded-full bg-primary" />
-                          )}
-                        </div>
-                        <p className="text-body text-muted-foreground leading-relaxed md:max-w-2xl">
-                          {notification.description}
-                        </p>
-                        <p className="text-label text-muted-foreground pt-1">
-                          {notification.time}
-                        </p>
-                      </div>
-
-                      {/* Action */}
-                      <div className="hidden md:block">
-                        {notification.actionLabel ? (
-                          <Button 
-                            variant={
-                              notification.actionLabel === 'View Details' ? 'default' : 
-                              notification.actionLabel === 'View Feedback' ? 'ghost' : 'outline'
-                            }
-                            className={`text-label font-bold h-9 px-4 ${
-                              notification.actionLabel === 'View Details' 
-                                ? 'bg-primary hover:bg-primary-dark text-primary-foreground shadow-sm shadow-primary/20' 
-                                : notification.actionLabel === 'View Feedback'
-                                  ? 'text-primary hover:text-primary-dark hover:bg-primary/5 gap-1.5'
-                                  : 'border-border text-foreground hover:bg-muted'
-                            }`}
-                          >
-                            {notification.actionLabel}
-                            {notification.actionIcon && <notification.actionIcon size={14} className="group-hover:translate-x-0.5 transition-transform" />}
-                          </Button>
-                        ) : (
-                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-full">
-                            <MoreVertical size={18} />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          {loading ? (
+             <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="animate-spin text-primary" size={40} />
+                <p className="text-slate-500 font-medium">Loading notifications...</p>
+             </div>
+          ) : Object.keys(groupedNotifications).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-3xl border border-dashed border-slate-200">
+              <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                <Bot size={32} />
+              </div>
+              <div className="text-center">
+                <h3 className="text-h3 text-slate-800">No Notifications</h3>
+                <p className="text-body text-slate-500 max-w-xs mx-auto mt-1">
+                  When candidates complete interviews or when AI finishes screening, you'll see them here.
+                </p>
               </div>
             </div>
-          ))}
+          ) : (
+            Object.entries(groupedNotifications).map(([group, items]) => (
+              <div key={group} className="space-y-4">
+                <h2 className="text-h3 text-foreground font-bold">{group}</h2>
+                <div className="space-y-3">
+                  {items.map((notification) => (
+                    <div 
+                      key={notification.id}
+                      className={`group relative bg-card rounded-2xl border border-border shadow-sm p-5 transition-all hover:border-primary/20 hover:shadow-md ${
+                        notification.isUnread ? 'border-l-4 border-l-primary' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Icon */}
+                        <div className={`p-3 rounded-xl ${notification.iconBg}`}>
+                          <notification.icon className={`size-6 ${notification.iconColor}`} />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-body font-bold text-foreground">
+                              {notification.title}
+                            </h3>
+                            {notification.isUnread && (
+                              <div className="size-2 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <p className="text-body text-muted-foreground leading-relaxed md:max-w-2xl">
+                            {notification.description}
+                          </p>
+                          <p className="text-label text-muted-foreground pt-1">
+                            {notification.time}
+                          </p>
+                        </div>
+
+                        {/* Action */}
+                        <div className="hidden md:block">
+                          {notification.link ? (
+                            <Link href={notification.link}>
+                              <Button 
+                                variant="ghost"
+                                className="text-primary hover:text-primary-dark hover:bg-primary/5 gap-1.5 font-bold h-9 px-4"
+                              >
+                                {notification.actionLabel}
+                                {notification.actionIcon && <notification.actionIcon size={14} className="group-hover:translate-x-0.5 transition-transform" />}
+                              </Button>
+                            </Link>
+                          ) : notification.actionLabel ? (
+                            <Button 
+                              variant="outline"
+                              className="text-label font-bold h-9 px-4 border-border text-foreground hover:bg-muted"
+                            >
+                              {notification.actionLabel}
+                            </Button>
+                          ) : (
+                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-full">
+                              <MoreVertical size={18} />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

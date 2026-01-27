@@ -20,7 +20,7 @@ function LatestInterviewsList() {
     setLoading(true);
     let { data, error } = await supabase
       .from('interviews')
-      .select('*')
+      .select('*, interview-feedback!interview_feedback_interview_id_fk(*)')
       .eq('userEmail', user.email)
       .order('created_at', { ascending: false })
       .limit(3); // Mockup shows 3 items usually for "latest"
