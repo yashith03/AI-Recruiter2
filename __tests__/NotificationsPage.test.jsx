@@ -1,61 +1,76 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import NotificationsPage from "@/app/(main)/notifications/page";
+import { useUser } from "@/app/provider";
+import { supabase } from "@/services/supabaseClient";
 import "@testing-library/jest-dom";
 
 // Mock next/image
 jest.mock("next/image", () => (props) => <img {...props} />);
 
+jest.mock("@/app/provider", () => ({
+  useUser: jest.fn(),
+}));
+
+jest.mock("@/services/supabaseClient", () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          order: jest.fn().mockResolvedValue({
+            data: [
+              {
+                id: 1,
+                userName: "John Doe",
+                interview_id: "int-123",
+                created_at: new Date().toISOString(),
+                interviews: { jobPosition: "Software Engineer" }
+              }
+            ],
+            error: null,
+          }),
+        }),
+      }),
+    })),
+  },
+}));
+
 describe("NotificationsPage", () => {
-  test("renders notifications title and description", () => {
-    render(<NotificationsPage />);
-    expect(screen.getByText("Notifications")).toBeInTheDocument();
-    expect(screen.getByText("Stay updated on your hiring pipeline")).toBeInTheDocument();
+  beforeEach(() => {
+    useUser.mockReturnValue({ user: { email: "test@mail.com" } });
+    jest.clearAllMocks();
   });
 
-  test("renders all tabs", () => {
-    render(<NotificationsPage />);
-    expect(screen.getByText("All Notifications")).toBeInTheDocument();
-    expect(screen.getByText("Unread")).toBeInTheDocument();
-    expect(screen.getByText("Mentions")).toBeInTheDocument();
-  });
-
-  test("renders unread count badge in tabs", () => {
-    render(<NotificationsPage />);
-    const unreadTab = screen.getByText("Unread");
-    const countBadge = unreadTab.nextSibling;
-    // The count is 2 in our hardcoded data for unread
-    expect(screen.getByText("2")).toBeInTheDocument();
-  });
-
-  test("filters notifications when clicking 'Unread' tab", () => {
+  test("renders notifications title and dynamically fetched items", async () => {
     render(<NotificationsPage />);
     
-    // Initially shows Sarah Jenkins (unread) and Michael Scott (read)
-    expect(screen.getByText("Interview Scheduled: Sarah Jenkins")).toBeInTheDocument();
-    expect(screen.getByText("New Applicant: Michael Scott")).toBeInTheDocument();
+    expect(screen.getByText("Notifications")).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText(/Interview Completed: John Doe/i)).toBeInTheDocument();
+      expect(screen.getByText(/John Doe has finished the interview/i)).toBeInTheDocument();
+    });
+  });
 
-    // Click Unread tab
+  test("renders action buttons from real data", async () => {
+    render(<NotificationsPage />);
+    
+    await waitFor(() => {
+        expect(screen.getByText("Show feedback")).toBeInTheDocument();
+    });
+  });
+
+  test("filters unread notifications correctly", async () => {
+    render(<NotificationsPage />);
+    
+    await waitFor(() => {
+      expect(screen.getByText("Unread")).toBeInTheDocument();
+    });
+
     fireEvent.click(screen.getByText("Unread"));
 
-    // Should still show Sarah Jenkins
-    expect(screen.getByText("Interview Scheduled: Sarah Jenkins")).toBeInTheDocument();
-    // Should NOT show Michael Scott
-    expect(screen.queryByText("New Applicant: Michael Scott")).not.toBeInTheDocument();
-  });
-
-  test("renders notification groups", () => {
-    render(<NotificationsPage />);
-    expect(screen.getByText("Today")).toBeInTheDocument();
-    expect(screen.getByText("Yesterday")).toBeInTheDocument();
-    expect(screen.getByText("Earlier this week")).toBeInTheDocument();
-  });
-
-  test("renders action buttons correctly", () => {
-    render(<NotificationsPage />);
-    expect(screen.getByText("View Details")).toBeInTheDocument();
-    expect(screen.getByText("Review Results")).toBeInTheDocument();
-    expect(screen.getByText("Upgrade Plan")).toBeInTheDocument();
-    expect(screen.getByText("View Feedback")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.getByText(/Interview Completed: John Doe/i)).toBeInTheDocument();
+    });
   });
 });

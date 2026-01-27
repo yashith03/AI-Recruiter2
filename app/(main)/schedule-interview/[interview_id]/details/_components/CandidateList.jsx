@@ -8,12 +8,12 @@ import { User, Mail, CheckCircle2, XCircle } from 'lucide-react'
 
 function CandidateList({candidateList}) {
   return (
-    <div className='max-w-5xl mx-auto'>
-        <div className='flex justify-between items-center mb-8'>
-            <h2 className='text-h2 text-slate-900 font-bold'>Candidates ({candidateList?.length})</h2>
+    <div>
+        <div className='flex justify-between items-center mb-10'>
+            <h2 className='text-h2 text-slate-900 font-bold'>Candidates ({candidateList?.length || 0})</h2>
             <div className='flex gap-2'>
-                <span className='px-4 py-1.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100'>
-                    {candidateList?.filter(c => c.recommendation).length} Recommended
+                <span className='px-4 py-2 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100 shadow-sm'>
+                    {candidateList?.filter(c => c.recommendation === true).length || 0} Recommended
                 </span>
             </div>
         </div>

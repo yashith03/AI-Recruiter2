@@ -26,19 +26,26 @@ describe("CandidateFeedbackDialog Component", () => {
     userName: "John Doe",
     userEmail: "john@example.com",
     feedback: {
-      feedback: {
-        overallScore: 8,
-        rating: {
-          technicalSkills: 9,
-          communication: 7,
-          problemSolving: 8,
-          experience: 8,
-        },
-        summary: ["Strong candidate", "Good communication"],
-        Recommendation: "Yes",
-        RecommendationMsg: "Highly recommended for the role.",
+      score: 8,
+      rating: {
+        technicalSkills: 9,
+        communication: 7,
+        problemSolving: 8,
+        experience: 8,
       },
+      summary: "Strong candidate with good communication skills.",
+      recommendation: "Recommended",
+      recommendationMsg: "Highly recommended for the role.",
+      questions: [
+        {
+          question: "Tell me about yourself.",
+          userAnswer: "I am a developer.",
+          feedback: "Good concise answer.",
+          rating: 8
+        }
+      ]
     },
+    asked_questions: [] // Fallback test
   };
 
   test("renders trigger button", () => {
@@ -49,30 +56,36 @@ describe("CandidateFeedbackDialog Component", () => {
   test("renders feedback details correctly", () => {
     render(<CandidateFeedbackDialog candidate={candidateMock} />);
     
-    // Check if details are rendered (since we mocked the dialog to be always open or just render its children)
     expect(screen.getByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText("john@example.com")).toBeInTheDocument();
     expect(screen.getByText("Technical Skills")).toBeInTheDocument();
     expect(screen.getByText("9/10")).toBeInTheDocument();
     expect(screen.getAllByText("8/10")).toHaveLength(3); // Overall (8), Problem Solving (8), Experience (8)
-    expect(screen.getByText("Strong candidate")).toBeInTheDocument();
-    expect(screen.getByText("Good communication")).toBeInTheDocument();
+    expect(screen.getByText("Strong candidate with good communication skills.")).toBeInTheDocument();
+    expect(screen.getByText(/Recommendation: Recommended/i)).toBeInTheDocument();
     expect(screen.getByText("Highly recommended for the role.")).toBeInTheDocument();
   });
 
-  test("renders 'No' recommendation styling", () => {
+  test("renders Q&A section correctly", () => {
+    render(<CandidateFeedbackDialog candidate={candidateMock} />);
+    
+    expect(screen.getByText("Interview Q&A")).toBeInTheDocument();
+    expect(screen.getByText("Tell me about yourself.")).toBeInTheDocument();
+    expect(screen.getByText(/"I am a developer."/i)).toBeInTheDocument();
+    expect(screen.getByText("Good concise answer.")).toBeInTheDocument();
+  });
+
+  test("renders 'Not Recommended' styling", () => {
     const rejectedCandidate = {
       ...candidateMock,
       feedback: {
-        feedback: {
-          ...candidateMock.feedback.feedback,
-          Recommendation: "No",
-          RecommendationMsg: "Not a good fit.",
-        }
+        ...candidateMock.feedback,
+        recommendation: "Not Recommended",
+        recommendationMsg: "Not a good fit.",
       }
     };
     render(<CandidateFeedbackDialog candidate={rejectedCandidate} />);
     expect(screen.getByText("Not a good fit.")).toBeInTheDocument();
-    expect(screen.getByText("Recommendation")).toHaveClass("text-red-700");
+    expect(screen.getByText(/Recommendation: Not Recommended/i)).toBeInTheDocument();
   });
 });

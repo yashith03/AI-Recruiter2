@@ -21,7 +21,7 @@ function InterviewDetail() {
       const { data, error } = await supabase
         .from("interviews")
         .select(
-          "jobPosition, jobDescription, type, duration, questionList, interview_id, created_at, interview-feedback(*)"
+          "jobPosition, jobDescription, type, duration, questionList, interview_id, created_at, interview-feedback!interview_feedback_interview_id_fk(*)"
         )
         .eq("userEmail", user.email)
         .eq("interview_id", interview_id)
@@ -39,10 +39,17 @@ function InterviewDetail() {
   }, [user, interview_id])
 
   return (
-    <div className="mt-5">
-      <h2 className="font-bold text-2xl">Interview Detail</h2>
+    <div className="max-w-5xl mx-auto pb-20 animate-in fade-in duration-700">
+      <div className="mb-8">
+        <h1 className="text-h1 text-slate-900 mb-2">Interview Detail</h1>
+        <p className="text-body text-slate-500 font-medium">Review interview configuration and candidate results.</p>
+      </div>
+      
       <InterviewDetailContainer interviewDetail={interviewDetails} />
-      <CandidateList candidateList={interviewDetails?.["interview-feedback"]} />
+      
+      <div className="mt-20">
+        <CandidateList candidateList={interviewDetails?.["interview-feedback"]} />
+      </div>
     </div>
   )
 }

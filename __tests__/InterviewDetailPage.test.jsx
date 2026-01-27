@@ -42,12 +42,40 @@ jest.mock("@/services/supabaseClient", () => ({
   },
 }));
 
-test("renders interview details correctly", async () => {
+test("renders interview details and candidate list correctly", async () => {
+  const mockDate = new Date().toISOString();
   useUser.mockReturnValue({ user: { email: "test@mail.com" } });
+  
+  supabase.from.mockReturnValue({
+    select: jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({
+          data: [
+            {
+              jobPosition: "Backend Engineer",
+              jobDescription: "Building APIs with Node.js",
+              duration: "30 Min",
+              type: ["Technical"],
+              created_at: mockDate,
+              questionList: [{ question: "Q1" }],
+              "interview-feedback": [
+                { id: 1, userName: "Alice", recommendation: true },
+                { id: 2, userName: "Bob", recommendation: false }
+              ],
+            },
+          ],
+          error: null,
+        }),
+      }),
+    }),
+  });
 
   render(<InterviewDetail />);
 
   await waitFor(() => {
+    expect(screen.getByText("Interview Detail")).toBeInTheDocument();
     expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
+    expect(screen.getByText(/Candidates \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 Recommended/i)).toBeInTheDocument();
   });
 });
