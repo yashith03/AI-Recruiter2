@@ -24,6 +24,9 @@ import { supabase } from "@/services/supabaseClient"
 import TimerComponent from "./_components/TimerComponent"
 
 function StartInterview() {
+  const { interview_id } = useParams()
+  const router = useRouter()
+
   const redirectToCompleted = () => {
    router.replace(`/interview/${interview_id}/completed`)
   }
@@ -44,8 +47,6 @@ function StartInterview() {
   const [activeUser, setActiveUser] = useState(false)
   const [animationEnabled, setAnimationEnabled] = useState(false)
 
-  const { interview_id } = useParams()
-  const router = useRouter()
 
   // ----------------------------------------------------
   // INIT VAPI & EVENT LISTENERS
@@ -123,6 +124,7 @@ function StartInterview() {
       vapi.off("error", handleError)
       vapi.off("call-ended", handleCallEnd)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ----------------------------------------------------

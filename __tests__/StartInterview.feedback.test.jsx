@@ -9,10 +9,12 @@ import { InterviewDataContext } from '@/context/interviewDataContext';
 // Mock navigation
 // --------------------
 const mockReplace = jest.fn();
+const mockParams = { interview_id: 'test-id' };
+const mockRouter = { replace: mockReplace };
 
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ interview_id: 'test-id' }),
-  useRouter: () => ({ replace: mockReplace }),
+  useParams: () => mockParams,
+  useRouter: () => mockRouter,
 }));
 
 // --------------------
@@ -22,14 +24,18 @@ let vapiInstance;
 
 jest.mock('@vapi-ai/web', () => {
   return jest.fn().mockImplementation(() => {
-    const handlers = {};
+    let handlers = {};
 
     vapiInstance = {
       on: (event, cb) => {
         handlers[event] = handlers[event] || [];
         handlers[event].push(cb);
       },
-      off: jest.fn(),
+      off: (event, cb) => {
+        if (handlers[event]) {
+          handlers[event] = handlers[event].filter(h => h !== cb);
+        }
+      },
       start: jest.fn(() => Promise.resolve()),
       stop: jest.fn(() => Promise.resolve()),
       __emit: (event, payload) => {

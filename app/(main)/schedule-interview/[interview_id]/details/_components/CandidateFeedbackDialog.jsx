@@ -187,7 +187,7 @@ function CandidateFeedbackDialog({ candidate }) {
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Candidate Answer</p>
                           <p className="text-sm text-slate-600 bg-slate-50/50 p-3 rounded-lg border border-slate-50 italic">
-                            "{item.userAnswer}"
+                            &quot;{item.userAnswer}&quot;
                           </p>
                         </div>
                       )}

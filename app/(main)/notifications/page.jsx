@@ -153,7 +153,7 @@ export default function NotificationsPage() {
               <div className="text-center">
                 <h3 className="text-h3 text-slate-800">No Notifications</h3>
                 <p className="text-body text-slate-500 max-w-xs mx-auto mt-1">
-                  When candidates complete interviews or when AI finishes screening, you'll see them here.
+                  When candidates complete interviews or when AI finishes screening, you&apos;ll see them here.
                 </p>
               </div>
             </div>
