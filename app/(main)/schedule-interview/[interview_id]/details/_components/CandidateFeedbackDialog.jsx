@@ -112,14 +112,9 @@ function CandidateFeedbackDialog({ candidate }) {
           {/* Summary */}
           <div className="bg-slate-50 p-5 rounded-xl border border-slate-100">
             <h3 className="font-bold text-slate-800 mb-3">Performance Summary</h3>
-            <div className="space-y-2 text-slate-600 text-sm leading-relaxed">
-              {feedback?.summary?.map((summary, index) => (
-                <p key={index} className="flex gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  {summary}
-                </p>
-              ))}
-            </div>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              {feedback?.summary}
+            </p>
           </div>
 
           {/* Recommendation */}
@@ -158,6 +153,64 @@ function CandidateFeedbackDialog({ candidate }) {
             } text-white font-bold px-6 h-10 rounded-lg ml-4`}>
               Send Notification
             </Button>
+          </div>
+
+          {/* Interview Q&A */}
+          <div className="space-y-4 pt-4">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+               Interview Q&A
+            </h3>
+            
+            <div className="space-y-4">
+              {(feedback?.questions || candidate?.asked_questions)?.map((item, index) => (
+                <div key={index} className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+                  {/* Question Header */}
+                  <div className="bg-slate-50/80 p-4 border-b border-slate-100 flex justify-between items-start gap-4">
+                    <div className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-bold">
+                        {index + 1}
+                      </span>
+                      <p className="text-sm font-bold text-slate-800 leading-tight">
+                        {item.question || (typeof item === 'string' ? item : '')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-slate-100 shadow-sm whitespace-nowrap">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Rating</span>
+                      <span className="text-sm font-black text-primary">{item.rating || 'N/A'}/10</span>
+                    </div>
+                  </div>
+
+                  {/* Answer & Feedback */}
+                  {(item.userAnswer || item.feedback) && (
+                    <div className="p-4 space-y-4">
+                      {item.userAnswer && (
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Candidate Answer</p>
+                          <p className="text-sm text-slate-600 bg-slate-50/50 p-3 rounded-lg border border-slate-50 italic">
+                            "{item.userAnswer}"
+                          </p>
+                        </div>
+                      )}
+                      
+                      {item.feedback && (
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">AI Feedback</p>
+                          <div className="text-sm text-slate-700 leading-relaxed font-medium">
+                            {item.feedback}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {(!(feedback?.questions || candidate?.asked_questions) || (feedback?.questions || candidate?.asked_questions).length === 0) && (
+                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-sm text-slate-500">No question data available for this session.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

@@ -126,7 +126,7 @@ IMPORTANT: Respond ONLY in valid JSON. Do not include any explanations, markdown
 export const FEEDBACK_PROMPT = `
 {{conversation}}
 
-Evaluate the candidate's interview performance.
+Evaluate the candidate's interview performance based on the provided conversation.
 
 Return ONLY valid JSON in the following structure:
 
@@ -140,7 +140,15 @@ Return ONLY valid JSON in the following structure:
   },
   "summary": "The candidate showed decent experience and communication skills, but had weaknesses in problem-solving and technical depth.",
   "recommendation": "Not Recommended",
-  "recommendationMsg": "The candidate may need more technical training before being considered for hire."
+  "recommendationMsg": "The candidate may need more technical training before being considered for hire.",
+  "questions": [
+    {
+      "question": "Question text here",
+      "userAnswer": "Candidate's response here",
+      "feedback": "AI feedback for this specific answer",
+      "rating": 7
+    }
+  ]
 }
 
 Rules:
@@ -149,6 +157,7 @@ Rules:
 - summary must be ONE paragraph (2–3 sentences).
 - recommendation must be exactly "Recommended" or "Not Recommended".
 - recommendationMsg must be ONE sentence.
+- questions must contain every question asked during the interview with the candidate's answer and specific feedback.
 - Do NOT include extra text, markdown, or explanations.
 
 IMPORTANT: Return ONLY the JSON object.
