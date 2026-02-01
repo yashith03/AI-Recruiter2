@@ -2,7 +2,7 @@
 
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -22,11 +22,55 @@ import {
 } from "@/components/ui/sidebar"
 import { usePathname } from 'next/navigation'
 import { useUser } from '@/app/provider'
+import { supabase } from '@/services/supabaseClient'
 
 
 export default function AppSidebar() {
   const { user } = useUser()
   const path = usePathname();
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  useEffect(() => {
+    const getNotificationCount = async () => {
+      if (!user?.email) return;
+
+      try {
+        // Step 1: Get all interview IDs for this user
+        const { data: userInterviews, error: interviewError } = await supabase
+          .from('interviews')
+          .select('id')
+          .eq('userEmail', user.email)
+
+        if (interviewError) {
+          console.error("Error fetching user interviews for notifications:", interviewError)
+          return
+        }
+
+        const interviewIds = userInterviews.map(i => i.id)
+
+        if (interviewIds.length === 0) {
+          setNotificationCount(0)
+          return
+        }
+
+        // Step 2: Count feedback for these interviews
+        const { count, error: feedbackError } = await supabase
+          .from('interview-feedback')
+          .select('*', { count: 'exact', head: true })
+          .in('interview_id', interviewIds)
+          
+        if (feedbackError) {
+          console.error("Error fetching notification count:", feedbackError);
+        } else {
+          setNotificationCount(count || 0);
+        }
+      } catch (error) {
+        console.error("Unexpected error in notification count:", error)
+      }
+    };
+
+    getNotificationCount();
+  }, [user]);
 
   return (
     <Sidebar>
@@ -66,9 +110,9 @@ export default function AppSidebar() {
                       <span className={`text-body transition-all flex-1 ${path === item.path ? "font-bold" : "font-semibold"}`}>
                         {item.name}
                       </span>
-                      {item.name === "Notifications" && (
+                      {item.name === "Notifications" && notificationCount > 0 && (
                         <div className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm shadow-primary/20">
-                          3
+                          {notificationCount}
                         </div>
                       )}
                     </Link>

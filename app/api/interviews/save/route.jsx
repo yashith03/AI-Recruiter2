@@ -2,13 +2,14 @@
 
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/services/supabaseServer";
+import { CREDITS } from "@/app/utils/constants";
 
 export async function POST(req) {
   try {
     const supabase = getSupabaseServer();
     const body = await req.json();
 
-    console.log("▶️ Server-side save interview called");
+    console.log(" Server-side save interview called");
 
     const {
       jobPosition,
@@ -24,6 +25,25 @@ export async function POST(req) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
+      );
+    }
+
+    // 1. Atomic Credit Deduction via RPC
+    const { data: allowed, error: rpcError } = await supabase
+      .rpc('decrement_credits', { 
+        user_email: userEmail, 
+        credit_cost: CREDITS.INTERVIEW_COST 
+      });
+
+    if (rpcError) {
+      console.error("RPC Error:", rpcError);
+      return NextResponse.json({ error: "Details verification failed" }, { status: 500 });
+    }
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You have no credits left. Please upgrade your plan." }, 
+        { status: 403 }
       );
     }
 

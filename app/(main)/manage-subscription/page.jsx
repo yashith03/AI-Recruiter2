@@ -18,11 +18,18 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
+import { supabase } from '@/services/supabaseClient'
+import { useUser } from '@/app/provider'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+import axios from 'axios'
 
 const plans = [
   {
     name: 'Starter',
     price: '$0',
+    priceId: 'price_1SvyK5ATveOlPa7d910y8fLX',
     description: 'Perfect for small teams trying out AI hiring.',
     features: [
       { name: '5 Active Jobs', included: true },
@@ -36,6 +43,7 @@ const plans = [
   {
     name: 'Monthly',
     price: '1000LKR',
+    priceId: 'price_1SvyCRATveOlPa7d7W7XyJH4', // Actual Stripe Price ID
     description: 'For growing companies needing automation.',
     features: [
       { name: 'Unlimited Jobs', included: true },
@@ -49,6 +57,7 @@ const plans = [
   {
     name: 'Yearly',
     price: '10,000LKR',
+    priceId: 'price_1SvyK5ATveOlPa7d910y8fLX', // Replace with your actual Stripe Price ID
     description: 'Custom solutions for high-volume recruitment.',
     features: [
    { name: 'Unlimited Jobs', included: true },
@@ -65,6 +74,40 @@ const plans = [
 export default function ManageSubscription() {
   const [billingCycle, setBillingCycle] = useState('Monthly')
   const [isCompareOpen, setIsCompareOpen] = useState(false)
+  const [loadingPlan, setLoadingPlan] = useState(null)
+  const { user } = useUser()
+
+  const handleUpgrade = async (plan) => {
+    if (!user?.email) {
+      toast.error('Please log in to upgrade')
+      return
+    }
+
+    if (!plan.priceId) {
+       toast.info('This plan is not yet available for purchase')
+       return
+    }
+
+    setLoadingPlan(plan.name)
+    try {
+      const { data } = await axios.post('/api/stripe/checkout', {
+        priceId: plan.priceId,
+        mode: 'subscription',
+        userEmail: user.email
+      })
+
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('Failed to get checkout URL')
+      }
+    } catch (error) {
+      console.error('Upgrade Error:', error)
+      toast.error(error.response?.data?.error || 'Failed to start checkout')
+    } finally {
+      setLoadingPlan(null)
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-700">
@@ -81,7 +124,7 @@ export default function ManageSubscription() {
         <div className="p-10 flex flex-col lg:flex-row gap-10 items-center">
           <div className="flex-1 space-y-8">
             <div className="flex items-center gap-4">
-              <h2 className="text-h2 text-slate-900">Current Plan: Starter</h2>
+              <h2 className="text-h2 text-slate-900">Current Plan: {user?.subscription_plan || 'Starter'}</h2>
               <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
                 ACTIVE
               </span>
@@ -90,28 +133,29 @@ export default function ManageSubscription() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-body text-slate-500">
                 <Clock size={18} className="text-slate-400" />
-                <span>Your plan renews on <span className="font-bold text-slate-700">Oct 24, 2023</span>.</span>
+                <span>Your plan is <span className="font-bold text-slate-700">active</span> and manages your hiring power.</span>
               </div>
               <p className="text-body text-slate-500">
-                You have used <span className="font-bold text-slate-700">4 of 5</span> active job slots.
+                Available Credits: <span className="font-bold text-slate-700">{user?.credits || 0}</span>
               </p>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-4">
-              <Button variant="outline" className="h-12 px-8 rounded-xl bg-slate-50 border-slate-100 text-body font-bold text-slate-600 hover:bg-slate-100 hover:border-slate-200 shadow-sm transition-all">
-                Billing History
-              </Button>
-              <Button variant="ghost" className="h-12 px-8 rounded-xl text-body font-bold text-primary hover:bg-primary/5 transition-all">
-                Cancel Subscription
-              </Button>
+              <Link href="/billing">
+                <Button variant="outline" className="h-12 px-8 rounded-xl bg-slate-50 border-slate-100 text-body font-bold text-slate-600 hover:bg-slate-100 hover:border-slate-200 shadow-sm transition-all">
+                  Billing History
+                </Button>
+              </Link>
+              {user?.subscription_plan && user?.subscription_plan !== 'Starter' && (
+                <Button variant="ghost" className="h-12 px-8 rounded-xl text-body font-bold text-primary hover:bg-primary/5 transition-all">
+                  Cancel Subscription
+                </Button>
+              )}
             </div>
           </div>
           
           <div className="w-full lg:w-[400px] h-[200px] relative rounded-2xl overflow-hidden shadow-inner bg-slate-900">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent z-10" />
-            <div className="absolute inset-0 flex items-center justify-center opacity-40">
-                <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/30 via-transparent to-transparent animate-pulse" />
-            </div>
             <div className="absolute inset-0 flex items-center justify-center">
                 <Zap className="text-primary w-24 h-24" />
             </div>
@@ -154,6 +198,8 @@ export default function ManageSubscription() {
             </div>
 
             <Button 
+                onClick={() => !plan.current && handleUpgrade(plan)}
+                disabled={plan.current || loadingPlan !== null}
                 className={`w-full h-14 rounded-2xl text-body font-black uppercase tracking-widest transition-all ${
                 plan.current 
                 ? 'bg-white border-2 border-slate-100 text-slate-300 hover:bg-slate-50 cursor-default' 
@@ -162,7 +208,11 @@ export default function ManageSubscription() {
                 : 'bg-slate-50 text-slate-900 border border-slate-100 hover:bg-slate-100 active:scale-95'
               }`}
             >
-              {plan.buttonText}
+              {loadingPlan === plan.name ? (
+                <Loader2 className="animate-spin" size={24} />
+              ) : (
+                plan.buttonText
+              )}
             </Button>
 
             <div className="mt-12 space-y-5">
@@ -186,7 +236,7 @@ export default function ManageSubscription() {
       {/* Bottom Footer Section */}
       <div className="text-center space-y-6">
         <p className="text-body text-slate-500 font-medium tracking-tight">
-          Need help choosing? <button className="text-primary hover:underline font-bold transition-all">Chat with our sales team</button> or check out our <button className="text-primary hover:underline font-bold transition-all">documentation</button>.
+          Need help choosing? <span className="text-primary hover:underline font-bold transition-all cursor-pointer">Chat with our sales team</span> or check out our <span className="text-primary hover:underline font-bold transition-all cursor-pointer">documentation</span>.
         </p>
       </div>
     </div>
