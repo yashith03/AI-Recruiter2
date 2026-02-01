@@ -19,14 +19,90 @@ import {
   Sparkles,
 } from "lucide-react"
 import moment from "moment"
+import { InterviewDataContext } from "@/context/interviewDataContext"
+import { supabase } from "@/services/supabaseClient"
+import axios from "axios"
+import { toast } from "sonner"
 
 export default function InterviewComplete() {
   const { interview_id } = useParams()
+  const { interviewInfo } = React.useContext(InterviewDataContext)
   const [loading, setLoading] = React.useState(true)
   const [feedbackData, setFeedbackData] = React.useState(null)
   const [pdfReady, setPdfReady] = React.useState(false)
+  const [processingStatus, setProcessingStatus] = React.useState("")
+  const [isProcessing, setIsProcessing] = React.useState(false)
+  const processingStartedRef = React.useRef(false)
 
-  // Fetch feedback data and poll for PDF
+  // 1. Initial Processing (Upload & AI Analysis) if data is available in context
+  React.useEffect(() => {
+    if (!interview_id || !interviewInfo || processingStartedRef.current) return
+    
+    // Only process if we have a conversation and haven't started yet
+    if (interviewInfo.conversation && interviewInfo.conversation.length > 0) {
+      processingStartedRef.current = true
+      startBackgroundProcessing()
+    }
+  }, [interview_id, interviewInfo])
+
+  const startBackgroundProcessing = async () => {
+    setIsProcessing(true)
+    setProcessingStatus("Preparing data...")
+    
+    try {
+      let recordingPath = null
+      
+      // Step A: Upload Recording if blob exists
+      if (interviewInfo.videoBlob) {
+        setProcessingStatus("Uploading interview video...")
+        recordingPath = await uploadRecording(interviewInfo.videoBlob)
+      }
+
+      // Step B: Generate Feedback
+      setProcessingStatus("Analysing results & generating PDF...")
+      await GenerateFeedback(recordingPath)
+      
+      setProcessingStatus("Complete!")
+    } catch (error) {
+      console.error("Background processing error:", error)
+      toast.error("An error occurred during final processing. We're still working on it.")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const uploadRecording = async (blob) => {
+    if (!blob || blob.size === 0) return null
+    try {
+      const timestamp = Date.now()
+      const filePath = `interviews/${interview_id}/${interview_id}_${timestamp}.webm`
+      const { error } = await supabase.storage
+        .from('interview-recordings')
+        .upload(filePath, blob, { contentType: 'video/webm' })
+      if (error) throw error
+      return filePath
+    } catch (err) {
+      console.error("Upload failed:", err)
+      return null
+    }
+  }
+
+  const GenerateFeedback = async (recordingPath) => {
+    try {
+      await axios.post("/api/interviews/process-result", { 
+        interview_id,
+        conversation: interviewInfo.conversation,
+        userName: interviewInfo.userName,
+        userEmail: interviewInfo.userEmail,
+        recording_path: recordingPath
+      })
+    } catch (err) {
+      console.error("Feedback generation error:", err)
+      throw err
+    }
+  }
+
+  // 2. Polling and state updates
   React.useEffect(() => {
     if (!interview_id) return
 
@@ -143,15 +219,22 @@ export default function InterviewComplete() {
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-500 ${pdfReady ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                     {pdfReady ? <CheckCircle2 className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
                   </div>
-                  <span className="text-sm font-semibold text-slate-700">
-                    {pdfReady ? 'Summary ready' : 'Analyzing feedback'}
-                  </span>
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-semibold text-slate-700">
+                      {pdfReady ? 'Summary ready' : 'Analyzing feedback'}
+                    </span>
+                    {isProcessing && (
+                      <span className="text-[10px] text-blue-500 font-bold animate-pulse">
+                        {processingStatus}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {pdfReady ? (
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
                 ) : (
                   <div className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wide">
-                    In Progress
+                    {isProcessing ? 'Processing' : 'Waiting'}
                   </div>
                 )}
               </div>

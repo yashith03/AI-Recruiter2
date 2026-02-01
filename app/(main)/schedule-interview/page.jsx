@@ -31,6 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import PageHeader from '../_components/PageHeader'
+import CreditBadge from '../_components/CreditBadge'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -122,26 +124,21 @@ export default function ScheduleInterviewPage() {
     <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 mt-2">
-        <div>
-          <h1 className="text-h1 text-slate-900 mb-2">Scheduled Interviews</h1>
-          <p className="text-body-lg text-slate-500">Manage your upcoming screenings and active interview links.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-4 h-11 rounded-xl border border-slate-100">
-            <Brain className="text-primary" size={18} />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">Available Credits</span>
-              <span className="text-body font-black text-slate-900 font-mono leading-none">{user?.credits || 0}</span>
-            </div>
-          </div>
-          <Link href="/dashboard/create-interview">
-            <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold px-6 h-11 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex gap-2">
-              <Plus size={18} /> Create New Interview
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Scheduled Interviews"
+        subtitle="Manage your upcoming screenings and active interview links."
+        className="mb-8 mt-2"
+        actions={
+          <>
+            <CreditBadge className="h-11" />
+            <Link href="/dashboard/create-interview">
+              <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold px-6 h-11 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex gap-2">
+                <Plus size={18} /> Create New Interview
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-10 flex flex-col lg:flex-row gap-4">

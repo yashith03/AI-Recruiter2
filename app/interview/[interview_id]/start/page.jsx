@@ -34,7 +34,7 @@ function StartInterview() {
    router.replace(`/interview/${interview_id}/completed`)
   }
 
-  const { interviewInfo } = useContext(InterviewDataContext)
+  const { interviewInfo, setInterviewInfo } = useContext(InterviewDataContext)
 
   const vapiRef = useRef(null)
   const callStartedRef = useRef(false)
@@ -59,6 +59,7 @@ function StartInterview() {
   const [isRecording, setIsRecording] = useState(false)
   const [recordedChunks, setRecordedChunks] = useState([]) // Keep for any UI if needed, but logic uses Ref
   const recordedChunksRef = useRef([])
+  const [processingStatus, setProcessingStatus] = useState("")
 
 
   // ----------------------------------------------------
@@ -188,36 +189,21 @@ function StartInterview() {
       if (hasEndedRef.current) return
       hasEndedRef.current = true
 
-      console.log("Vapi Call Ended - starting processing...");
+      console.log("Vapi Call Ended - Redirecting to completed page...");
       toast("Interview Ended")
-      setTimerStop(true)
-      setCallStarted(false)
-      setLoading(true)
-      callStartedRef.current = false
-
+      
       const currentConvo = conversationRef.current
+      const recordingBlob = await stopRecording()
 
-      const isEmptyConversation =
-        !currentConvo ||
-        (Array.isArray(currentConvo) && currentConvo.length === 0) ||
-        (typeof currentConvo === "string" && currentConvo.trim() === "")
+      // Hand off data to context for processing on the completed page
+      setInterviewInfo(prev => ({
+        ...prev,
+        conversation: currentConvo,
+        videoBlob: recordingBlob
+      }))
 
-    if (isEmptyConversation) {
-      console.warn("Conversation is empty - skipping feedback");
       redirectToCompleted()
-      return
     }
-
-    // Stop recording and upload
-    const recordingBlob = await stopRecording()
-    let recordingPath = null
-    
-    if (recordingBlob) {
-      recordingPath = await uploadRecording(recordingBlob)
-    }
-
-    await GenerateFeedback(recordingPath)
-}
 
     vapi.on("message", handleMessage)
     vapi.on("speech-start", handleSpeechStart)
@@ -235,27 +221,6 @@ function StartInterview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ----------------------------------------------------
-  // FEEDBACK GENERATOR
-  // ----------------------------------------------------
-  const GenerateFeedback = async (recordingPath = null) => {
-    try {
-      // 🚀 New unified processing: generating candidate summary + PDF + recruiter feedback
-      const result = await axios.post("/api/interviews/process-result", { 
-        interview_id,
-        conversation: conversationRef.current,
-        userName: interviewInfo?.userName || "Unknown",
-        userEmail: interviewInfo?.userEmail || "unknown@example.com",
-        recording_path: recordingPath
-      })
-      
-      console.log("Process Result Success:", result.data);
-      redirectToCompleted()
-    } catch (err) {
-      console.error("Processing error:", err)
-      redirectToCompleted()
-    }
-  }
 
   // ----------------------------------------------------
   // RECORDING FUNCTIONS
@@ -308,30 +273,6 @@ function StartInterview() {
     })
   }
 
-  const uploadRecording = async (blob) => {
-    if (!blob || blob.size === 0) return null
-
-    try {
-      const timestamp = Date.now()
-      const filePath = `interviews/${interview_id}/${interview_id}_${timestamp}.webm`
-      
-      const { error: uploadError } = await supabase.storage
-        .from('interview-recordings')
-        .upload(filePath, blob, {
-          contentType: 'video/webm',
-          upsert: false
-        })
-
-      if (uploadError) throw uploadError
-
-      console.log("Recording uploaded:", filePath)
-      return filePath
-    } catch (err) {
-      console.error("Upload failed (graceful):", err)
-      // toast.error("Failed to upload recording") // Silent failure per plan
-      return null
-    }
-  }
 
   // ----------------------------------------------------
   // START CALL
@@ -398,36 +339,29 @@ const stopInterview = async () => {
 
   setLoading(true)
   setTimerStop(true)
+  
+  console.log("Stopping interview and redirecting...");
 
-  // 🔑 Safety fallback: never hang forever
-  const forceExitTimeout = setTimeout(async () => {
-    if (hasEndedRef.current) return;
-    console.warn("Force exit: Vapi hung, triggering feedback manually");
-    
-    const currentConvo = conversationRef.current
-    if (currentConvo && currentConvo.length > 0) {
-        // Stop recording and upload
-        const recordingBlob = await stopRecording()
-        let recordingPath = null
-        if (recordingBlob) {
-          recordingPath = await uploadRecording(recordingBlob)
-        }
-        await GenerateFeedback(recordingPath);
-    } else {
-        router.replace(`/interview/${interview_id}/completed`);
-    }
-  }, 7000)
+  // 1. Immediately trigger recording stop
+  const recordingBlob = await stopRecording()
 
-  try {
-    if (vapiRef.current) {
+  // 2. Stop Vapi
+  if (vapiRef.current) {
+    try {
       await vapiRef.current.stop()
-      // call-ended SHOULD fire and clear this timeout
+    } catch (err) {
+      console.error("Vapi stop error:", err)
     }
-  } catch (err) {
-    console.error("Stop interview error:", err)
-    clearTimeout(forceExitTimeout)
-    if (!hasEndedRef.current) redirectToCompleted()
   }
+
+  // 3. Hand off data and redirect
+  setInterviewInfo(prev => ({
+    ...prev,
+    conversation: conversationRef.current,
+    videoBlob: recordingBlob
+  }))
+
+  redirectToCompleted()
 }
 
 

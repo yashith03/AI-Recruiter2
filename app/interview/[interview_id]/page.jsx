@@ -138,8 +138,8 @@ function Interview() {
                                 <h1 className="text-[42px] leading-tight font-black text-slate-900 tracking-tight">
                                     {interviewData?.jobPosition || "Software Engineer"}
                                 </h1>
-                                <p className="text-lg text-slate-500 font-medium">
-                                    Senior Level • Full-time
+                             <p className="text-lg text-slate-500 font-medium">
+                                   {/* Senior Level • Full-time */}
                                 </p>
                             </div>
 

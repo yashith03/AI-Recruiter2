@@ -28,6 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import PageHeader from '../_components/PageHeader'
+import CreditBadge from '../_components/CreditBadge'
 
 export default function CompletedInterviews() {
   const [interviewList, setInterviewList] = useState([]);
@@ -63,26 +65,20 @@ export default function CompletedInterviews() {
   return (
     <div className="max-w-7xl mx-auto pb-20 space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-h1 text-slate-900 mb-2">Completed Interviews</h1>
-          <p className="text-body text-slate-500 font-medium">Review feedback for your successfully completed hiring cycles.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-4 h-12 rounded-xl border border-slate-100">
-            <Brain className="text-primary" size={18} />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">Available Credits</span>
-              <span className="text-body font-black text-slate-900 font-mono leading-none">{user?.credits || 0}</span>
-            </div>
-          </div>
-          <Link href="/all-interviews">
-            <Button variant="outline" className="rounded-xl border-slate-200 text-body font-bold h-12 px-6 gap-2 hover:bg-slate-50">
-              View All Pipelines
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Completed Interviews"
+        subtitle="Review feedback for your successfully completed hiring cycles."
+        actions={
+          <>
+            <CreditBadge />
+            <Link href="/all-interviews">
+              <Button variant="outline" className="rounded-xl border-slate-200 text-body font-bold h-12 px-6 gap-2 hover:bg-slate-50">
+                View All Pipelines
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
@@ -135,7 +131,11 @@ export default function CompletedInterviews() {
               </div>
             ) : (
               interviewList.map((interview, index) => (
-                <PremiumInterviewCard interview={interview} key={index} />
+                <PremiumInterviewCard 
+                interview={interview} 
+                key={index} 
+                onRefresh={GetInterviewList}
+              />
               ))
             )}
           </>
