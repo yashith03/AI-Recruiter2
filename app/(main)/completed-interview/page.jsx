@@ -12,7 +12,8 @@ import {
   Plus, 
   ChevronLeft, 
   ChevronRight,
-  Video
+  Video,
+  Brain
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,11 +68,20 @@ export default function CompletedInterviews() {
           <h1 className="text-h1 text-slate-900 mb-2">Completed Interviews</h1>
           <p className="text-body text-slate-500 font-medium">Review feedback for your successfully completed hiring cycles.</p>
         </div>
-        <Link href="/all-interviews">
-          <Button variant="outline" className="rounded-xl border-slate-200 text-body font-bold h-12 px-6 gap-2 hover:bg-slate-50">
-            View All Pipelines
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-4 h-12 rounded-xl border border-slate-100">
+            <Brain className="text-primary" size={18} />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">Available Credits</span>
+              <span className="text-body font-black text-slate-900 font-mono leading-none">{user?.credits || 0}</span>
+            </div>
+          </div>
+          <Link href="/all-interviews">
+            <Button variant="outline" className="rounded-xl border-slate-200 text-body font-bold h-12 px-6 gap-2 hover:bg-slate-50">
+              View All Pipelines
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filter Bar */}

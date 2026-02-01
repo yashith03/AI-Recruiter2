@@ -8,7 +8,7 @@ export async function GET(req, { params }) {
     const { interview_id } = await params;
     const supabase = getSupabaseServer();
 
-    console.log(`▶️ Server-side fetch interview details: ${interview_id}`);
+    console.log(` Server-side fetch interview details: ${interview_id}`);
 
     const { data, error } = await supabase
       .from("interviews")

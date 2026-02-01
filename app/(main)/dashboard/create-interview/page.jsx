@@ -11,6 +11,7 @@ import QuestionList from "./_components/QuestionList"
 import InterviewLink from "./_components/InterviewLink"
 import { toast } from "sonner"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,

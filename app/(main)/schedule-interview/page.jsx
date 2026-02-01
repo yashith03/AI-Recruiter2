@@ -19,7 +19,8 @@ import {
   Layout,
   Briefcase,
   Trash2,
-  History
+  History,
+  Brain
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -126,11 +127,20 @@ export default function ScheduleInterviewPage() {
           <h1 className="text-h1 text-slate-900 mb-2">Scheduled Interviews</h1>
           <p className="text-body-lg text-slate-500">Manage your upcoming screenings and active interview links.</p>
         </div>
-        <Link href="/dashboard/create-interview">
-          <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold px-6 h-11 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex gap-2">
-            <Plus size={18} /> Create New Interview
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-4 h-11 rounded-xl border border-slate-100">
+            <Brain className="text-primary" size={18} />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">Available Credits</span>
+              <span className="text-body font-black text-slate-900 font-mono leading-none">{user?.credits || 0}</span>
+            </div>
+          </div>
+          <Link href="/dashboard/create-interview">
+            <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold px-6 h-11 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-95 flex gap-2">
+              <Plus size={18} /> Create New Interview
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

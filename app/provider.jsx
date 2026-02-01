@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useContext, createContext } from "react";
 import { supabase } from "@/services/supabaseClient";
 import { ThemeProvider } from "next-themes";
+import { PLAN, CREDITS } from "./utils/constants";
 
 export const UserDetailContext = createContext();
 
@@ -38,14 +39,30 @@ function Provider({ children }) {
      */
     const saveUserToDB = async (sessionUser) => {
       try {
-        await supabase.from("users").upsert(
-          {
+        // First check if user exists to avoid overwriting credits
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("email")
+          .eq("email", sessionUser.email)
+          .single();
+
+        if (!existingUser) {
+          // New User: Grant initial credits and set plan
+          await supabase.from("users").insert({
             email: sessionUser.email,
             name: formatName(sessionUser.user_metadata?.name),
             picture: sessionUser.user_metadata?.picture,
-          },
-          { onConflict: "email" }
-        );
+            credits: CREDITS.INITIAL_GRANT,
+            subscription_plan: PLAN.STARTER,
+          });
+          console.log("New user initialized with credits");
+        } else {
+          // Existing User: Just update basic profile info
+          await supabase.from("users").update({
+            name: formatName(sessionUser.user_metadata?.name),
+            picture: sessionUser.user_metadata?.picture,
+          }).eq("email", sessionUser.email);
+        }
       } catch (err) {
         console.error("User save error:", err);
       }

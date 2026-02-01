@@ -6,6 +6,7 @@
 import React from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { 
   Check, 
@@ -78,19 +79,11 @@ export default function InterviewComplete() {
             {/* Header */}
             <header className="w-full px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                        <Sparkles size={20} fill="currentColor" className="text-primary" />
-                    </div>
-                    <span className="text-xl font-bold text-slate-900 tracking-tight">AI Recruiter</span>
+                    <Image src="/logo.png" alt="AI Recruiter" width={140} height={50} className="h-10 w-auto object-contain" />
                 </div>
                 <div className="flex items-center gap-6">
-                    <Link href="#" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                    <Link href="/candidate-support" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
                         Support
-                    </Link>
-                    <Link href="/auth">
-                        <Button className="bg-primary hover:bg-blue-700 text-white font-semibold rounded-lg px-6 h-10 shadow-lg shadow-primary/20">
-                            Login
-                        </Button>
                     </Link>
                 </div>
             </header>
