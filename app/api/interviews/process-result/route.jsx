@@ -158,7 +158,7 @@ export async function POST(req) {
 
     // 6. Save to Database
     console.log(" Saving results to database...");
-    const { error: feedbackError } = await supabase.from("interview-feedback").insert([{
+    const { error: feedbackError } = await supabase.from("interview-feedback").upsert({
       userName,
       userEmail,
       interview_id,
@@ -171,7 +171,7 @@ export async function POST(req) {
       interview_date: moment().format("YYYY-MM-DD"),
       start_time: startTime,
       duration: durationStr,
-    }]);
+    }, { onConflict: 'interview_id' });
 
     if (feedbackError) throw new Error("Database Save Error: " + feedbackError.message);
 

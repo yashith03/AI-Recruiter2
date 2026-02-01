@@ -38,6 +38,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import PageHeader from '../_components/PageHeader'
+import CreditBadge from '../_components/CreditBadge'
 
 export default function AllInterviews() {
   const [interviewList, setInterviewList] = useState([]);
@@ -77,26 +79,20 @@ export default function AllInterviews() {
   return (
     <div className="max-w-7xl mx-auto pb-20 space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-h1 text-slate-900 mb-2">All Interviews</h1>
-          <p className="text-body text-slate-500 font-medium">Manage your active interview pipelines and candidates.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-4 h-12 rounded-xl border border-slate-100">
-            <Brain className="text-primary" size={18} />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">Available Credits</span>
-              <span className="text-body font-black justify-center text-center text-slate-900 font-mono leading-none">{user?.credits || 0}</span>
-            </div>
-          </div>
-          <Link href="/dashboard/create-interview">
-            <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold h-12 px-8 rounded-xl shadow-lg shadow-primary/20 gap-3">
-              <Plus size={20} /> Create New Interview
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="All Interviews"
+        subtitle="Manage your active interview pipelines and candidates."
+        actions={
+          <>
+            <CreditBadge />
+            <Link href="/dashboard/create-interview">
+              <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold h-12 px-8 rounded-xl shadow-lg shadow-primary/20 gap-3">
+                <Plus size={20} /> Create New Interview
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
@@ -142,7 +138,11 @@ export default function AllInterviews() {
         ) : (
           <>
             {currentData.map((interview, index) => (
-              <PremiumInterviewCard interview={interview} key={index} />
+              <PremiumInterviewCard 
+                interview={interview} 
+                key={index} 
+                onRefresh={GetInterviewList}
+              />
             ))}
             
             {/* Create New Card - Only show on the last page or if list is empty */}

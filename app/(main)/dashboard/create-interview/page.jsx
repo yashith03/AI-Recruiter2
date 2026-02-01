@@ -169,7 +169,15 @@ function CreateInterview() {
       )}
 
       {step === 3 && interviewId && (
-        <InterviewLink interview_id={interviewId} formData={formData} />
+        <InterviewLink 
+          interview_id={interviewId} 
+          formData={formData} 
+          onReset={() => {
+            setStep(1)
+            setFormData({})
+            setInterviewId(null)
+          }}
+        />
       )}
 
       {/* Credit Limit Dialog */}

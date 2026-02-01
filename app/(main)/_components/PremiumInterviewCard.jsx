@@ -2,7 +2,7 @@
 
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { 
   Calendar, 
   Code, 
@@ -12,15 +12,37 @@ import {
   MoreVertical, 
   Send, 
   Link as LinkIcon, 
-  Clock
+  Clock,
+  Trash2,
+  Eye,
+  AlertTriangle
 } from 'lucide-react'
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { supabase } from '@/services/supabaseClient'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import moment from 'moment'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import ShareInterviewDialog from './ShareInterviewDialog'
 
-const PremiumInterviewCard = ({ interview }) => {
+const PremiumInterviewCard = ({ interview, onRefresh }) => {
+  const router = useRouter()
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const url = `${process.env.NEXT_PUBLIC_BASE_URL}/interview/${interview?.interview_id}`;
   const candidatesCount = interview["interview-feedback"]?.length || 0;
   
@@ -70,13 +92,33 @@ const PremiumInterviewCard = ({ interview }) => {
   
   const copyLink = () => {
     navigator.clipboard.writeText(url);
-    toast("Link copied to clipboard");
+    toast.success("Link copied to clipboard");
   };
 
-  const onInvite = () => {
-    const mailto = `mailto:?subject=AI Recruiter Interview Invite&body=Please join the interview using this link: ${url}`;
-    window.open(mailto, "_blank");
-  };
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase
+        .from('interviews')
+        .delete()
+        .eq('interview_id', interview.interview_id)
+
+      if (error) throw error
+
+      toast.success("Interview deleted successfully")
+      if (onRefresh) onRefresh()
+    } catch (error) {
+      console.error("Error deleting interview:", error)
+      toast.error("Failed to delete interview")
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+    }
+  }
+
+  const goToDetails = () => {
+    router.push(`/schedule-interview/${interview?.interview_id}/details`)
+  }
 
   const getIcon = () => {
     const title = interview?.jobPosition?.toLowerCase() || '';
@@ -112,11 +154,54 @@ const PremiumInterviewCard = ({ interview }) => {
             </span>
           </div>
         </div>
-        {!isCompleted && (
-          <button className="text-slate-400 p-1 hover:bg-slate-50 rounded-lg">
-            <MoreVertical size={18} />
+        <div className="relative">
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="text-slate-400 p-2 hover:bg-slate-50 rounded-xl transition-colors"
+          >
+            <MoreVertical size={20} />
           </button>
-        )}
+
+          {isMenuOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setIsMenuOpen(false)} 
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl border border-slate-100 shadow-xl z-20 overflow-hidden py-1 animate-in fade-in zoom-in duration-200">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsMenuOpen(false);
+                    goToDetails();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-body font-bold text-slate-600 hover:bg-slate-50 transition-colors text-left"
+                >
+                  <Eye size={18} className="text-slate-400" />
+                  View Details
+                </button>
+                <div className="h-px bg-slate-50 mx-2" />
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsMenuOpen(false);
+                    setShowDeleteDialog(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-body font-bold text-rose-500 hover:bg-rose-50 transition-colors text-left"
+                >
+                  <Trash2 size={18} />
+                  Delete Interview
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4 text-label text-slate-500 font-bold uppercase tracking-wider">
@@ -150,14 +235,22 @@ const PremiumInterviewCard = ({ interview }) => {
       <div className="grid grid-cols-2 gap-3 mt-2">
         <Button 
           variant="outline" 
-          onClick={copyLink}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            copyLink();
+          }}
           disabled={interview?.status === 'cancelled'}
           className="rounded-xl border-slate-100 text-body text-slate-600 font-bold h-10 gap-2 hover:bg-slate-50 disabled:opacity-50"
         >
           <LinkIcon size={14} /> Copy Link
         </Button>
         <Button 
-          onClick={onInvite}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsShareOpen(true);
+          }}
           className={`rounded-xl text-body font-bold h-10 gap-2 shadow-sm ${
             isActionDisabled 
             ? 'bg-slate-100 text-slate-400 cursor-not-allowed hover:bg-slate-100' 
@@ -165,9 +258,48 @@ const PremiumInterviewCard = ({ interview }) => {
           }`}
           disabled={isActionDisabled}
         >
-          <Send size={14} /> Invite
+          <Send size={14} /> Share
         </Button>
       </div>
+
+      <ShareInterviewDialog 
+        open={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        interview={interview}
+      />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="rounded-3xl border-slate-100 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-h2 text-slate-900 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
+                <AlertTriangle className="text-rose-500" size={24} />
+              </div>
+              Delete Interview?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-body text-slate-500 py-2">
+              This action cannot be undone. This will permanently delete the 
+              <span className="font-bold text-slate-900"> {interview?.jobPosition} </span> 
+              interview and all associated candidate feedback.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3">
+            <AlertDialogCancel className="rounded-xl border-slate-100 text-body font-bold h-12 px-6">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              className="rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-body font-bold h-12 px-6 shadow-lg shadow-rose-200"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Interview'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 

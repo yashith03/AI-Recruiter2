@@ -65,7 +65,6 @@ function FormContainer({ onHandleInputChange, GoToNext, loading }) {
               <SelectValue placeholder="Select Duration" />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-              <SelectItem value="5 Min" className="text-body">5 Min</SelectItem>
               <SelectItem value="15 Min" className="text-body">15 Min</SelectItem>
               <SelectItem value="30 Min" className="text-body">30 Min</SelectItem>
               <SelectItem value="45 Min" className="text-body">45 Min</SelectItem>
