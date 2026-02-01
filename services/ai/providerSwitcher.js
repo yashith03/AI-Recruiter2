@@ -15,15 +15,15 @@ export async function generateWithFallback(prompt) {
 
   for (const provider of providers) {
     try {
-      console.log(`🔁 Trying provider: ${provider.name}`);
+      console.log(`Trying provider: ${provider.name}`);
       const result = await provider.generate(prompt);
 
       if (result && result.trim()) {
-        console.log(`✅ Provider succeeded: ${provider.name}`);
+        console.log(`Provider succeeded: ${provider.name}`);
         return result;
       }
     } catch (err) {
-      console.warn(`❌ Provider failed: ${provider.name}`, err.message);
+      console.warn(`Provider failed: ${provider.name}`, err.message);
       lastError = err;
     }
   }

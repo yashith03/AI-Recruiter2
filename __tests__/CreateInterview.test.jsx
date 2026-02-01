@@ -19,7 +19,7 @@ jest.mock("@/app/provider", () => {
   return {
     __esModule: true,
     ...original,
-    useUser: () => ({ user: { email: "test@mail.com", credits: 1 } })
+    useUser: () => ({ user: { email: "test@mail.com", credits: 5, subscription_plan: 'Starter' } })
   };
 });
 

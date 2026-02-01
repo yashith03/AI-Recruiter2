@@ -40,10 +40,12 @@ jest.mock("@/services/supabaseClient", () => ({
   supabase: {
     from: jest.fn(() => ({
       update: jest.fn((data) => ({
-        eq: jest.fn(async (field, value) => {
-          mockUpdate(data);
-          return { error: null };
-        })
+        eq: jest.fn(() => ({
+          select: jest.fn(async () => {
+            mockUpdate(data);
+            return { data: [mockUser], error: null };
+          })
+        }))
       }))
     }))
   },

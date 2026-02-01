@@ -9,6 +9,9 @@ jest.mock('sonner', () => {
 });
 
 
+jest.mock('@/app/provider', () => ({
+  useUser: () => ({ user: { email: 'test@mail.com', name: 'Test User' } }),
+}))
 
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'

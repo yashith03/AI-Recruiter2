@@ -88,7 +88,7 @@ describe("CreateInterview – credit validation", () => {
     fireEvent.click(screen.getByTestId("next-btn")); // try to advance
 
     expect(toast.error).toHaveBeenCalledWith(
-      "You have no credits to create an interview. Please top up your credits."
+      "Your free credits are over, upgrade the plan for unlimited interview creation"
     );
   });
 });
