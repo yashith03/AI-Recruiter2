@@ -41,6 +41,8 @@ import {
 export default function AllInterviews() {
   const [interviewList, setInterviewList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
   const { user } = useUser();
 
   const GetInterviewList = useCallback(async () => {
@@ -64,6 +66,12 @@ export default function AllInterviews() {
   useEffect(() => {
     GetInterviewList();
   }, [GetInterviewList]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(interviewList.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = interviewList.slice(startIndex, endIndex);
 
   return (
     <div className="max-w-7xl mx-auto pb-20 space-y-8 animate-in fade-in duration-700">
@@ -123,42 +131,72 @@ export default function AllInterviews() {
           ))
         ) : (
           <>
-            {interviewList.map((interview, index) => (
+            {currentData.map((interview, index) => (
               <PremiumInterviewCard interview={interview} key={index} />
             ))}
             
-            {/* Create New Card */}
-            <Link href="/dashboard/create-interview">
-              <div className="h-full min-h-[280px] rounded-2xl border-2 border-dashed border-slate-200 hover:border-primary/50 hover:bg-slate-50 transition-all flex flex-col items-center justify-center p-8 cursor-pointer group">
-                <div className="w-16 h-16 rounded-full bg-slate-50 group-hover:bg-primary/10 flex items-center justify-center text-slate-300 group-hover:text-primary transition-all mb-5">
-                  <Plus size={36} />
+            {/* Create New Card - Only show on the last page or if list is empty */}
+            {(currentPage === totalPages || interviewList.length === 0) && (
+              <Link href="/dashboard/create-interview">
+                <div className="h-full min-h-[280px] rounded-2xl border-2 border-dashed border-slate-200 hover:border-primary/50 hover:bg-slate-50 transition-all flex flex-col items-center justify-center p-8 cursor-pointer group">
+                  <div className="w-16 h-16 rounded-full bg-slate-50 group-hover:bg-primary/10 flex items-center justify-center text-slate-300 group-hover:text-primary transition-all mb-5">
+                    <Plus size={36} />
+                  </div>
+                  <h4 className="text-h3 text-slate-800 mb-2">Create New Interview</h4>
+                  <p className="text-body text-slate-400 text-center">Start hiring for a new role in minutes.</p>
                 </div>
-                <h4 className="text-h3 text-slate-800 mb-2">Create New Interview</h4>
-                <p className="text-body text-slate-400 text-center">Start hiring for a new role in minutes.</p>
-              </div>
-            </Link>
+              </Link>
+            )}
           </>
         )}
       </div>
 
       {/* Pagination Footer */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-10 border-t border-slate-100">
-        <p className="text-label text-slate-400 font-bold uppercase tracking-wider">
-          Showing <span className="text-slate-900">1-{interviewList.length}</span> of <span className="text-slate-900">{interviewList.length}</span> interviews
-        </p>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="rounded-xl h-9 w-9 border-slate-200 text-slate-400" disabled>
-            <ChevronLeft size={18} />
-          </Button>
-          <Button className="rounded-xl h-9 w-9 bg-primary text-white text-body font-black">1</Button>
-          <Button variant="ghost" className="rounded-xl h-9 w-9 text-slate-500 text-body font-bold">2</Button>
-          <Button variant="ghost" className="rounded-xl h-9 w-9 text-slate-500 text-body font-bold">3</Button>
-          <span className="text-slate-300 px-1">...</span>
-          <Button variant="outline" size="icon" className="rounded-xl h-9 w-9 border-slate-200 text-slate-600">
-            <ChevronRight size={18} />
-          </Button>
+      {!loading && interviewList.length > 0 && (
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-10 border-t border-slate-100">
+          <p className="text-label text-slate-400 font-bold uppercase tracking-wider">
+            Showing <span className="text-slate-900">{Math.min(startIndex + 1, interviewList.length)}-{Math.min(endIndex, interviewList.length)}</span> of <span className="text-slate-900">{interviewList.length}</span> interviews
+          </p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="rounded-xl h-9 w-9 border-slate-200 text-slate-600 disabled:opacity-50"
+            >
+              <ChevronLeft size={18} />
+            </Button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 5).map(page => (
+              <Button 
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                variant={currentPage === page ? "default" : "ghost"}
+                className={`rounded-xl h-9 w-9 text-body font-bold ${
+                  currentPage === page 
+                    ? "bg-primary text-white" 
+                    : "text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            
+            {totalPages > 5 && <span className="text-slate-300 px-1">...</span>}
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="rounded-xl h-9 w-9 border-slate-200 text-slate-600 disabled:opacity-50"
+            >
+              <ChevronRight size={18} />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

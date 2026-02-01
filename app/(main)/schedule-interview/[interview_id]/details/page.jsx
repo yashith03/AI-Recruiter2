@@ -39,10 +39,10 @@ function InterviewDetail() {
   }, [user, interview_id])
 
   return (
-    <div className="max-w-5xl mx-auto pb-20 animate-in fade-in duration-700">
-      <div className="mb-8">
-        <h1 className="text-h1 text-slate-900 mb-2">Interview Detail</h1>
-        <p className="text-body text-slate-500 font-medium">Review interview configuration and candidate results.</p>
+    <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-700 px-6">
+      <div className="mb-10 pt-4">
+        <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">Interview Details</h1>
+        <p className="text-body-lg text-slate-500 font-medium">Review interview configuration and candidate results.</p>
       </div>
       
       <InterviewDetailContainer interviewDetail={interviewDetails} />

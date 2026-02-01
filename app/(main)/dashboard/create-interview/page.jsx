@@ -10,7 +10,16 @@ import FormContainer from "./_components/FormContainer"
 import QuestionList from "./_components/QuestionList"
 import InterviewLink from "./_components/InterviewLink"
 import { toast } from "sonner"
+import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useUser } from "@/app/provider"
+import { canCreateInterview } from "@/app/utils/subscription"
 
 function CreateInterview() {
   const router = useRouter()
@@ -21,6 +30,7 @@ function CreateInterview() {
   const [interviewId, setInterviewId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [questionList, setQuestionList] = useState([])
+  const [openCreditDialog, setOpenCreditDialog] = useState(false)
 
   // Stable callback to pass to child component
   const onHandleInputChange = useCallback((field, value) => {
@@ -43,8 +53,10 @@ function CreateInterview() {
       return
     }
 
-    if (user?.credits <= 0) {
-      toast.error("You have no credits to create an interview. Please top up your credits.")
+    // Centralized Credit Check
+    if (!canCreateInterview(user)) {
+      toast.error("Your free credits are over, upgrade the plan for unlimited interview creation")
+      setOpenCreditDialog(true)
       return
     }
 
@@ -158,6 +170,26 @@ function CreateInterview() {
       {step === 3 && interviewId && (
         <InterviewLink interview_id={interviewId} formData={formData} />
       )}
+
+      {/* Credit Limit Dialog */}
+      <Dialog open={openCreditDialog} onOpenChange={setOpenCreditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Credits Exhausted</DialogTitle>
+            <DialogDescription>
+              Your free credits are over, upgrade the plan for unlimited interview creation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setOpenCreditDialog(false)}>
+              Cancel
+            </Button>
+            <Link href="/manage-subscription">
+              <Button>Upgrade Plan</Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

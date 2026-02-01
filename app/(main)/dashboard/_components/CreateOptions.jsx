@@ -1,12 +1,64 @@
 // app/(main)/dashboard/_components/CreateOptions.jsx
 
 "use client"
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Plus, LineChart, ArrowRight, Video } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useUser } from '@/app/provider'
+import { supabase } from '@/services/supabaseClient'
+import moment from 'moment'
 
 function CreateOptions() {
+  const { user } = useUser()
+  const [metrics, setMetrics] = useState({
+    activeInterviews: 0,
+    pendingReviews: 0,
+    candidatesWeek: 0,
+    loading: true
+  })
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!user) return
+
+      try {
+        // 1. Active Interviews
+        const { count: interviewCount } = await supabase
+          .from('interviews')
+          .select('*', { count: 'exact', head: true })
+          .eq('created_by', user.email)
+
+        // 2. Candidates This Week
+        const weekAgo = moment().subtract(7, 'days').toISOString()
+        const { count: distinctCandidates } = await supabase
+          .from('interview-feedback')
+          .select('interviews!inner(created_by)', { count: 'exact', head: true })
+          .eq('interviews.created_by', user.email)
+          .gte('created_at', weekAgo)
+
+        // 3. Pending Reviews
+        const { count: pendingCount } = await supabase
+          .from('interview-feedback')
+          .select('interviews!inner(created_by)', { count: 'exact', head: true })
+          .eq('interviews.created_by', user.email)
+          .is('rating', null) 
+
+        setMetrics({
+          activeInterviews: interviewCount || 0,
+          pendingReviews: pendingCount || 0, 
+          candidatesWeek: distinctCandidates || 0,
+          loading: false
+        })
+      } catch (error) {
+        console.error("Error fetching pipeline metrics:", error)
+        setMetrics(prev => ({ ...prev, loading: false }))
+      }
+    }
+
+    fetchMetrics()
+  }, [user])
+
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
         {/* Create New Interview Card */}
@@ -38,7 +90,7 @@ function CreateOptions() {
 
 
         {/* Pipeline Overview Card */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl transition-all group animate-in fade-in duration-700">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
@@ -50,9 +102,9 @@ function CreateOptions() {
 
             <div className="space-y-6">
                 {[
-                    { label: 'Active Interviews', value: '12', color: 'bg-green-500' },
-                    { label: 'Pending Reviews', value: '5', color: 'bg-orange-500' },
-                    { label: 'Candidates This Week', value: '28', color: 'bg-blue-600' }
+                    { label: 'Completed interviews', value: metrics.activeInterviews, color: 'bg-green-500' },
+                    { label: 'Ongoing interviews', value: metrics.pendingReviews, color: 'bg-orange-500' },
+                    { label: 'Candidates This Week', value: metrics.candidatesWeek, color: 'bg-blue-600' }
                 ].map((stat, i) => (
                     <div key={i} className="flex items-center justify-between group/item">
                         <div className="flex items-center gap-3">
@@ -61,15 +113,19 @@ function CreateOptions() {
                                 {stat.label}
                             </span>
                         </div>
-                        <span className="text-h3 text-slate-900">{stat.value}</span>
+                        <span className="text-h3 text-slate-900">
+                           {metrics.loading ? "-" : stat.value}
+                        </span>
                     </div>
                 ))}
             </div>
 
             <div className="mt-8 pt-6 border-t border-slate-50">
-                <button className="text-primary text-body font-bold flex items-center gap-1.5 hover:underline decoration-2 underline-offset-4">
-                    View Full Analytics <ArrowRight size={14} className="-rotate-45" />
-                </button>
+                <Link href="/analytics">
+                    <button className="text-primary text-body font-bold flex items-center gap-1.5 hover:underline decoration-2 underline-offset-4">
+                        View Full Analytics <ArrowRight size={14} className="-rotate-45" />
+                    </button>
+                </Link>
             </div>
         </div>
     </div>

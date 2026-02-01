@@ -28,12 +28,10 @@ export default function NotificationsPage() {
     if (!user?.email) return
     setLoading(true)
 
-    // Fetch real interview completions from interview-feedback table
-    // We join with interviews to filter by the recruiter's email
     const { data, error } = await supabase
-      .from('interview-feedback')
-      .select('*, interviews!inner(userEmail, jobPosition)')
-      .eq('interviews.userEmail', user.email)
+      .from('notifications')
+      .select('*')
+      .eq('user_email', user.email)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -51,18 +49,18 @@ export default function NotificationsPage() {
 
       return {
         id: item.id,
-        type: 'feedback',
-        title: `Interview Completed: ${item.userName}`,
-        description: `${item.userName} has finished the interview for the ${item.interviews?.jobPosition || 'Role'}. View the AI-generated feedback now.`,
+        type: item.type,
+        title: item.title,
+        description: item.message,
         time: createdAt.fromNow(),
-        isUnread: true, // We can implement read/unread in DB later if needed
+        isUnread: !item.is_read,
         group: group,
         icon: ClipboardList,
         iconColor: 'text-primary',
         iconBg: 'bg-primary/5',
         actionLabel: 'Show feedback',
         actionIcon: ChevronRight,
-        link: `/schedule-interview/${item.interview_id}/details`
+        link: item.link
       }
     })
 
@@ -97,7 +95,18 @@ export default function NotificationsPage() {
           </div>
           <Button 
             variant="outline" 
-            onClick={() => setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })))}
+            onClick={async () => {
+              if (!user?.email) return
+              const { error } = await supabase
+                .from('notifications')
+                .update({ is_read: true })
+                .eq('user_email', user.email)
+                .eq('is_read', false)
+              
+              if (!error) {
+                setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })))
+              }
+            }}
             className="text-body font-bold border-border h-10 px-4 gap-2 text-muted-foreground hover:text-foreground"
           >
             <CheckCheck size={18} />
@@ -110,8 +119,7 @@ export default function NotificationsPage() {
           <div className="flex gap-8">
             {[
               { id: 'all', label: 'All Notifications' },
-              { id: 'unread', label: 'Unread', count: unreadCount },
-              { id: 'mentions', label: 'Mentions' }
+              { id: 'unread', label: 'Unread', count: unreadCount }
             ].map((tab) => (
               <button
                 key={tab.id}

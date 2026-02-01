@@ -13,15 +13,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-function CandidateFeedbackDialog({ candidate }) {
+function CandidateFeedbackDialog({ candidate, trigger }) {
   const feedback = candidate?.feedback;
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="text-primary">
-          View Report
-        </Button>
+        {trigger || (
+          <Button variant="outline" className="text-primary border-primary/20 hover:bg-primary/5">
+            View Report
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">

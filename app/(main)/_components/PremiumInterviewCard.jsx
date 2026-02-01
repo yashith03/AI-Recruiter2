@@ -23,7 +23,50 @@ import Link from 'next/link'
 const PremiumInterviewCard = ({ interview }) => {
   const url = `${process.env.NEXT_PUBLIC_BASE_URL}/interview/${interview?.interview_id}`;
   const candidatesCount = interview["interview-feedback"]?.length || 0;
+  
+  // Status logic
+  const getStatusDetails = () => {
+    if (candidatesCount > 0) return {
+      label: 'Completed',
+      badgeClass: 'bg-emerald-500',
+      borderClass: 'border-emerald-100',
+      bottomClass: 'border-b-emerald-500',
+      statusText: 'text-emerald-600',
+      progressClass: 'bg-emerald-50 [&>div]:bg-emerald-500',
+      pipelineLabel: 'Finished'
+    };
+    if (interview?.status === 'cancelled') return {
+      label: 'Cancelled',
+      badgeClass: 'bg-rose-500',
+      borderClass: 'border-rose-100',
+      bottomClass: 'border-b-rose-500',
+      statusText: 'text-rose-600',
+      progressClass: 'bg-rose-50 [&>div]:bg-rose-500',
+      pipelineLabel: 'Cancelled'
+    };
+    if (interview?.status === 'in_progress') return {
+      label: 'In Progress',
+      badgeClass: 'bg-amber-500',
+      borderClass: 'border-amber-100',
+      bottomClass: 'border-b-amber-500',
+      statusText: 'text-amber-600',
+      progressClass: 'bg-amber-50 [&>div]:bg-amber-500',
+      pipelineLabel: 'Active'
+    };
+    return {
+      label: 'Upcoming',
+      badgeClass: 'bg-blue-500',
+      borderClass: 'border-blue-100',
+      bottomClass: 'border-b-blue-500',
+      statusText: 'text-primary',
+      progressClass: 'bg-slate-100',
+      pipelineLabel: 'Upcoming'
+    };
+  };
+
+  const status = getStatusDetails();
   const isCompleted = candidatesCount > 0;
+  const isActionDisabled = isCompleted || interview?.status === 'cancelled';
   
   const copyLink = () => {
     navigator.clipboard.writeText(url);
@@ -52,12 +95,10 @@ const PremiumInterviewCard = ({ interview }) => {
   };
 
   const CardContent = (
-    <div className={`bg-white h-full rounded-2xl border ${isCompleted ? 'border-emerald-100' : 'border-slate-100'} p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-5 border-b-4 ${isCompleted ? 'border-b-emerald-500' : 'border-b-transparent hover:border-b-primary'} group relative overflow-hidden ${isCompleted ? 'cursor-pointer hover:bg-slate-50/50' : ''}`}>
-      {isCompleted && (
-        <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl">
-           Completed
-        </div>
-      )}
+    <div className={`bg-white h-full rounded-2xl border ${status.borderClass} p-6 shadow-sm hover:shadow-md transition-all flex flex-col gap-5 border-b-4 ${status.bottomClass} group relative overflow-hidden ${isCompleted ? 'cursor-pointer hover:bg-slate-50/50' : ''}`}>
+      <div className={`absolute top-0 right-0 ${status.badgeClass} text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl`}>
+         {status.label}
+      </div>
       
       <div className="flex justify-between items-start">
         <div className="flex gap-4">
@@ -92,13 +133,13 @@ const PremiumInterviewCard = ({ interview }) => {
       <div className="space-y-3">
         <div className="flex justify-between items-end">
           <span className="text-label text-slate-400 font-bold uppercase tracking-wider">Pipeline Status</span>
-          <span className={`text-label font-black uppercase tracking-wider ${isCompleted ? 'text-emerald-600' : 'text-primary'}`}>
-            {isCompleted ? 'Finished' : `${candidatesCount} Active`}
+          <span className={`text-label font-black uppercase tracking-wider ${status.statusText}`}>
+            {candidatesCount > 0 ? 'Finished' : status.pipelineLabel}
           </span>
         </div>
         <Progress 
           value={Math.min(candidatesCount * 10, 100)} 
-          className={`h-1.5 ${isCompleted ? 'bg-emerald-50 [&>div]:bg-emerald-500' : 'bg-slate-100'}`} 
+          className={`h-1.5 ${status.progressClass}`} 
         />
         <div className="flex justify-between text-label font-semibold text-slate-400">
           <span>{candidatesCount} Reviewed</span>
@@ -110,18 +151,19 @@ const PremiumInterviewCard = ({ interview }) => {
         <Button 
           variant="outline" 
           onClick={copyLink}
-          className="rounded-xl border-slate-100 text-body text-slate-600 font-bold h-10 gap-2 hover:bg-slate-50"
+          disabled={interview?.status === 'cancelled'}
+          className="rounded-xl border-slate-100 text-body text-slate-600 font-bold h-10 gap-2 hover:bg-slate-50 disabled:opacity-50"
         >
           <LinkIcon size={14} /> Copy Link
         </Button>
         <Button 
           onClick={onInvite}
           className={`rounded-xl text-body font-bold h-10 gap-2 shadow-sm ${
-            isCompleted 
+            isActionDisabled 
             ? 'bg-slate-100 text-slate-400 cursor-not-allowed hover:bg-slate-100' 
             : 'bg-primary hover:bg-primary-dark text-white shadow-primary/10'
           }`}
-          disabled={isCompleted}
+          disabled={isActionDisabled}
         >
           <Send size={14} /> Invite
         </Button>
