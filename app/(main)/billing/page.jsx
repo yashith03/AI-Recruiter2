@@ -32,6 +32,7 @@ import { supabase } from '@/services/supabaseClient'
 import { useSearchParams } from 'next/navigation'
 import moment from 'moment'
 import { toast } from 'sonner'
+import { PLAN, CREDITS } from '@/app/utils/constants'
 
 export default function BillingPage() {
   const { user } = useUser()
@@ -146,7 +147,12 @@ export default function BillingPage() {
               </div>
               <span className="text-body font-black text-slate-900 font-mono">{user?.credits || 0}</span>
             </div>
-            <Progress value={Math.min(((user?.credits || 0) / 100) * 100, 100)} className="h-2 bg-slate-100" />
+            <Progress 
+              value={user?.subscription_plan === PLAN.MONTHLY || user?.subscription_plan === PLAN.YEARLY 
+                ? 100 
+                : ((user?.credits || 0) / CREDITS.INITIAL_GRANT) * 100} 
+              className="h-2 bg-slate-100" 
+            />
             <p className="text-helper text-slate-400 font-bold uppercase tracking-wider">Total AI interview credits available.</p>
           </div>
         </div>

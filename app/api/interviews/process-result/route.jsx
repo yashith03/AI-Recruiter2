@@ -20,10 +20,10 @@ function normalizeQuestion(q) {
 export async function POST(req) {
   const supabase = getSupabaseServer();
   try {
-    console.log("▶️ process-result API called");
+    console.log("process-result API called");
 
     const body = await req.json();
-    const { interview_id, conversation, userName, userEmail } = body || {};
+    const { interview_id, conversation, userName, userEmail, recording_path } = body || {};
 
     if (!interview_id || !conversation || !userName || !userEmail) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -45,7 +45,7 @@ export async function POST(req) {
       : conversation;
 
     // 2. Generate Internal Recruiter Feedback
-    console.log("▶️ Generating Recruiter Feedback...");
+    console.log(" Generating Recruiter Feedback...");
     let feedbackJson;
     try {
       const feedbackPrompt = FEEDBACK_PROMPT.replaceAll("{{conversation}}", JSON.stringify(trimmedConversation));
@@ -58,7 +58,7 @@ export async function POST(req) {
     }
 
     // 3. Generate External Candidate Summary (for PDF)
-    console.log("▶️ Generating Candidate Summary...");
+    console.log(" Generating Candidate Summary...");
     let summaryJson;
     try {
       const summaryPrompt = CANDIDATE_SUMMARY_PROMPT.replaceAll("{{conversation}}", JSON.stringify(trimmedConversation));
@@ -157,7 +157,7 @@ export async function POST(req) {
     const publicUrl = publicData?.publicUrl;
 
     // 6. Save to Database
-    console.log("▶️ Saving results to database...");
+    console.log(" Saving results to database...");
     const { error: feedbackError } = await supabase.from("interview-feedback").insert([{
       userName,
       userEmail,
@@ -166,6 +166,7 @@ export async function POST(req) {
       recommendation: feedbackJson.recommendation === "Recommended",
       candidate_summary: summaryJson, // Storing candidate-facing summary JSON
       pdf_url: publicUrl,
+      recording_path: recording_path || null,
       asked_questions: askedQuestions,
       interview_date: moment().format("YYYY-MM-DD"),
       start_time: startTime,

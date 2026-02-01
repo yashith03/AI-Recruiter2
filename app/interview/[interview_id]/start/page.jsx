@@ -7,9 +7,12 @@ import {
   Loader2Icon,
   Timer,
   Mic,
+  MicOff,
   Video,
+  VideoOff,
   Settings,
   Wifi,
+  WifiOff,
   CheckCircle2,
   Play,
   Bot as BotIcon,
@@ -38,6 +41,8 @@ function StartInterview() {
   const timerStartedRef = useRef(false)
   const hasEndedRef = useRef(false)
   const conversationRef = useRef([])
+  const videoRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
 
   const [conversation, setConversation] = useState([])
   const [callStarted, setCallStarted] = useState(false)
@@ -46,7 +51,102 @@ function StartInterview() {
   const [loading, setLoading] = useState(false)
   const [activeUser, setActiveUser] = useState(false)
   const [animationEnabled, setAnimationEnabled] = useState(false)
+  const [micOn, setMicOn] = useState(false)
+  const [cameraOn, setCameraOn] = useState(false)
+  const [stream, setStream] = useState(null)
+  const [mediaError, setMediaError] = useState("")
+  const [networkQuality, setNetworkQuality] = useState("good") // "good", "unstable", "poor"
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordedChunks, setRecordedChunks] = useState([]) // Keep for any UI if needed, but logic uses Ref
+  const recordedChunksRef = useRef([])
 
+
+  // ----------------------------------------------------
+  // CHECK MEDIA PERMISSIONS ON MOUNT
+  // ----------------------------------------------------
+  useEffect(() => {
+    const checkMedia = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 24 }
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        })
+        setStream(mediaStream)
+        setMicOn(true)
+        setCameraOn(true)
+        setMediaError("")
+      } catch (err) {
+        console.error("Media permission error:", err)
+        setMediaError("Camera and microphone access is required to proceed.")
+        setMicOn(false)
+        setCameraOn(false)
+      }
+    }
+
+    checkMedia()
+
+    return () => {
+      // Cleanup: stop all tracks when leaving page
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [])
+
+  // ----------------------------------------------------
+  // ATTACH STREAM TO VIDEO ELEMENT
+  // ----------------------------------------------------
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
+  // ----------------------------------------------------
+  // MONITOR NETWORK QUALITY
+  // ----------------------------------------------------
+  useEffect(() => {
+    const checkNetworkQuality = () => {
+      if ('connection' in navigator) {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+        const effectiveType = connection?.effectiveType
+        
+        // Map connection types to quality levels
+        if (effectiveType === '4g' || effectiveType === 'wifi') {
+          setNetworkQuality('good')
+        } else if (effectiveType === '3g') {
+          setNetworkQuality('unstable')
+        } else {
+          setNetworkQuality('poor')
+        }
+      } else {
+        // Fallback: use online/offline status
+        setNetworkQuality(navigator.onLine ? 'good' : 'poor')
+      }
+    }
+
+    checkNetworkQuality()
+    
+    // Re-check every 5 seconds
+    const interval = setInterval(checkNetworkQuality, 5000)
+
+    // Listen for online/offline events
+    window.addEventListener('online', checkNetworkQuality)
+    window.addEventListener('offline', checkNetworkQuality)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('online', checkNetworkQuality)
+      window.removeEventListener('offline', checkNetworkQuality)
+    }
+  }, [])
 
   // ----------------------------------------------------
   // INIT VAPI & EVENT LISTENERS
@@ -108,7 +208,15 @@ function StartInterview() {
       return
     }
 
-    await GenerateFeedback()
+    // Stop recording and upload
+    const recordingBlob = await stopRecording()
+    let recordingPath = null
+    
+    if (recordingBlob) {
+      recordingPath = await uploadRecording(recordingBlob)
+    }
+
+    await GenerateFeedback(recordingPath)
 }
 
     vapi.on("message", handleMessage)
@@ -130,14 +238,15 @@ function StartInterview() {
   // ----------------------------------------------------
   // FEEDBACK GENERATOR
   // ----------------------------------------------------
-  const GenerateFeedback = async () => {
+  const GenerateFeedback = async (recordingPath = null) => {
     try {
       // 🚀 New unified processing: generating candidate summary + PDF + recruiter feedback
       const result = await axios.post("/api/interviews/process-result", { 
         interview_id,
         conversation: conversationRef.current,
         userName: interviewInfo?.userName || "Unknown",
-        userEmail: interviewInfo?.userEmail || "unknown@example.com"
+        userEmail: interviewInfo?.userEmail || "unknown@example.com",
+        recording_path: recordingPath
       })
       
       console.log("Process Result Success:", result.data);
@@ -145,6 +254,82 @@ function StartInterview() {
     } catch (err) {
       console.error("Processing error:", err)
       redirectToCompleted()
+    }
+  }
+
+  // ----------------------------------------------------
+  // RECORDING FUNCTIONS
+  // ----------------------------------------------------
+  const startRecording = () => {
+    if (!stream || isRecording) return
+
+    try {
+      recordedChunksRef.current = [] // Clear previous chunks
+      const options = {
+        mimeType: 'video/webm;codecs=vp8,opus',
+        videoBitsPerSecond: 2_500_000, // Optimized ~2.5 Mbps
+        audioBitsPerSecond: 128_000
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options)
+      mediaRecorderRef.current = mediaRecorder
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunksRef.current.push(e.data)
+        }
+      }
+
+      mediaRecorder.start(1000) // Collect data every second for safety
+      setIsRecording(true)
+      console.log("Recording started")
+    } catch (err) {
+      console.error("Failed to start recording:", err)
+      toast.error("Could not start recording")
+    }
+  }
+
+  const stopRecording = () => {
+    return new Promise((resolve) => {
+      const recorder = mediaRecorderRef.current
+      if (!recorder || recorder.state === "inactive") {
+        resolve(null)
+        return
+      }
+
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
+        setIsRecording(false)
+        console.log("Recording stopped, blob size:", blob.size)
+        resolve(blob)
+      }
+
+      recorder.stop()
+    })
+  }
+
+  const uploadRecording = async (blob) => {
+    if (!blob || blob.size === 0) return null
+
+    try {
+      const timestamp = Date.now()
+      const filePath = `interviews/${interview_id}/${interview_id}_${timestamp}.webm`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('interview-recordings')
+        .upload(filePath, blob, {
+          contentType: 'video/webm',
+          upsert: false
+        })
+
+      if (uploadError) throw uploadError
+
+      console.log("Recording uploaded:", filePath)
+      return filePath
+    } catch (err) {
+      console.error("Upload failed (graceful):", err)
+      // toast.error("Failed to upload recording") // Silent failure per plan
+      return null
     }
   }
 
@@ -179,6 +364,30 @@ function StartInterview() {
         ],
       },
     })
+
+    // Start recording after Vapi starts successfully
+    startRecording()
+  }
+
+  // ----------------------------------------------------
+  // TOGGLE MIC & CAMERA
+  // ----------------------------------------------------
+  const toggleMic = () => {
+    if (!stream) return
+    const audioTrack = stream.getAudioTracks()[0]
+    if (audioTrack) {
+      audioTrack.enabled = !audioTrack.enabled
+      setMicOn(audioTrack.enabled)
+    }
+  }
+
+  const toggleCamera = () => {
+    if (!stream) return
+    const videoTrack = stream.getVideoTracks()[0]
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled
+      setCameraOn(videoTrack.enabled)
+    }
   }
 
   // ----------------------------------------------------
@@ -197,7 +406,13 @@ const stopInterview = async () => {
     
     const currentConvo = conversationRef.current
     if (currentConvo && currentConvo.length > 0) {
-        await GenerateFeedback();
+        // Stop recording and upload
+        const recordingBlob = await stopRecording()
+        let recordingPath = null
+        if (recordingBlob) {
+          recordingPath = await uploadRecording(recordingBlob)
+        }
+        await GenerateFeedback(recordingPath);
     } else {
         router.replace(`/interview/${interview_id}/completed`);
     }
@@ -237,15 +452,11 @@ const stopInterview = async () => {
             </div>
             
             <div className="flex items-center gap-4 text-gray-400">
-               <button className="hover:text-gray-600 transition-colors">
-                  <Settings className="w-5 h-5" />
-               </button>
-               <div className="w-px h-6 bg-gray-200" />
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-100 to-blue-100 border border-gray-200 p-0.5 overflow-hidden">
-                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-xs font-bold text-blue-600">
-                      {interviewInfo?.userName?.[0]?.toUpperCase() || "U"}
-                   </div>
-                </div>
+               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-100 to-blue-100 border border-gray-200 p-0.5 overflow-hidden">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-xs font-bold text-blue-600">
+                     {interviewInfo?.userName?.[0]?.toUpperCase() || "U"}
+                  </div>
+               </div>
             </div>
           </div>
         </div>
@@ -333,13 +544,21 @@ const stopInterview = async () => {
              {/* Simulating a camera feed */}
              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60 z-10" />
 
-             {/* Placeholder for Video Feed */}
+             {/* Video Feed */}
              <div className="absolute inset-0 flex items-center justify-center z-0">
-                 {/* Instead of Image, we use a placeholder or the actual image from the user provided code if any. The user provided code used a simple flex layout. */}
-                 {/* Using a subtle background image or pattern to simulate video off/loading or just a dark background */}
-                 <div className="w-full h-full bg-[#1F2937] flex items-center justify-center">
-                    <UserIcon className="w-20 h-20 text-gray-700" />
-                 </div>
+                 {stream && cameraOn ? (
+                   <video 
+                     ref={videoRef}
+                     autoPlay 
+                     playsInline 
+                     muted
+                     className="w-full h-full object-cover scale-x-[-1]"
+                   />
+                 ) : (
+                   <div className="w-full h-full bg-[#1F2937] flex items-center justify-center">
+                      <UserIcon className="w-20 h-20 text-gray-700" />
+                   </div>
+                 )}
                  
                  {/* Active Speaker Ring */}
                  {activeUser && (
@@ -356,8 +575,16 @@ const stopInterview = async () => {
              </div>
              
              {/* Wifi Signal */}
-             <div className="absolute top-5 right-5 z-20 text-white/50">
-                 <Wifi className="w-5 h-5" />
+             <div className="absolute top-5 right-5 z-20">
+                 {networkQuality === 'good' && (
+                   <Wifi className="w-5 h-5 text-green-400" />
+                 )}
+                 {networkQuality === 'unstable' && (
+                   <Wifi className="w-5 h-5 text-yellow-400" />
+                 )}
+                 {networkQuality === 'poor' && (
+                   <WifiOff className="w-5 h-5 text-red-400" />
+                 )}
              </div>
 
              {/* Footer Overlay */}
@@ -374,11 +601,19 @@ const stopInterview = async () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
-                            <Mic className="w-4 h-4" />
+                        <div className={`w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center border transition-colors ${
+                          micOn 
+                            ? 'bg-white/10 text-white border-white/10' 
+                            : 'bg-red-500/90 text-white border-red-600'
+                        }`}>
+                            {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                         </div>
-                         <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/10">
-                            <Video className="w-4 h-4" />
+                         <div className={`w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center border transition-colors ${
+                          cameraOn 
+                            ? 'bg-white/10 text-white border-white/10' 
+                            : 'bg-red-500/90 text-white border-red-600'
+                        }`}>
+                            {cameraOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                         </div>
                     </div>
                 </div>
@@ -404,13 +639,25 @@ const stopInterview = async () => {
            <div className="flex items-center gap-4">
               {/* START BUTTON */}
                {!callStarted && (
-                 <button 
-                    onClick={startCall}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold shadow-xl shadow-blue-600/20 active:scale-95 transition-all text-base"
-                 >
-                    Start Interview
-                    <Play className="w-5 h-5 fill-current ml-1" />
-                 </button>
+                 <div className="flex flex-col items-center gap-2">
+                   <button 
+                      onClick={startCall}
+                      disabled={!micOn || !cameraOn}
+                      className={`flex items-center gap-2 px-10 py-4 rounded-xl font-bold shadow-xl text-base transition-all ${
+                        micOn && cameraOn
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 active:scale-95'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                      }`}
+                   >
+                      Start Interview
+                      <Play className="w-5 h-5 fill-current ml-1" />
+                   </button>
+                   {(!micOn || !cameraOn) && (
+                     <p className="text-xs text-red-500 font-medium">
+                       {mediaError || "Turn on camera and microphone to start the interview."}
+                     </p>
+                   )}
+                 </div>
                )}
 
                {/* STOP BUTTON */}
@@ -428,16 +675,31 @@ const stopInterview = async () => {
                {/* Divider */}
                <div className="h-10 w-px bg-gray-200 mx-4 hidden sm:block"></div>
 
-               {/* Secondary Settings */}
+               {/* Media Controls */}
                <div className="flex items-center gap-2 bg-white border border-gray-200 p-1.5 rounded-xl shadow-sm">
-                   <button className="p-3 hover:bg-gray-50 rounded-lg text-gray-500 transition-colors">
-                      <Mic className="w-5 h-5" />
+                   <button 
+                     onClick={toggleMic}
+                     disabled={!stream}
+                     className={`p-3 rounded-lg transition-all ${
+                       micOn 
+                         ? 'hover:bg-gray-50 text-gray-700' 
+                         : 'bg-red-50 text-red-600 hover:bg-red-100'
+                     }`}
+                     title={micOn ? "Mute microphone" : "Unmute microphone"}
+                   >
+                      {micOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
                    </button>
-                    <button className="p-3 hover:bg-gray-50 rounded-lg text-gray-500 transition-colors">
-                      <Video className="w-5 h-5" />
-                   </button>
-                    <button className="p-3 hover:bg-gray-50 rounded-lg text-gray-500 transition-colors">
-                      <Settings className="w-5 h-5" />
+                    <button 
+                      onClick={toggleCamera}
+                      disabled={!stream}
+                      className={`p-3 rounded-lg transition-all ${
+                        cameraOn 
+                          ? 'hover:bg-gray-50 text-gray-700' 
+                          : 'bg-red-50 text-red-600 hover:bg-red-100'
+                      }`}
+                      title={cameraOn ? "Turn off camera" : "Turn on camera"}
+                    >
+                      {cameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
                    </button>
                </div>
            </div>

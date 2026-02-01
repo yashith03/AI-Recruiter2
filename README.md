@@ -136,7 +136,7 @@ NEXT_PUBLIC_SUPABASE_URL=your_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
 ```
 
-### ▶️ Development Server
+###  Development Server
 
 ```bash
 npm run dev
