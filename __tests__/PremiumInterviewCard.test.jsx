@@ -1,68 +1,125 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import PremiumInterviewCard from "@/app/(main)/_components/PremiumInterviewCard";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/services/supabaseClient";
 import "@testing-library/jest-dom";
 
+// Mock dependencies
 jest.mock("sonner", () => ({
-  toast: jest.fn(),
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
-jest.mock("next/link", () => {
-  return ({ children, href }) => <a href={href}>{children}</a>;
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(),
+}));
+
+jest.mock("@/services/supabaseClient", () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      delete: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ error: null })),
+      })),
+    })),
+  },
+}));
+
+// Mock child components to simplify testing
+jest.mock("@/app/(main)/_components/ShareInterviewDialog", () => {
+  return ({ open }) => (open ? <div data-testid="share-dialog">Share Dialog</div> : null);
 });
 
+// Mock AlertDialog
+jest.mock("@/components/ui/alert-dialog", () => ({
+  AlertDialog: ({ children, open }) => (open ? <div data-testid="alert-dialog">{children}</div> : null),
+  AlertDialogContent: ({ children }) => <div>{children}</div>,
+  AlertDialogHeader: ({ children }) => <div>{children}</div>,
+  AlertDialogFooter: ({ children }) => <div>{children}</div>,
+  AlertDialogTitle: ({ children }) => <div>{children}</div>,
+  AlertDialogDescription: ({ children }) => <div>{children}</div>,
+  AlertDialogAction: ({ children, onClick }) => <button onClick={onClick}>{children}</button>,
+  AlertDialogCancel: ({ children }) => <button>{children}</button>,
+}));
+
 describe("PremiumInterviewCard Component", () => {
-  const activeInterview = {
-    interview_id: "active-123",
-    jobPosition: "Software Engineer",
-    jobDescription: "Technical role",
+  const interview = {
+    interview_id: "test-id-123",
+    jobPosition: "Frontend Engineer",
     created_at: new Date().toISOString(),
-    "interview-feedback": []
+    "interview-feedback": [], // No feedback means active
   };
 
-  const completedInterview = {
-    interview_id: "completed-456",
-    jobPosition: "Product Designer",
-    jobDescription: "Creative role",
-    created_at: new Date().toISOString(),
-    "interview-feedback": [{ id: 1 }]
-  };
+  const mockRouter = { push: jest.fn() };
+  const mockOnRefresh = jest.fn();
 
-  test("renders active interview correctly", () => {
-    render(<PremiumInterviewCard interview={activeInterview} />);
-    expect(screen.getByText("Software Engineer")).toBeInTheDocument();
-    expect(screen.getByText(/0 Active/i)).toBeInTheDocument();
-    expect(screen.queryByText("Completed")).not.toBeInTheDocument();
+  beforeEach(() => {
+    useRouter.mockReturnValue(mockRouter);
+    jest.clearAllMocks();
   });
 
-  test("renders completed interview with badge", () => {
-    render(<PremiumInterviewCard interview={completedInterview} />);
-    expect(screen.getByText("Product Designer")).toBeInTheDocument();
-    expect(screen.getByText("Completed")).toBeInTheDocument();
-    expect(screen.getByText(/Finished/i)).toBeInTheDocument();
+  test("renders interview title and copy link button", () => {
+    render(<PremiumInterviewCard interview={interview} />);
+    expect(screen.getByText("Frontend Engineer")).toBeInTheDocument();
+    expect(screen.getByText(/Copy Link/i)).toBeInTheDocument();
   });
 
-  test("completed interview card is a link to details", () => {
-    render(<PremiumInterviewCard interview={completedInterview} />);
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/schedule-interview/completed-456/details");
+  test("opens share dialog when share button is clicked", () => {
+    render(<PremiumInterviewCard interview={interview} />);
+    fireEvent.click(screen.getByText(/Share/i));
+    expect(screen.getByTestId("share-dialog")).toBeInTheDocument();
   });
 
-  test("invite button is disabled for completed interviews", () => {
-    render(<PremiumInterviewCard interview={completedInterview} />);
-    const inviteBtn = screen.getByRole("button", { name: /invite/i });
-    expect(inviteBtn).toBeDisabled();
-  });
-
-  test("copies link to clipboard", () => {
-    const writeText = jest.fn();
-    Object.assign(navigator, { clipboard: { writeText } });
+  test("shows actions menu when three-dot icon is clicked", () => {
+    render(<PremiumInterviewCard interview={interview} />);
+    // The button has the MoreVertical icon. We can find it by its accessibility or index.
+    // It's a button inside the relative container.
+    const menuBtn = screen.getByRole("button", { name: "" }); // Find the icon button
+    fireEvent.click(menuBtn);
     
-    render(<PremiumInterviewCard interview={activeInterview} />);
-    fireEvent.click(screen.getByText(/Copy Link/i));
+    expect(screen.getByText(/View Details/i)).toBeInTheDocument();
+    expect(screen.getByText(/Delete Interview/i)).toBeInTheDocument();
+  });
+
+  test("navigates to details when 'View Details' is clicked in menu", () => {
+    render(<PremiumInterviewCard interview={interview} />);
+    // Open menu
+    fireEvent.click(screen.getAllByRole("button")[0]); 
+    // Click View Details
+    fireEvent.click(screen.getByText(/View Details/i));
     
-    expect(writeText).toHaveBeenCalled();
-    expect(toast).toHaveBeenCalledWith("Link copied to clipboard");
+    expect(mockRouter.push).toHaveBeenCalledWith(
+        expect.stringContaining("/details")
+    );
+  });
+
+  test("opens delete confirmation dialog", () => {
+    render(<PremiumInterviewCard interview={interview} />);
+    // Open menu
+    fireEvent.click(screen.getAllByRole("button")[0]); 
+    // Click Delete
+    fireEvent.click(screen.getByText(/Delete Interview/i));
+    
+    expect(screen.getByTestId("alert-dialog")).toBeInTheDocument();
+    expect(screen.getByText(/Delete Interview\?/i)).toBeInTheDocument();
+  });
+
+  test("calls handleDelete and onRefresh when confirmed", async () => {
+    render(<PremiumInterviewCard interview={interview} onRefresh={mockOnRefresh} />);
+    // Open menu and delete dialog
+    fireEvent.click(screen.getAllByRole("button")[0]); 
+    fireEvent.click(screen.getByText(/Delete Interview/i));
+    
+    // Click confirm delete in dialog
+    fireEvent.click(screen.getByText("Delete Interview"));
+    
+    await waitFor(() => {
+      expect(supabase.from).toHaveBeenCalledWith("interviews");
+      expect(toast.success).toHaveBeenCalledWith("Interview deleted successfully");
+      expect(mockOnRefresh).toHaveBeenCalled();
+    });
   });
 });

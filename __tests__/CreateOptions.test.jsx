@@ -3,11 +3,17 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CreateOptions from "@/app/(main)/dashboard/_components/CreateOptions";
+import React from "react";
 
 // Mock Next.js Link component
 jest.mock("next/link", () => {
   return ({ href, children, ...rest }) => <a href={href} {...rest}>{children}</a>;
 });
+
+// Mock user provider
+jest.mock("@/app/provider", () => ({
+  useUser: () => ({ user: { email: "test@example.com" } }),
+}));
 
 // Mock lucide-react icons
 jest.mock("lucide-react", () => ({

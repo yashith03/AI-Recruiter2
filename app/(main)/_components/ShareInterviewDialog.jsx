@@ -79,6 +79,7 @@ const ShareInterviewDialog = ({ open, onClose, interview }) => {
               <Button 
                 onClick={onCopyLink}
                 size="icon"
+                aria-label="Copy Link"
                 className="h-11 w-11 shrink-0 rounded-xl bg-primary hover:bg-primary-dark shadow-lg shadow-primary/20"
               >
                 <Copy size={18} />

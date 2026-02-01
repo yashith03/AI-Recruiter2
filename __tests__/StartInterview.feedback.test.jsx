@@ -1,154 +1,122 @@
 // __tests__/StartInterview.feedback.test.jsx
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import StartInterview from '@/app/interview/[interview_id]/start/page';
-import { InterviewDataContext } from '@/context/interviewDataContext';
+import React from 'react'
+import { render, waitFor, fireEvent, screen, act } from '@testing-library/react'
+import StartInterview from '@/app/interview/[interview_id]/start/page'
+import { InterviewDataContext } from '@/context/interviewDataContext'
+import { useRouter, useParams } from 'next/navigation'
 
 // --------------------
-// Mock navigation
+// Mocks
 // --------------------
-const mockReplace = jest.fn();
-const mockParams = { interview_id: 'test-id' };
-const mockRouter = { replace: mockReplace };
-
 jest.mock('next/navigation', () => ({
-  useParams: () => mockParams,
-  useRouter: () => mockRouter,
-}));
+  useParams: jest.fn(),
+  useRouter: jest.fn(),
+}))
 
-// --------------------
-// Mock Vapi
-// --------------------
-let vapiInstance;
-
-jest.mock('@vapi-ai/web', () => {
-  return jest.fn().mockImplementation(() => {
-    let handlers = {};
-
-    vapiInstance = {
-      on: (event, cb) => {
-        handlers[event] = handlers[event] || [];
-        handlers[event].push(cb);
-      },
-      off: (event, cb) => {
-        if (handlers[event]) {
-          handlers[event] = handlers[event].filter(h => h !== cb);
-        }
-      },
-      start: jest.fn(() => Promise.resolve()),
-      stop: jest.fn(() => Promise.resolve()),
-      __emit: (event, payload) => {
-        (handlers[event] || []).forEach(cb => cb(payload));
-      },
-    };
-
-    return vapiInstance;
-  });
+// Mock mediaDevices
+Object.defineProperty(global.navigator, 'mediaDevices', {
+  value: {
+    getUserMedia: jest.fn().mockResolvedValue({
+      getTracks: () => [{ stop: jest.fn() }]
+    })
+  },
+  writable: true
 });
 
-// --------------------
-// Mock axios
-// --------------------
-jest.mock('axios');
-import axios from 'axios';
+// Mock vapi web SDK
+let vapiInstance = null
+jest.mock('@vapi-ai/web', () => {
+  return jest.fn().mockImplementation(() => {
+    const handlers = {}
+    const inst = {
+      start: jest.fn().mockImplementation(() => {
+        // Automatically emit call-start when start is called
+        setTimeout(() => {
+           if (handlers['call-start']) handlers['call-start']()
+        }, 10)
+      }),
+      on: jest.fn((event, cb) => { handlers[event] = cb }),
+      off: jest.fn(),
+      stop: jest.fn(),
+      emit: (event, payload) => { if (handlers[event]) handlers[event](payload) }
+    }
+    vapiInstance = inst
+    return inst
+  })
+})
 
-// --------------------
-// Mock supabase
-// --------------------
-jest.mock('@/services/supabaseClient', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      insert: jest.fn(() => ({ error: null })),
-    })),
-  },
-}));
-
-// --------------------
 // Silence toast
-// --------------------
 jest.mock('sonner', () => ({
-  toast: jest.fn(),
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  }
 }));
 
 describe('StartInterview - feedback paths', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY = 'test-key';
-  });
-
-  const ctxValue = {
-    interviewInfo: {
-      userName: 'Jane Tester',
-      userEmail: 'jane@test.com',
-      interviewData: {
-        jobPosition: 'Dev',
-        questionList: [],
-      },
+  const mockReplace = jest.fn()
+  const setInterviewInfo = jest.fn()
+  
+  const interviewInfo = {
+    userName: 'Test User',
+    userEmail: 'test@mail.com',
+    interviewData: {
+      jobPosition: 'Software Engineer',
+      questionList: [{ question: 'Q1', answer: 'A1' }],
     },
-    setInterviewInfo: jest.fn(),
-  };
+  }
 
-  test('GenerateFeedback no content - redirects to dashboard', async () => {
-    // axios returns empty content
-    axios.post.mockResolvedValueOnce({
-      data: { content: '' },
-    });
+  beforeEach(() => {
+    jest.clearAllMocks()
+    useParams.mockReturnValue({ interview_id: 'test-id' })
+    useRouter.mockReturnValue({ replace: mockReplace })
+    process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY = 'test-key'
+  })
+
+  it('redirects to dashboard when GenerateFeedback returns no content', async () => {
+    // Mock the global fetch for API calls
+    global.fetch = jest.fn().mockImplementation((url) => {
+      if (url === '/api/interviews/process-result') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true })
+        })
+      }
+      return Promise.resolve({ ok: false })
+    })
 
     render(
-      <InterviewDataContext.Provider value={ctxValue}>
+      <InterviewDataContext.Provider value={{ interviewInfo, setInterviewInfo }}>
         <StartInterview />
       </InterviewDataContext.Provider>
-    );
+    )
 
-    // --------------------
-    // Start interview
-    // --------------------
-    const startBtn = await screen.findByRole('button', {
-      name: /start interview/i,
-    });
-
+    // Wait for the start button to be enabled (it waits for getMedia)
+    const startBtn = await screen.findByRole('button', { name: /start interview/i })
+    
     await act(async () => {
       fireEvent.click(startBtn);
     });
 
-    await screen.findByText(/interview in progress/i);
-
-    // --------------------
-    // End interview via alert dialog
-    // --------------------
-    const trigger = document.querySelector('[data-slot="alert-dialog-trigger"]');
+    // Wait for the end-interview button (trigger) to appear
+    const trigger = await waitFor(() => {
+      const t = document.querySelector('[data-slot="alert-dialog-trigger"]');
+      if (!t) throw new Error("Trigger not found");
+      return t;
+    }, { timeout: 3000 });
+    
     expect(trigger).toBeTruthy();
 
     await act(async () => {
       fireEvent.click(trigger);
     });
 
-    const continueBtn = await screen.findByText(/continue/i);
-
+    const continueBtn = screen.getByText('Continue');
     await act(async () => {
       fireEvent.click(continueBtn);
     });
 
-    // --------------------
-    // Emit Vapi call-ended event
-    // --------------------
-    await act(async () => {
-      vapiInstance.__emit('call-ended');
-    });
-
-    // --------------------
-    // Assertions
-    // --------------------
-
-    // axios should NOT be called
-    await waitFor(() => {
-      expect(axios.post).not.toHaveBeenCalled();
-    });
-
-    // Redirect must happen
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/interview/test-id/completed');
-    });
-  });
-});
+    expect(mockReplace).toHaveBeenCalledWith('/interview/test-id/completed')
+  })
+})

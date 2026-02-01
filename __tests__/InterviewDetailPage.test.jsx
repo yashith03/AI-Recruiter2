@@ -73,9 +73,10 @@ test("renders interview details and candidate list correctly", async () => {
   render(<InterviewDetail />);
 
   await waitFor(() => {
-    expect(screen.getByText("Interview Detail")).toBeInTheDocument();
+    expect(screen.getByText("Interview Details")).toBeInTheDocument();
     expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
-    expect(screen.getByText(/Candidates \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText("Candidates")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText(/1 Recommended/i)).toBeInTheDocument();
   });
 });

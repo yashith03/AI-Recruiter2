@@ -4,6 +4,10 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ManageSubscription from '@/app/(main)/manage-subscription/page';
 
+jest.mock('@/app/provider', () => ({
+  useUser: () => ({ user: { email: 'test@mail.com', name: 'Test User' } }),
+}))
+
 // Mock UI components
 jest.mock('@/components/ui/button', () => ({
   Button: ({ children, className }) => <button className={className}>{children}</button>,

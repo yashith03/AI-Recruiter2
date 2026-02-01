@@ -1,10 +1,10 @@
 // __tests__/AppSidebar.test.jsx
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import AppSidebar from "@/app/(main)/_components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar"; // ✅ Your real provider
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 // ---- Mock Next.js navigation ----
 jest.mock("next/navigation", () => ({
@@ -41,6 +41,23 @@ jest.mock("@/app/provider", () => ({
   useUser: jest.fn(),
 }));
 
+// ---- Mock Supabase ----
+jest.mock("@/services/supabaseClient", () => ({
+  supabase: {
+    from: jest.fn((table) => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockImplementation(() => Promise.resolve({
+        data: table === 'interviews' ? [{ id: 1 }, { id: 2 }] : [],
+        error: null
+      })),
+      in: jest.fn().mockImplementation(() => Promise.resolve({
+        count: table === 'interview-feedback' ? 3 : 0,
+        error: null
+      })),
+    })),
+  },
+}));
+
 describe("AppSidebar", () => {
   const { usePathname } = require("next/navigation");
   const { useUser } = require("@/app/provider");
@@ -52,7 +69,6 @@ describe("AppSidebar", () => {
     });
   });
 
-  // ✅ Helper: render with SidebarProvider wrapper
   const renderWithProvider = (path) => {
     usePathname.mockReturnValue(path);
     return render(
@@ -75,9 +91,14 @@ describe("AppSidebar", () => {
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
-  test("renders notification badge for Notifications item", () => {
-    renderWithProvider("/home");
-    expect(screen.getByText("3")).toBeInTheDocument();
+  test("renders notification badge for Notifications item", async () => {
+    await act(async () => {
+      renderWithProvider("/home");
+    });
+    
+    // The count fetch is async, wait for it
+    const badge = await screen.findByText("3");
+    expect(badge).toBeInTheDocument();
   });
 
   test("highlights the active path", () => {

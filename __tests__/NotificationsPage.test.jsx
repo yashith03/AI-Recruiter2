@@ -15,22 +15,22 @@ jest.mock("@/app/provider", () => ({
 jest.mock("@/services/supabaseClient", () => ({
   supabase: {
     from: jest.fn(() => ({
-      select: jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          order: jest.fn().mockResolvedValue({
-            data: [
-              {
-                id: 1,
-                userName: "John Doe",
-                interview_id: "int-123",
-                created_at: new Date().toISOString(),
-                interviews: { jobPosition: "Software Engineer" }
-              }
-            ],
-            error: null,
-          }),
-        }),
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      order: jest.fn().mockResolvedValue({
+        data: [
+          {
+            id: 1,
+            type: "interview_completed",
+            title: "Interview Completed: John Doe",
+            message: "John Doe has finished the interview for Software Engineer",
+            created_at: new Date().toISOString(),
+            is_read: false
+          }
+        ],
+        error: null,
       }),
+      update: jest.fn().mockReturnThis(),
     })),
   },
 }));
