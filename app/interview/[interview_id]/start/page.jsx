@@ -60,6 +60,7 @@ function StartInterview() {
   const [recordedChunks, setRecordedChunks] = useState([]) // Keep for any UI if needed, but logic uses Ref
   const recordedChunksRef = useRef([])
   const [processingStatus, setProcessingStatus] = useState("")
+  const streamRef = useRef(null)
 
 
   // ----------------------------------------------------
@@ -79,6 +80,7 @@ function StartInterview() {
             noiseSuppression: true
           }
         })
+        streamRef.current = mediaStream
         setStream(mediaStream)
         setMicOn(true)
         setCameraOn(true)
@@ -95,8 +97,8 @@ function StartInterview() {
 
     return () => {
       // Cleanup: stop all tracks when leaving page
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop())
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
       }
     }
   }, [])
