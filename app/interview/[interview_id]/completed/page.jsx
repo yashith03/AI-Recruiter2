@@ -34,18 +34,38 @@ export default function InterviewComplete() {
   const [isProcessing, setIsProcessing] = React.useState(false)
   const processingStartedRef = React.useRef(false)
 
-  // 1. Initial Processing (Upload & AI Analysis) if data is available in context
-  React.useEffect(() => {
-    if (!interview_id || !interviewInfo || processingStartedRef.current) return
-    
-    // Only process if we have a conversation and haven't started yet
-    if (interviewInfo.conversation && interviewInfo.conversation.length > 0) {
-      processingStartedRef.current = true
-      startBackgroundProcessing()
+  const uploadRecording = React.useCallback(async (blob) => {
+    if (!blob || blob.size === 0) return null
+    try {
+      const timestamp = Date.now()
+      const filePath = `interviews/${interview_id}/${interview_id}_${timestamp}.webm`
+      const { error } = await supabase.storage
+        .from('interview-recordings')
+        .upload(filePath, blob, { contentType: 'video/webm' })
+      if (error) throw error
+      return filePath
+    } catch (err) {
+      console.error("Upload failed:", err)
+      return null
+    }
+  }, [interview_id])
+
+  const GenerateFeedback = React.useCallback(async (recordingPath) => {
+    try {
+      await axios.post("/api/interviews/process-result", { 
+        interview_id,
+        conversation: interviewInfo.conversation,
+        userName: interviewInfo.userName,
+        userEmail: interviewInfo.userEmail,
+        recording_path: recordingPath
+      })
+    } catch (err) {
+      console.error("Feedback generation error:", err)
+      throw err
     }
   }, [interview_id, interviewInfo])
 
-  const startBackgroundProcessing = async () => {
+  const startBackgroundProcessing = React.useCallback(async () => {
     setIsProcessing(true)
     setProcessingStatus("Preparing data...")
     
@@ -69,38 +89,18 @@ export default function InterviewComplete() {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [interview_id, interviewInfo, uploadRecording, GenerateFeedback])
 
-  const uploadRecording = async (blob) => {
-    if (!blob || blob.size === 0) return null
-    try {
-      const timestamp = Date.now()
-      const filePath = `interviews/${interview_id}/${interview_id}_${timestamp}.webm`
-      const { error } = await supabase.storage
-        .from('interview-recordings')
-        .upload(filePath, blob, { contentType: 'video/webm' })
-      if (error) throw error
-      return filePath
-    } catch (err) {
-      console.error("Upload failed:", err)
-      return null
+  // 1. Initial Processing (Upload & AI Analysis) if data is available in context
+  React.useEffect(() => {
+    if (!interview_id || !interviewInfo || processingStartedRef.current) return
+    
+    // Only process if we have a conversation and haven't started yet
+    if (interviewInfo.conversation && interviewInfo.conversation.length > 0) {
+      processingStartedRef.current = true
+      startBackgroundProcessing()
     }
-  }
-
-  const GenerateFeedback = async (recordingPath) => {
-    try {
-      await axios.post("/api/interviews/process-result", { 
-        interview_id,
-        conversation: interviewInfo.conversation,
-        userName: interviewInfo.userName,
-        userEmail: interviewInfo.userEmail,
-        recording_path: recordingPath
-      })
-    } catch (err) {
-      console.error("Feedback generation error:", err)
-      throw err
-    }
-  }
+  }, [interview_id, interviewInfo, startBackgroundProcessing])
 
   // 2. Polling and state updates
   React.useEffect(() => {
