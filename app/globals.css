@@ -191,4 +191,29 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.6); }
+  }
+  .animate-wave {
+    animation: wave 1s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
 }
