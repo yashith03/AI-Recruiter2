@@ -233,6 +233,14 @@ Alternative registry: you can switch the workflow to push to GitHub Container Re
 
 - **Vercel:** [https://ai-recruiterapp.vercel.app](https://ai-recruiterapp.vercel.app)
 
+### 🛡️ Security Policy
+
+This project enforces container vulnerability scanning using **Trivy** within the CI/CD pipeline.
+
+- **Actionable Enforcement:** The pipeline is configured to fail builds only on **fixable HIGH and CRITICAL vulnerabilities** (using the `--ignore-unfixed` flag).
+- **Non-Actionable Issues:** OS-level or framework vulnerabilities without a current upstream fix are tracked and mitigated via periodic base image updates rather than blocking releases.
+- **Industry Standards:** This approach ensures a secure environment without introducing false blockers for non-actionable security disclosures.
+
 
 
 ---
