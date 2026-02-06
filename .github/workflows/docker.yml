@@ -33,17 +33,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Scan pushed image with Trivy (sha tag)
-        env:
-          IMAGE_REF: ${{ secrets.DOCKER_USERNAME }}/ai-recruiter2:${{ github.sha }}
-        run: |
-          echo "Scanning image: $IMAGE_REF"
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasecurity/trivy:0.44.0 image \
-            --format table \
-            --severity CRITICAL,HIGH \
-            --no-progress $IMAGE_REF
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/ai-recruiter2:${{ github.sha }}
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: '1'
 
       - name: Tag and push `latest` on main
         if: github.ref == 'refs/heads/main'
