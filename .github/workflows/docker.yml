@@ -1,8 +1,7 @@
 name: Docker CI/CD
 
 on:
-  push: {}
-  # Allow manual trigger
+  push:
   workflow_dispatch:
 
 jobs:
@@ -34,14 +33,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@v0.20.0
-        env:
-          IMAGE_REF: ${{ secrets.DOCKER_USERNAME }}/ai-recruiter2:${{ github.sha }}
-        with:
-          image-ref: ${{ env.IMAGE_REF }}
-          format: table
-          severity: HIGH,CRITICAL
-          exit-code: '1'
+        run: |
+          IMAGE_REF=${{ secrets.DOCKER_USERNAME }}/ai-recruiter2:${{ github.sha }}
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            ghcr.io/aquasecurity/trivy:0.44.0 \
+            image --severity HIGH,CRITICAL --exit-code 1 $IMAGE_REF
 
       - name: Tag and push `latest` on main
         if: github.ref == 'refs/heads/main'
