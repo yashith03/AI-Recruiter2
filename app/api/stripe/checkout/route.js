@@ -2,12 +2,14 @@
 
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/services/supabaseServer";
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 export async function POST(req) {
   try {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      console.error('Missing STRIPE_SECRET_KEY during build/runtime');
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    }
+    const stripe = new Stripe(stripeKey);
     const { priceId, mode, userEmail } = await req.json();
 
     if (!priceId || !mode || !userEmail) {

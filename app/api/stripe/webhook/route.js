@@ -4,10 +4,16 @@ import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/services/supabaseServer";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
 export async function POST(req) {
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripeKey || !endpointSecret) {
+    console.error('Missing Stripe secrets for webhook');
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
+
+  const stripe = new Stripe(stripeKey);
   const payload = await req.text();
   const sig = req.headers.get("stripe-signature");
 

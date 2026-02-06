@@ -5,9 +5,11 @@ import { render, screen } from "@testing-library/react";
 import Page from "@/app/page";
 
 // Mock next/image to avoid Next.js optimization issues
-jest.mock("next/image", () => (props) => (
-  <img {...props} alt={props.alt || "mocked image"} />
-));
+jest.mock("next/image", () => (props) => {
+  // Filter out Next/Image-specific props that become invalid DOM attributes in tests
+  const { priority, fill, placeholder, ...rest } = props || {};
+  return <img {...rest} alt={props?.alt || "mocked image"} />;
+});
 
 // Mock next/link for testing
 jest.mock("next/link", () => {
@@ -29,7 +31,11 @@ describe("Home Page", () => {
     expect(container.querySelector("main")).toBeInTheDocument();
     // Problem section has an h2
     expect(screen.getByText(/Why traditional hiring fails/i)).toBeInTheDocument();
-    // Solution section has an h2
-    expect(screen.getByText(/Your autonomous AI recruiter/i)).toBeInTheDocument();
+    // Solution section heading is split across elements (<br/> and <span>),
+    // assert its parts instead of the full joined string.
+    expect(screen.getByText(/Your autonomous/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: /AI recruiter/i })
+    ).toBeInTheDocument();
   });
 });
