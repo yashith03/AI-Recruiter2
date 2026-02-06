@@ -5,7 +5,7 @@ WORKDIR /app
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --cache /tmp/npm-cache
+RUN npm ci --cache /tmp/npm-cache
 
 # ======= BUILDER =======
 FROM node:20-slim AS builder
