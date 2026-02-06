@@ -180,6 +180,8 @@ The application is dockerized for production using a multi-stage, highly optimiz
 
 - **Build Output:** Standalone (minimal footprint)
 - **Base Image:** `node:20-alpine`
+ - **Build Output:** Standalone (minimal footprint)
+ - **Base Image:** `node:20-slim` (runtime installs Chromium system libraries required by Puppeteer)
 
 #### Run with Docker Locally:
 
@@ -191,6 +193,13 @@ The application is dockerized for production using a multi-stage, highly optimiz
    ```bash
    docker run -p 3000:3000 ai-recruiter2
    ```
+
+If you need to test an image pulled from Docker Hub, replace `YOUR_DOCKERHUB_USER` and run:
+
+```bash
+docker pull YOUR_DOCKERHUB_USER/ai-recruiter2:latest
+docker run --rm -p 3000:3000 YOUR_DOCKERHUB_USER/ai-recruiter2:latest
+```
 
 ### 🚀 GitHub Actions CI/CD
 
@@ -204,6 +213,21 @@ To enable automated Docker builds, add the following secrets in **Settings > Sec
 
 - `DOCKER_USERNAME`: Your Docker Hub username.
 - `DOCKER_PASSWORD`: Your Docker Hub token/password.
+
+Notes about CI behavior and scanning:
+
+- The GitHub Actions workflow tags images by branch name and by commit SHA. The workflow only tags `latest` when the `main` branch is pushed.
+- The pipeline runs a Trivy vulnerability scan against the SHA-tagged image. The workflow uses `aquasecurity/trivy-action`.
+
+If your organization blocks third-party Actions, allowlist the actions used by the workflow or contact your admin. Common actions used:
+
+- `actions/checkout`
+- `docker/setup-buildx-action`
+- `docker/login-action`
+- `docker/build-push-action`
+- `aquasecurity/trivy-action`
+
+Alternative registry: you can switch the workflow to push to GitHub Container Registry (GHCR) instead of Docker Hub — GHCR can use `GITHUB_TOKEN` and avoids creating a separate Docker token.
 
 ### 🔗 Live Application
 
