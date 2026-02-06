@@ -3,6 +3,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import SettingsPage from "@/app/(main)/settings/page";
 import "@testing-library/jest-dom";
+import axios from "axios";
 
 // Mock the provider hook
 const mockSetUser = jest.fn();
@@ -58,6 +59,9 @@ jest.mock("sonner", () => ({
     error: jest.fn(),
   },
 }));
+
+// Mock axios
+jest.mock("axios");
 
 describe("SettingsPage", () => {
   beforeEach(() => {
@@ -118,15 +122,24 @@ describe("SettingsPage", () => {
     fireEvent.change(screen.getByDisplayValue("Test User"), { target: { value: "Updated Name" } });
     fireEvent.change(screen.getByDisplayValue("Developer"), { target: { value: "Senior Dev" } });
     
+    // Mock axios response
+    axios.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        user: { ...mockUser, name: "Updated Name", job: "Senior Dev" }
+      }
+    });
+
     // Click save
     const saveButton = screen.getByText("Save Information");
     fireEvent.click(saveButton);
 
-    // Verify Supabase update was called
+    // Verify API call was made
     await waitFor(() => {
-        expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        expect(axios.post).toHaveBeenCalledWith("/api/user/update", expect.objectContaining({
           name: "Updated Name",
           job: "Senior Dev",
+          userEmail: "test@example.com"
         }));
     });
 
