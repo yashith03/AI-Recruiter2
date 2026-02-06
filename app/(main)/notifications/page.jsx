@@ -13,14 +13,17 @@ import {
   MoreVertical,
   Loader2
 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/app/provider'
 import { fetchNotifications } from '@/services/queries/notifications'
+import { supabase } from '@/services/supabaseClient'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState('all')
   const { user, isAuthLoading } = useUser()
+  const queryClient = useQueryClient()
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.email],
@@ -67,7 +70,10 @@ export default function NotificationsPage() {
                 .eq('is_read', false)
               
               if (!error) {
-                setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })))
+                queryClient.invalidateQueries({ queryKey: ['notifications', user?.email] })
+                toast.success('All notifications marked as read')
+              } else {
+                toast.error('Failed to mark notifications as read')
               }
             }}
             className="text-body font-bold border-border h-10 px-4 gap-2 text-muted-foreground hover:text-foreground"

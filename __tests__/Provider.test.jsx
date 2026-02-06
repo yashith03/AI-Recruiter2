@@ -2,8 +2,7 @@
 
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
-import Provider, { useUser } from "@/app/provider";
-import { UserDetailContext } from "@/context/UserDetailContext";
+import Provider, { useUser, UserDetailContext } from "@/app/provider";
 
 const { supabase } = require("@/services/supabaseClient");
 
