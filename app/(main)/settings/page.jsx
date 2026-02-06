@@ -290,7 +290,6 @@ export default function SettingsPage() {
                   <span className="flex items-center gap-1.5"><Briefcase size={14} className="text-muted-foreground" /> {formData.job || 'Job Title'}</span>
                   <span className="flex items-center gap-1.5"><MapPin size={14} className="text-muted-foreground" /> {formData.company || 'Company'}</span>
                 </div>
-                <p className="text-label text-primary font-bold">Acme Corp • Global Talent Team</p>
               </div>
 
               <div className="flex gap-3">

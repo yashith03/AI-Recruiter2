@@ -22,7 +22,7 @@ function WelcomeContainer() {
             
             <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl px-4 py-2.5 shadow-sm hover:shadow-md transition-all cursor-pointer group">
                 <CalendarIcon className="text-slate-400 group-hover:text-primary transition-colors" size={18} />
-                <span className="text-body font-bold text-slate-700">
+                <span className="text-title text-slate-700">
                     {moment().format('MMM DD, YYYY')}
                 </span>
             </div>

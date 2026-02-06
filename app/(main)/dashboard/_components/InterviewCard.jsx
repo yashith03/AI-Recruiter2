@@ -96,14 +96,14 @@ function InterviewCard({ interview }) {
         <div className="flex items-center gap-3 self-end lg:self-center shrink-0">
           <button 
             onClick={copyLink}
-            className="flex items-center gap-2 px-4 py-2.5 text-body font-bold text-slate-600 hover:text-primary hover:bg-slate-50 rounded-xl transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 text-title text-slate-600 hover:text-primary hover:bg-slate-50 rounded-xl transition-all"
           >
             <Copy size={16} /> <span className="hidden sm:inline">Copy Link</span>
           </button>
           
           <button 
             onClick={onInvite}
-            className="flex items-center gap-2 px-4 py-2.5 text-body font-bold text-slate-600 hover:text-primary hover:bg-slate-50 rounded-xl transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 text-title text-slate-600 hover:text-primary hover:bg-slate-50 rounded-xl transition-all"
           >
             <Send size={16} /> <span className="hidden sm:inline">Invite</span>
           </button>
@@ -112,13 +112,13 @@ function InterviewCard({ interview }) {
 
           {status === 'DRAFT' ? (
             <Link href={`/dashboard/create-interview/${interview?.interview_id}`}>
-              <Button className="bg-white border text-slate-800 hover:bg-slate-50 text-body font-bold h-11 px-6 rounded-xl gap-2">
+              <Button className="bg-white border text-slate-800 hover:bg-slate-50 text-title h-11 px-6 rounded-xl gap-2">
                 <Edit3 size={16} /> Resume Draft
               </Button>
             </Link>
           ) : (
             <Link href={`/dashboard/create-interview/${interview?.interview_id}/details`}>
-              <Button className="bg-primary hover:bg-primary-dark text-white text-body font-bold h-11 px-6 rounded-xl gap-2 shadow-lg shadow-primary/20">
+              <Button className="bg-primary hover:bg-primary-dark text-white text-title h-11 px-6 rounded-xl gap-2 shadow-lg shadow-primary/20">
                 View Details <ArrowRight size={16} />
               </Button>
             </Link>
