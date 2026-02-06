@@ -237,9 +237,9 @@ Alternative registry: you can switch the workflow to push to GitHub Container Re
 
 This project enforces container vulnerability scanning using **Trivy** within the CI/CD pipeline.
 
-- **Actionable Enforcement:** The pipeline is configured to fail builds only on **fixable HIGH and CRITICAL vulnerabilities** (using the `--ignore-unfixed` flag).
-- **Non-Actionable Issues:** OS-level or framework vulnerabilities without a current upstream fix are tracked and mitigated via periodic base image updates rather than blocking releases.
-- **Industry Standards:** This approach ensures a secure environment without introducing false blockers for non-actionable security disclosures.
+- **OS Vulnerability Enforcement:** The pipeline is configured to fail builds on **fixable HIGH and CRITICAL OS-level vulnerabilities** (using `--ignore-unfixed`).
+- **Framework & npm Dependencies:** Vulnerabilities in pinned framework dependencies (like Next.js) are tracked separately and resolved through controlled upgrades to avoid breaking production behavior.
+- **Rationale:** This strategy ensures a strong security posture for the container infrastructure while maintaining application stability and avoiding false blockers for non-actionable or pinned framework disclosures.
 
 
 
