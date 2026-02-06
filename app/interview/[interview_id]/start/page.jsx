@@ -197,7 +197,23 @@ function StartInterview() {
       const currentConvo = conversationRef.current
       const recordingBlob = await stopRecording()
 
-      // Hand off data to context for processing on the completed page
+      // 1. Persist session data to DB before redirect
+      try {
+        await fetch("/api/interviews/save-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            interview_id,
+            conversation: currentConvo,
+            userName: interviewInfo?.userName,
+            userEmail: interviewInfo?.userEmail,
+          }),
+        });
+      } catch (err) {
+        console.error("Initial session save failed:", err);
+      }
+
+      // 2. Hand off data to context for processing on the completed page
       setInterviewInfo(prev => ({
         ...prev,
         conversation: currentConvo,
@@ -356,10 +372,28 @@ const stopInterview = async () => {
     }
   }
 
-  // 3. Hand off data and redirect
+  const currentConvo = conversationRef.current
+
+  // 3. Persist session data to DB before redirect
+  try {
+    await fetch("/api/interviews/save-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        interview_id,
+        conversation: currentConvo,
+        userName: interviewInfo?.userName,
+        userEmail: interviewInfo?.userEmail,
+      }),
+    });
+  } catch (err) {
+    console.error("Initial session save failed (manual stop):", err);
+  }
+
+  // 4. Hand off data and redirect
   setInterviewInfo(prev => ({
     ...prev,
-    conversation: conversationRef.current,
+    conversation: currentConvo,
     videoBlob: recordingBlob
   }))
 

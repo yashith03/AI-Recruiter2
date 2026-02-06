@@ -37,26 +37,38 @@ export default function InterviewComplete() {
   const uploadRecording = React.useCallback(async (blob) => {
     if (!blob || blob.size === 0) return null
     try {
-      const timestamp = Date.now()
-      const filePath = `interviews/${interview_id}/${interview_id}_${timestamp}.webm`
-      const { error } = await supabase.storage
-        .from('interview-recordings')
-        .upload(filePath, blob, { contentType: 'video/webm' })
-      if (error) throw error
-      return filePath
+      const formData = new FormData();
+      formData.append("file", blob);
+      formData.append("interview_id", interview_id);
+
+      const response = await fetch("/api/interviews/upload-recording", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Server upload failed");
+      }
+
+      if (!data?.filePath) throw new Error("Invalid response from upload server");
+      
+      return data.filePath
     } catch (err) {
-      console.error("Upload failed:", err)
+      console.error("Upload failed (server-side proxy):", err)
       return null
     }
   }, [interview_id])
 
-  const GenerateFeedback = React.useCallback(async (recordingPath) => {
+  const GenerateFeedback = React.useCallback(async (recordingPath, info = null) => {
+    const data = info || interviewInfo;
     try {
       await axios.post("/api/interviews/process-result", { 
         interview_id,
-        conversation: interviewInfo.conversation,
-        userName: interviewInfo.userName,
-        userEmail: interviewInfo.userEmail,
+        conversation: data.conversation,
+        userName: data.userName,
+        userEmail: data.userEmail,
         recording_path: recordingPath
       })
     } catch (err) {
@@ -65,22 +77,25 @@ export default function InterviewComplete() {
     }
   }, [interview_id, interviewInfo])
 
-  const startBackgroundProcessing = React.useCallback(async () => {
+  const startBackgroundProcessing = React.useCallback(async (recoveredInfo = null) => {
     setIsProcessing(true)
     setProcessingStatus("Preparing data...")
     
+    // Use recoveredInfo if provided, otherwise fallback to context
+    const info = recoveredInfo || interviewInfo;
+    
     try {
-      let recordingPath = null
+      let recordingPath = recoveredInfo?.recording_path || null
       
       // Step A: Upload Recording if blob exists
-      if (interviewInfo.videoBlob) {
+      if (info.videoBlob) {
         setProcessingStatus("Uploading interview video...")
-        recordingPath = await uploadRecording(interviewInfo.videoBlob)
+        recordingPath = await uploadRecording(info.videoBlob)
       }
 
       // Step B: Generate Feedback
       setProcessingStatus("Analysing results & generating PDF...")
-      await GenerateFeedback(recordingPath)
+      await GenerateFeedback(recordingPath, info)
       
       setProcessingStatus("Complete!")
     } catch (error) {
@@ -89,7 +104,7 @@ export default function InterviewComplete() {
     } finally {
       setIsProcessing(false)
     }
-  }, [interview_id, interviewInfo, uploadRecording, GenerateFeedback])
+  }, [interviewInfo, uploadRecording, GenerateFeedback])
 
   // 1. Initial Processing (Upload & AI Analysis) if data is available in context
   React.useEffect(() => {
@@ -102,41 +117,46 @@ export default function InterviewComplete() {
     }
   }, [interview_id, interviewInfo, startBackgroundProcessing])
 
-  // 2. Polling and state updates
+  // 2. Polling for final results
   React.useEffect(() => {
-    if (!interview_id) return
+    if (!interview_id || pdfReady) return
 
     const checkStatus = async () => {
       try {
         const response = await fetch(`/api/interviews/${interview_id}/feedback`);
-        if (!response.ok) return false;
+        if (!response.ok) return;
 
         const data = await response.json();
-
         if (data) {
           setFeedbackData(data)
           if (data.pdf_url) {
             setPdfReady(true)
             setLoading(false)
-            return true // stop polling
           }
         }
-        return false
       } catch (err) {
         console.error("CheckStatus Error:", err);
-        return false;
       }
     }
 
     checkStatus()
-    
-    const interval = setInterval(async () => {
-      const isDone = await checkStatus()
-      if (isDone) clearInterval(interval)
-    }, 3000)
-
+    const interval = setInterval(checkStatus, 3000)
     return () => clearInterval(interval)
-  }, [interview_id])
+  }, [interview_id, pdfReady])
+
+  // 3. Recovery if data is missing from context but found in DB
+  React.useEffect(() => {
+    if (!processingStartedRef.current && feedbackData?.feedback?._temporary_session_data && !pdfReady) {
+      console.log("Recovering session from DB...");
+      processingStartedRef.current = true;
+      startBackgroundProcessing({
+        conversation: feedbackData.feedback._temporary_session_data,
+        userName: feedbackData.userName,
+        userEmail: feedbackData.userEmail,
+        recording_path: feedbackData.recording_path
+      });
+    }
+  }, [feedbackData, pdfReady, startBackgroundProcessing])
 
   const handleDownload = () => {
     if (pdfReady) {
@@ -201,59 +221,68 @@ export default function InterviewComplete() {
             </div>
 
             {/* Status Steps */}
-            <div className="w-full space-y-3 mb-8">
-              {/* Step 1: Saved */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-white shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                    <ShieldCheck className="w-4 h-4" />
+            <div className="w-full space-y-4 mb-8">
+              {/* Step 1: Saved - Styled as a "button" / card */}
+              <div className="w-full flex items-center justify-between p-4 rounded-2xl border border-green-100 bg-green-50/20 shadow-sm transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                    <ShieldCheck className="w-5 h-5" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-700">Recording saved</span>
+                  <span className="text-body font-bold text-slate-700">Recording saved</span>
                 </div>
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+                  <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                </div>
               </div>
               
-              {/* Step 2: Analyzing */}
-              <div className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-500 ${pdfReady ? 'border-green-100 bg-green-50/30' : 'border-blue-100 bg-blue-50/30'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-500 ${pdfReady ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
-                    {pdfReady ? <CheckCircle2 className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
+              {/* Step 2: Analyzing - Styled as a "button" / card */}
+              <div className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-500 shadow-sm ${
+                pdfReady ? 'border-green-100 bg-green-50/20' : 'border-blue-100 bg-blue-50/20'
+              }`}>
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-500 shadow-sm ${
+                    pdfReady ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                  }`}>
+                    {pdfReady ? <CheckCircle2 className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold text-slate-700">
-                      {pdfReady ? 'Summary ready' : 'Analyzing feedback'}
+                    <span className="text-body font-bold text-slate-700">
+                      {pdfReady ? 'Analysis complete' : 'Analyzing feedback'}
                     </span>
-                    {isProcessing && (
-                      <span className="text-[10px] text-blue-500 font-bold animate-pulse">
-                        {processingStatus}
+                    {!pdfReady && (
+                      <span className="text-[11px] text-blue-500 font-bold uppercase tracking-wider animate-pulse">
+                        {processingStatus || "Analysing results & generating PDF..."}
                       </span>
                     )}
                   </div>
                 </div>
                 {pdfReady ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+                    <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                  </div>
                 ) : (
-                  <div className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wide">
-                    {isProcessing ? 'Processing' : 'Waiting'}
+                  <div className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest border border-blue-200">
+                    {isProcessing ? 'Processing' : 'Wait...'}
                   </div>
                 )}
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="w-full space-y-3">
-              <button 
+          
+            {/* Download Button */}
+            <div className="w-full">
+              <Button 
                 onClick={handleDownload}
                 disabled={!pdfReady}
-                className={`w-full font-semibold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg ${
+                className={`w-full h-14 rounded-2xl font-bold transition-all flex items-center justify-center gap-3 shadow-xl ${
                   pdfReady 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 active:scale-[0.98]' 
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200/50 active:scale-[0.98]' 
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
                 }`}
               >
-                <Download className="w-4 h-4" />
-                Download Interview Summary
-              </button>
+                {!pdfReady && <Loader2 className="w-5 h-5 animate-spin" />}
+                <Download className="w-5 h-5" />
+                <span className="text-body">Download Interview Summary</span>
+              </Button>
             </div>
 
             <p className="mt-8 text-xs text-gray-400 text-center">

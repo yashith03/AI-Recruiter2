@@ -2,17 +2,14 @@ import { PLAN, CREDITS } from './constants';
 
 export const canCreateInterview = (user) => {
   if (!user) return false;
+
+  const userPlan = (user.subscription_plan || PLAN.STARTER).toLowerCase();
   
   // Paid plans have unlimited access
-  if (user.subscription_plan === PLAN.MONTHLY || user.subscription_plan === PLAN.YEARLY) {
+  if (userPlan === PLAN.MONTHLY.toLowerCase() || userPlan === PLAN.YEARLY.toLowerCase()) {
     return true;
   }
   
-  // Starter Plan requires credits
-  if (user.subscription_plan === PLAN.STARTER) {
-    return (user.credits || 0) >= CREDITS.INTERVIEW_COST;
-  }
-
-  // Fallback for unknown plans (treat as restricted)
-  return false;
+  // All other plans (Starter, Credit Pack, etc.) require credits
+  return (user.credits || 0) >= CREDITS.INTERVIEW_COST;
 };

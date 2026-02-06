@@ -156,22 +156,42 @@ export async function POST(req) {
     const { data: publicData } = supabase.storage.from("interview-summaries").getPublicUrl(filePath);
     const publicUrl = publicData?.publicUrl;
 
-    // 6. Save to Database
+    // 6. Save to Database (Manual Upsert to bypass missing constraint)
     console.log(" Saving results to database...");
-    const { error: feedbackError } = await supabase.from("interview-feedback").upsert({
+    const feedbackPayload = {
       userName,
       userEmail,
       interview_id,
-      feedback: feedbackJson, // Storing full recruiter evaluation JSON
+      feedback: feedbackJson,
       recommendation: feedbackJson.recommendation === "Recommended",
-      candidate_summary: summaryJson, // Storing candidate-facing summary JSON
+      candidate_summary: summaryJson,
       pdf_url: publicUrl,
       recording_path: recording_path || null,
       asked_questions: askedQuestions,
       interview_date: moment().format("YYYY-MM-DD"),
       start_time: startTime,
       duration: durationStr,
-    }, { onConflict: 'interview_id' });
+    };
+
+    const { data: existingFeedback } = await supabase
+      .from("interview-feedback")
+      .select("id")
+      .eq("interview_id", interview_id)
+      .maybeSingle();
+
+    let feedbackError;
+    if (existingFeedback) {
+      const { error } = await supabase
+        .from("interview-feedback")
+        .update(feedbackPayload)
+        .eq("id", existingFeedback.id);
+      feedbackError = error;
+    } else {
+      const { error } = await supabase
+        .from("interview-feedback")
+        .insert(feedbackPayload);
+      feedbackError = error;
+    }
 
     if (feedbackError) throw new Error("Database Save Error: " + feedbackError.message);
 
