@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useMemo } from 'react'
 import { 
   Users, 
   Video, 
@@ -30,195 +30,149 @@ import {
   Pie,
   Cell
 } from 'recharts'
+import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/app/provider'
-import { supabase } from '@/services/supabaseClient'
+import { fetchAnalyticsInterviews, fetchAnalyticsFeedback } from '@/services/queries/analytics'
 import moment from 'moment'
 import { downloadCSV } from '@/app/utils/export'
 
 export default function AnalyticsPage() {
-  const { user } = useUser()
+  const { user, isAuthLoading } = useUser()
   const [dateRange, setDateRange] = useState('Last 7 Days')
-  const [loading, setLoading] = useState(true)
   
-  // Stats State
-  const [kpis, setKpis] = useState({
-    totalCandidates: 0,
-    interviewsCompleted: 0,
-    avgScore: 0,
-    offerRate: 0
-  })
+  // Fetch interviews
+  const { data: interviews = [], isLoading: interviewsLoading } = useQuery({
+    queryKey: ['analytics', 'interviews', user?.email],
+    queryFn: () => fetchAnalyticsInterviews(user.email),
+    enabled: !!user?.email && !isAuthLoading,
+  });
 
-  // Chart Data State
-  const [volumeData, setVolumeData] = useState([])
-  const [statusData, setStatusData] = useState([])
-  const [recentEvaluations, setRecentEvaluations] = useState([])
+  // Extract interview IDs and fetch feedback
+  const interviewIds = useMemo(() => interviews.map(i => i.id), [interviews]);
+  
+  const { data: feedbackList = [], isLoading: feedbackLoading } = useQuery({
+    queryKey: ['analytics', 'feedback', user?.email, interviewIds],
+    queryFn: () => fetchAnalyticsFeedback(interviewIds),
+    enabled: !!user?.email && !isAuthLoading && interviewIds.length > 0,
+  });
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!user) return
+  const isLoading = interviewsLoading || feedbackLoading;
 
-      try {
-        setLoading(true)
-
-        // 1. Fetch User Interviews (to get IDs and Job Positions)
-        const { data: interviews, error: interviewError } = await supabase
-          .from('interviews')
-          .select('id, jobPosition, created_at')
-          .eq('userEmail', user.email) 
-
-        if (interviewError) throw interviewError
-        
-        const interviewIds = interviews.map(i => i.id)
-        const jobPositionMap = interviews.reduce((acc, curr) => {
-          acc[curr.id] = curr.jobPosition
-          return acc
-        }, {})
-
-        if (interviewIds.length === 0) {
-            setLoading(false)
-            return // No data
-        }
-
-        // 2. Fetch Feedback for these interviews
-        const { data: allFeedback, error: feedbackError } = await supabase
-          .from('interview-feedback')
-          .select('*')
-          .in('interview_id', interviewIds) 
-
-        if (feedbackError) throw feedbackError
-
-        // --- FILTERING ---
-        let feedback = allFeedback
-        const now = moment()
-        
-        if (dateRange === 'Last 7 Days') {
-          feedback = allFeedback.filter(f => moment(f.created_at).isAfter(moment().subtract(7, 'days')))
-        } else if (dateRange === 'This Month') {
-          feedback = allFeedback.filter(f => moment(f.created_at).isSame(now, 'month'))
-        } else if (dateRange === 'This Year') {
-          feedback = allFeedback.filter(f => moment(f.created_at).isSame(now, 'year'))
-        }
-        // 'All Time' -> no filter
-
-        // --- CALCULATIONS ---
-
-        // A. KPIs
-        const totalCandidates = feedback.length
-        
-        // Count completed
-        const completedCount = feedback.filter(f => f.rating !== null).length
-        
-        // Avg Score
-        const validScores = feedback.filter(f => f.rating !== null).map(f => Number(f.rating))
-        const avgScore = validScores.length > 0 
-          ? (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1) 
-          : 0
-
-        // Offer Rate (Score >= 7.5)
-        const offersByScore = validScores.filter(s => s >= 7.5).length
-        const offerRate = totalCandidates > 0 
-          ? ((offersByScore / totalCandidates) * 100).toFixed(1)
-          : 0
-
-        setKpis({
-          totalCandidates,
-          interviewsCompleted: completedCount,
-          avgScore,
-          offerRate
-        })
-
-        // B. Volume Data
-        // For 'Last 7 Days', use specific days. For others, maybe specific grouping, 
-        // but to keep UI simple, let's keep the 'Selected Period' volume distribution by day of week
-        // or just aggregate by day if it's a longer period? 
-        // The current chart expects "count" per "day". 
-        // For simplicity in this iteration: map strictly to Day of Week for the filtered set.
-        // (Improving this for 'Year' views to be 'Month' based is a future enhancement)
-        
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-        const volumeMap = { 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0 }
-
-        feedback.forEach(item => {
-           const dayName = days[new Date(item.created_at).getDay()]
-           volumeMap[dayName]++
-        })
-
-        const chartData = [
-          { day: 'Mon', count: volumeMap['Mon'] },
-          { day: 'Tue', count: volumeMap['Tue'] },
-          { day: 'Wed', count: volumeMap['Wed'] },
-          { day: 'Thu', count: volumeMap['Thu'] },
-          { day: 'Fri', count: volumeMap['Fri'] },
-          { day: 'Sat', count: volumeMap['Sat'] },
-          { day: 'Sun', count: volumeMap['Sun'] },
-        ]
-        setVolumeData(chartData)
-
-        // C. Status Distribution
-        let passed = 0, failed = 0, pending = 0
-        feedback.forEach(item => {
-           if (item.rating === null) {
-             pending++
-           } else {
-             const score = Number(item.rating)
-             if (score >= 7.5) {
-               passed++
-             } else if (score >= 4) {
-               pending++
-             } else {
-               failed++
-             }
-           }
-        })
-        const totalStatus = passed + failed + pending
-        
-        setStatusData([
-          { name: 'Passed', value: totalStatus ? Math.round((passed/totalStatus)*100) : 0, color: '#3b82f6' },
-          { name: 'Pending', value: totalStatus ? Math.round((pending/totalStatus)*100) : 0, color: '#f97316' },
-          { name: 'Failed', value: totalStatus ? Math.round((failed/totalStatus)*100) : 0, color: '#ef4444' },
-        ])
-
-        // D. Recent Evaluations
-        const sortedFeedback = [...feedback].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8)
-        
-        const recentList = sortedFeedback.map(item => {
-           let status = 'Pending'
-           let colorClass = 'text-gray-500'
-           
-           if (item.rating !== null) {
-              const r = Number(item.rating)
-              if (r >= 7.5) { status = 'Passed'; colorClass = 'text-green-600' }
-              else if (r >= 4) { status = 'Pending'; colorClass = 'text-orange-500' }
-              else { status = 'Failed'; colorClass = 'text-red-500' }
-           }
-
-           return {
-             name: item.userName || 'Unknown Candidate',
-             role: jobPositionMap[item.interview_id] || 'Unknown Position',
-             date: moment(item.created_at).format('MMM D, YYYY'),
-             score: item.rating ? (Number(item.rating) * 10).toFixed(0) : '-',
-             rawScore: item.rating,
-             status: status,
-             statusColor: colorClass
-           }
-        })
-        setRecentEvaluations(recentList)
-
-      } catch (err) {
-        console.error("Error fetching analytics:", err)
-      } finally {
-        setLoading(false)
-      }
+  // Calculate analytics from fetched data
+  const analytics = useMemo(() => {
+    if (!interviews.length || !feedbackList.length) {
+      return {
+        kpis: { totalCandidates: 0, interviewsCompleted: 0, avgScore: 0, offerRate: 0 },
+        volumeData: [],
+        statusData: [],
+        recentEvaluations: []
+      };
     }
 
-    fetchAnalytics()
-  }, [user, dateRange])
+    // Create job position map
+    const jobPositionMap = interviews.reduce((acc, curr) => {
+      acc[curr.id] = curr.jobPosition;
+      return acc;
+    }, {});
+
+    // KPIs
+    const totalCandidates = feedbackList.length;
+    const interviewsCompleted = interviews.length;
+    
+    const validScores = feedbackList
+      .filter(f => f.rating !== null)
+      .map(f => Number(f.rating));
+    const avgScore = validScores.length > 0 
+      ? (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1)
+      : 0;
+
+    const offersByScore = validScores.filter(s => s >= 7.5).length;
+    const offerRate = totalCandidates > 0 
+      ? ((offersByScore / totalCandidates) * 100).toFixed(0)
+      : 0;
+
+    // Volume Data (last 7 days)
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const volumeMap = { 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0 };
+
+    feedbackList.forEach(item => {
+      const dayName = days[new Date(item.created_at).getDay()];
+      volumeMap[dayName]++;
+    });
+
+    const chartData = [
+      { day: 'Mon', count: volumeMap['Mon'] },
+      { day: 'Tue', count: volumeMap['Tue'] },
+      { day: 'Wed', count: volumeMap['Wed'] },
+      { day: 'Thu', count: volumeMap['Thu'] },
+      { day: 'Fri', count: volumeMap['Fri'] },
+      { day: 'Sat', count: volumeMap['Sat'] },
+      { day: 'Sun', count: volumeMap['Sun'] },
+    ];
+
+    // Status Distribution
+    let passed = 0, failed = 0, pending = 0;
+    feedbackList.forEach(item => {
+      if (item.rating === null) {
+        pending++;
+      } else {
+        const score = Number(item.rating);
+        if (score >= 7.5) {
+          passed++;
+        } else if (score >= 4) {
+          pending++;
+        } else {
+          failed++;
+        }
+      }
+    });
+    const totalStatus = passed + failed + pending;
+    
+    const statusDataArray = [
+      { name: 'Passed', value: totalStatus ? Math.round((passed/totalStatus)*100) : 0, color: '#3b82f6' },
+      { name: 'Pending', value: totalStatus ? Math.round((pending/totalStatus)*100) : 0, color: '#f97316' },
+      { name: 'Failed', value: totalStatus ? Math.round((failed/totalStatus)*100) : 0, color: '#ef4444' },
+    ];
+
+    // Recent Evaluations
+    const sortedFeedback = [...feedbackList].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+    
+    const recentList = sortedFeedback.map(item => {
+      let status = 'Pending';
+      let colorClass = 'text-gray-500';
+      
+      if (item.rating !== null) {
+        const r = Number(item.rating);
+        if (r >= 7.5) { status = 'Passed'; colorClass = 'text-green-600'; }
+        else if (r >= 4) { status = 'Pending'; colorClass = 'text-orange-500'; }
+        else { status = 'Failed'; colorClass = 'text-red-500'; }
+      }
+
+      return {
+        name: item.userName || 'Unknown Candidate',
+        role: jobPositionMap[item.interview_id] || 'Unknown Position',
+        date: moment(item.created_at).format('MMM D, YYYY'),
+        score: item.rating ? (Number(item.rating) * 10).toFixed(0) : '-',
+        rawScore: item.rating,
+        status: status,
+        statusColor: colorClass
+      };
+    });
+
+    return {
+      kpis: { totalCandidates, interviewsCompleted, avgScore, offerRate },
+      volumeData: chartData,
+      statusData: statusDataArray,
+      recentEvaluations: recentList
+    };
+  }, [interviews, feedbackList]);
+
+  const { kpis, volumeData, statusData, recentEvaluations } = analytics;
 
   const handleExport = () => {
-    // ... existing export logic
     if (recentEvaluations.length === 0) {
-       toast.error("No data available to export")
-       return
+      toast.error("No data available to export");
+      return;
     }
     const reportData = recentEvaluations.map(item => ({
       Candidate: item.name,
@@ -229,15 +183,96 @@ export default function AnalyticsPage() {
     }));
     downloadCSV(reportData, `Recruitment_Report_${moment().format('YYYY-MM-DD')}.csv`);
     toast.success("Report downloaded successfully");
-  }
+  };
 
-  if (loading) {
-     // ... existing loader
-     return (
-       <div className="flex h-[80vh] items-center justify-center">
-         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-       </div>
-     )
+  if (isLoading) {
+    return (
+      <div className="max-w-[1600px] mx-auto pb-20 space-y-8 animate-in fade-in duration-700">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-slate-100 rounded-lg animate-pulse" />
+            <div className="h-4 w-64 bg-slate-50 rounded-lg animate-pulse" />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-[180px] bg-slate-100 rounded-lg animate-pulse" />
+            <div className="h-10 w-32 bg-slate-100 rounded-lg animate-pulse" />
+          </div>
+        </div>
+
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-card rounded-2xl p-6 border border-border shadow-sm h-[160px] flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <div className="h-12 w-12 rounded-xl bg-slate-100 animate-pulse" />
+                <div className="h-6 w-12 rounded-full bg-slate-50 animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-slate-50 rounded animate-pulse" />
+                <div className="h-8 w-16 bg-slate-100 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Section Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Candidate Volume Skeleton */}
+          <div className="lg:col-span-2 bg-card rounded-2xl p-6 md:p-8 border border-border shadow-sm h-[400px]">
+            <div className="flex items-center justify-between mb-8">
+              <div className="space-y-2">
+                <div className="h-6 w-32 bg-slate-100 rounded animate-pulse" />
+                <div className="h-4 w-48 bg-slate-50 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="h-[300px] w-full bg-slate-50 rounded-xl animate-pulse" />
+          </div>
+
+          {/* Right: Status Distribution Skeleton */}
+          <div className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-sm h-[400px]">
+            <div className="mb-8 space-y-2">
+              <div className="h-6 w-32 bg-slate-100 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-slate-50 rounded animate-pulse" />
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="h-48 w-48 rounded-full bg-slate-50 animate-pulse border-8 border-slate-100" />
+            </div>
+            <div className="space-y-3 mt-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex justify-between">
+                  <div className="h-4 w-20 bg-slate-50 rounded animate-pulse" />
+                  <div className="h-4 w-8 bg-slate-50 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="p-6 md:p-8 border-b border-border">
+            <div className="h-6 w-48 bg-slate-100 rounded animate-pulse" />
+          </div>
+          <div className="p-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center justify-between py-4 border-b border-slate-50 last:border-0">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-slate-100 rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-slate-50 rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="h-4 w-24 bg-slate-50 rounded animate-pulse hidden md:block" />
+                <div className="h-4 w-24 bg-slate-50 rounded animate-pulse hidden md:block" />
+                <div className="h-6 w-16 bg-slate-100 rounded-full animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

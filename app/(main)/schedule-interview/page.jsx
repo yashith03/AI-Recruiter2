@@ -1,7 +1,7 @@
 // app/(main)/schedule-interview/page.jsx
 
 "use client"
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { 
   Search, 
   Plus, 
@@ -36,47 +36,24 @@ import CreditBadge from '../_components/CreditBadge'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/services/supabaseClient'
 import { useUser } from '@/app/provider'
+import { fetchScheduledInterviews } from '@/services/queries/interviews'
 import moment from 'moment'
 import { toast } from 'sonner'
 
 export default function ScheduleInterviewPage() {
-  const [interviewList, setInterviewList] = useState([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const { user } = useUser()
+  const { user, isAuthLoading } = useUser()
+  const queryClient = useQueryClient()
 
-  const GetScheduledInterviews = useCallback(async () => {
-    if (!user?.email) return;
-    
-    setLoading(true);
-    // Fetch interviews with scheduled/in_progress/cancelled status
-    let { data, error } = await supabase
-      .from('interviews')
-      .select('*, interview-feedback!interview_feedback_interview_id_fk(*)')
-      .eq('userEmail', user.email)
-      .in('status', ['scheduled', 'in_progress', 'cancelled'])
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Supabase error:', error.message);
-    } else {
-      // Filter out interviews where any candidate has reached 'ready' (completed) status
-      const filtered = (data || []).filter(interview => {
-        const feedbacks = interview['interview-feedback'] || [];
-        const isCompleted = feedbacks.some(fb => fb.summary_status === 'ready');
-        return !isCompleted;
-      });
-      setInterviewList(filtered);
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    GetScheduledInterviews();
-  }, [GetScheduledInterviews]);
+  const { data: interviewList = [], isLoading, refetch } = useQuery({
+    queryKey: ['interviews', 'scheduled', user?.email],
+    queryFn: () => fetchScheduledInterviews(user.email),
+    enabled: !!user?.email && !isAuthLoading,
+  });
 
   const handleCancelInterview = async (interviewId) => {
     try {
@@ -88,28 +65,31 @@ export default function ScheduleInterviewPage() {
       if (error) throw error;
 
       toast.success('Interview cancelled successfully');
-      // Refresh list to update UI
-      GetScheduledInterviews();
-    } catch (err) {
-      console.error('Error cancelling interview:', err.message);
+      // Invalidate all interview queries to refetch
+      queryClient.invalidateQueries(['interviews']);
+    } catch (error) {
+      console.error('Error cancelling interview:', error);
       toast.error('Failed to cancel interview');
     }
   };
 
   const handleReschedule = async (interviewId) => {
     try {
+      const newDate = prompt('Enter new date (YYYY-MM-DD):');
+      if (!newDate) return;
+
       const { error } = await supabase
         .from('interviews')
-        .update({ status: 'scheduled' })
+        .update({ scheduled_date: newDate })
         .eq('interview_id', interviewId);
 
       if (error) throw error;
 
-      toast.success('Interview reactivated successfully');
-      // Refresh list to update UI
-      GetScheduledInterviews();
-    } catch (err) {
-      console.error('Error rescheduling interview:', err.message);
+      toast.success('Interview rescheduled successfully');
+      // Invalidate queries to trigger refetch
+      queryClient.invalidateQueries(['interviews']);
+    } catch (error) {
+      console.error('Error rescheduling interview:', error);
       toast.error('Failed to reschedule interview');
     }
   };
@@ -168,10 +148,35 @@ export default function ScheduleInterviewPage() {
 
       {/* List */}
       <div className="space-y-10">
-        {loading ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((_, i) => (
-              <div key={i} className="h-64 rounded-3xl bg-slate-50 animate-pulse border border-slate-100" />
+              <div key={i} className="bg-white rounded-3xl border border-slate-100 p-6 flex flex-col justify-between h-[300px]">
+                {/* Header Skeleton */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex gap-4 w-full">
+                    <div className="h-14 w-14 rounded-full bg-slate-50 animate-pulse shrink-0" />
+                    <div className="space-y-2 w-full">
+                       <div className="h-5 w-32 bg-slate-100 rounded animate-pulse" />
+                       <div className="h-4 w-24 bg-slate-50 rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-20 bg-slate-50 rounded-full animate-pulse" />
+                </div>
+                
+                {/* Body/Time Skeleton */}
+                <div className="p-4 rounded-2xl bg-slate-50 mb-6 space-y-3">
+                   <div className="h-4 w-24 bg-white rounded animate-pulse" />
+                   <div className="h-4 w-32 bg-white rounded animate-pulse" />
+                   <div className="h-3 w-40 bg-white/50 rounded animate-pulse" />
+                </div>
+
+                {/* Footer Actions Skeleton */}
+                <div className="flex gap-3 border-t border-slate-50 pt-4 mt-auto">
+                   <div className="h-11 flex-1 bg-slate-100 rounded-xl animate-pulse" />
+                   <div className="h-11 w-24 bg-slate-50 rounded-xl animate-pulse" />
+                </div>
+              </div>
             ))}
           </div>
         ) : filteredData.length === 0 ? (

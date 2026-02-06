@@ -2,6 +2,7 @@
 
 "use client"
 import React, { useContext, useEffect, useState, useRef } from "react"
+import Image from "next/image"
 import { InterviewDataContext } from "@/context/interviewDataContext"
 import {
   Loader2Icon,
@@ -15,7 +16,6 @@ import {
   WifiOff,
   CheckCircle2,
   Play,
-  Bot as BotIcon,
   User as UserIcon,
 } from "lucide-react"
 import Vapi from "@vapi-ai/web"
@@ -375,10 +375,7 @@ const stopInterview = async () => {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 rounded-lg p-1.5 shadow-sm">
-               <BotIcon className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="font-bold text-lg tracking-tight text-gray-900">AI Recruiter</h1>
+             <Image src="/logo.png" alt="logo" width={140} height={50} className="h-10 w-auto object-contain" />
           </div>
 
           <div className="flex items-center gap-6">
@@ -460,7 +457,7 @@ const stopInterview = async () => {
                     <div className="flex items-center gap-3.5">
                         <div className="relative">
                             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md border border-gray-100">
-                               <BotIcon className="w-6 h-6 text-blue-600" />
+                               <Image src="/logo.png" alt="logo" width={40} height={40} className="h-6 w-auto object-contain" />
                             </div>
                         </div>
                         <div>

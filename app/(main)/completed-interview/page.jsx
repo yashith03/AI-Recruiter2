@@ -2,23 +2,25 @@
 
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { 
-  Search, 
-  Filter, 
-  Calendar, 
-  Briefcase, 
-  X, 
-  Plus, 
-  ChevronLeft, 
+import React from 'react'
+import {
+  Search,
+  Filter,
+  Calendar,
+  Clock,
+  User,
   ChevronRight,
-  Video,
-  Brain
+  ChevronLeft,
+  Loader2,
+  X,
+  Video
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/app/provider'
-import { supabase } from '@/services/supabaseClient'
+import { fetchCompletedInterviews } from '@/services/queries/interviews'
+import moment from 'moment'
 import Link from 'next/link'
 import PremiumInterviewCard from '../_components/PremiumInterviewCard'
 import {
@@ -32,35 +34,13 @@ import PageHeader from '../_components/PageHeader'
 import CreditBadge from '../_components/CreditBadge'
 
 export default function CompletedInterviews() {
-  const [interviewList, setInterviewList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useUser();
+  const { user, isAuthLoading } = useUser();
 
-  const GetInterviewList = useCallback(async () => {
-    if (!user?.email) return;
-    
-    setLoading(true);
-    // Fetch interviews that have at least one record in interview-feedback using !inner join
-    let { data, error } = await supabase
-      .from('interviews')
-      .select('*, interview-feedback!interview_feedback_interview_id_fk!inner(*)')
-      .eq('userEmail', user.email)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-        // If no records found, Supabase might return an error or empty array depending on the join
-        // We'll treat errors as empty list for now if it's just a 'not found' type error
-        console.error('Supabase error:', error.message);
-        setInterviewList([]);
-    } else {
-      setInterviewList(data || []);
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    GetInterviewList();
-  }, [GetInterviewList]);
+  const { data: interviewList = [], isLoading, refetch } = useQuery({
+    queryKey: ['interviews', 'completed', user?.email],
+    queryFn: () => fetchCompletedInterviews(user.email),
+    enabled: !!user?.email && !isAuthLoading,
+  });
 
   return (
     <div className="max-w-7xl mx-auto pb-20 space-y-8 animate-in fade-in duration-700">
@@ -112,9 +92,50 @@ export default function CompletedInterviews() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {loading ? (
+        {isLoading ? (
           Array(6).fill(0).map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-slate-50 animate-pulse border border-slate-100" />
+            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-5 border-b-4 border-b-slate-100 h-[380px]">
+              {/* Badge Skeleton */}
+              <div className="flex justify-end -mt-2 -mr-2">
+                 <div className="h-6 w-20 bg-slate-100 rounded-bl-xl animate-pulse" />
+              </div>
+              
+              {/* Header Skeleton */}
+              <div className="flex justify-between items-start">
+                <div className="flex gap-4 w-full">
+                  <div className="h-12 w-12 rounded-xl bg-slate-50 animate-pulse shrink-0" />
+                  <div className="space-y-2 w-full">
+                    <div className="h-6 w-32 bg-slate-100 rounded animate-pulse" />
+                    <div className="h-4 w-48 bg-slate-50 rounded animate-pulse" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Date/Time Skeleton */}
+              <div className="flex gap-4">
+                <div className="h-4 w-24 bg-slate-50 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-slate-50 rounded animate-pulse" />
+              </div>
+
+              {/* Progress Skeleton */}
+              <div className="space-y-3 mt-auto">
+                <div className="flex justify-between">
+                  <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                  <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded animate-pulse" />
+                <div className="flex justify-between">
+                   <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                   <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                </div>
+              </div>
+
+              {/* Buttons Skeleton */}
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="h-10 w-full bg-slate-50 rounded-xl animate-pulse" />
+                <div className="h-10 w-full bg-slate-100 rounded-xl animate-pulse" />
+              </div>
+            </div>
           ))
         ) : (
           <>
@@ -134,7 +155,7 @@ export default function CompletedInterviews() {
                 <PremiumInterviewCard 
                 interview={interview} 
                 key={index} 
-                onRefresh={GetInterviewList}
+                onRefresh={refetch}
               />
               ))
             )}
