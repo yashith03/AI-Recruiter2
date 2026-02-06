@@ -170,13 +170,44 @@ Test coverage includes:
 
 ---
 
-## 🌐 Deployment
+## 🌐 Deployment & CI/CD
 
-Deployment is handled through **Vercel**, with GitHub Actions for automated build, test, and deployment.
+This project is configured for automated deployment using **Vercel** and **GitHub Actions** for Docker.
 
-### Live Application
+### 🐳 Docker Support
 
-🔗 [https://ai-recruiterapp.vercel.app](https://ai-recruiterapp.vercel.app)
+The application is dockerized for production using a multi-stage, highly optimized build process.
+
+- **Build Output:** Standalone (minimal footprint)
+- **Base Image:** `node:20-alpine`
+
+#### Run with Docker Locally:
+
+1. Build the image:
+   ```bash
+   docker build -t ai-recruiter2 .
+   ```
+2. Run the container:
+   ```bash
+   docker run -p 3000:3000 ai-recruiter2
+   ```
+
+### 🚀 GitHub Actions CI/CD
+
+Every push to the `main` branch triggers:
+1. **Linting & Testing:** Ensures code quality and stability.
+2. **Docker Build & Push:** Automatically builds a production Docker image and pushes it to Docker Hub.
+
+#### Required GitHub Secrets:
+
+To enable automated Docker builds, add the following secrets in **Settings > Secrets and variables > Actions**:
+
+- `DOCKER_USERNAME`: Your Docker Hub username.
+- `DOCKER_PASSWORD`: Your Docker Hub token/password.
+
+### 🔗 Live Application
+
+- **Vercel:** [https://ai-recruiterapp.vercel.app](https://ai-recruiterapp.vercel.app)
 
 
 
