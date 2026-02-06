@@ -34,7 +34,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan pushed image with Trivy (sha tag)
-        uses: aquasecurity/trivy-action@v2
+        uses: aquasecurity/trivy-action@v1
         with:
           image-ref: ${{ secrets.DOCKER_USERNAME }}/ai-recruiter2:${{ github.sha }}
           format: 'table'
