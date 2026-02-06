@@ -43,3 +43,20 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan pushed image with Trivy
+        uses: aquasecurity/trivy-action@v2
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/ai-recruiter2:latest
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          vuln-type: 'os,library'
+
+      - name: Add extra tags (sha + date) and push
+        run: |
+          IMAGE=${{ secrets.DOCKER_USERNAME }}/ai-recruiter2
+          SHA_TAG=${GITHUB_SHA::8}
+          docker pull ${IMAGE}:latest || true
+          docker tag ${IMAGE}:latest ${IMAGE}:${SHA_TAG}
+          docker push ${IMAGE}:${SHA_TAG}
