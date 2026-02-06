@@ -1,0 +1,92 @@
+﻿@import "tailwindcss";
+@import "tw-animate-css";
+
+@layer base {
+  :root {
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+}
+
+@layer utilities {
+  /* Typography System */
+  .text-h1 {
+    font-size: 2.25rem;
+    line-height: 1.1;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+  }
+  .text-h2 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .text-h3 {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    font-weight: 700;
+  }
+  .text-body-lg {
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .text-body {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .text-helper {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+  .text-label {
+    font-size: 0.625rem;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.6); }
+  }
+  .animate-wave {
+    animation: wave 1s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
+}
