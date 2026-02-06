@@ -51,11 +51,6 @@ export default function CompletedInterviews() {
         actions={
           <>
             <CreditBadge />
-            <Link href="/all-interviews">
-              <Button variant="outline" className="rounded-xl border-slate-200 text-body font-bold h-12 px-6 gap-2 hover:bg-slate-50">
-                View All Pipelines
-              </Button>
-            </Link>
           </>
         }
       />

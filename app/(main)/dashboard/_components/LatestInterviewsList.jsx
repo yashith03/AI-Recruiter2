@@ -86,7 +86,7 @@ function LatestInterviewsList() {
                 </p>
               </div>
               <Link href="/dashboard/create-interview">
-                <Button className="mt-2 text-body font-bold rounded-xl px-8 h-12 shadow-lg shadow-primary/20">
+                <Button className="mt-2 text-title rounded-xl px-8 h-12 shadow-lg shadow-primary/20">
                   Create New Interview
                 </Button>
               </Link>
@@ -99,7 +99,7 @@ function LatestInterviewsList() {
               
               <div className="flex justify-center pt-6">
                 <Link href="/all-interviews">
-                  <button className="flex items-center gap-2 text-body font-bold text-slate-500 hover:text-primary transition-colors group">
+                  <button className="flex items-center gap-2 text-title text-slate-500 hover:text-primary transition-colors group">
                     View All Interviews <ChevronDown size={18} className="group-hover:translate-y-0.5 transition-transform" />
                   </button>
                 </Link>

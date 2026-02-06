@@ -1,27 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-
-
-@layer base {
-  :root {
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-  }
-
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -30,6 +15,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -51,6 +37,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -92,12 +79,64 @@
   --sidebar-ring: oklch(0.707 0.022 261.325);
 }
 
-
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 font-sans;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  /* Typography System */
+  .text-h1 {
+    @apply text-[2.25rem] leading-[1.1] font-black tracking-tight;
+  }
+  .text-h2 {
+    @apply text-[1.5rem] leading-[1.2] font-extrabold tracking-tight;
+  }
+  .text-h3 {
+    @apply text-[1.25rem] leading-[1.4] font-bold tracking-tight;
+  }
+  .text-title {
+    @apply text-[1.125rem] leading-[1.4] font-bold;
+  }
+  .text-body-lg {
+    @apply text-[1rem] leading-[1.6] font-medium;
+  }
+  .text-body {
+    @apply text-[0.875rem] leading-[1.5] font-medium;
+  }
+  .text-helper {
+    @apply text-[0.75rem] leading-[1.4] font-semibold;
+  }
+  .text-label {
+    @apply text-[0.625rem] leading-[1] font-black tracking-widest uppercase;
+  }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.6); }
+  }
+  .animate-wave {
+    animation: wave 1s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
   }
 }

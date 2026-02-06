@@ -281,8 +281,8 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Analytics Overview</h1>
-          <p className="text-muted-foreground mt-1">Detailed insights into your AI-driven recruitment pipeline.</p>
+          <h1 className="text-h1 text-slate-900">Analytics Overview</h1>
+          <p className="text-body text-slate-500 mt-1">Detailed insights into your AI-driven recruitment pipeline.</p>
         </div>
         <div className="flex items-center gap-3">
           

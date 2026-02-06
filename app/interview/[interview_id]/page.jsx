@@ -105,14 +105,14 @@ function Interview() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-display">
+        <div className="min-h-screen bg-slate-50 flex flex-col">
             {/* Header */}
             <header className="w-full px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
                 <div className="flex items-center gap-2">
                     <Image src="/logo.png" alt="logo" width={140} height={50} className="h-10 w-auto object-contain" />
                 </div>
                 <div className="flex items-center gap-6">
-                    <Link href="/candidate-support" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                    <Link href="/candidate-support" className="text-body text-slate-500 hover:text-slate-900 transition-colors">
                         Support
                     </Link>
                 </div>
@@ -129,26 +129,26 @@ function Interview() {
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-100/50 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
                         <div className="relative z-10 flex-1">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-black uppercase tracking-wider mb-8">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-label mb-8">
                                 <Sparkles size={12} />
                                 AI-Powered Interview
                             </div>
 
                             <div className="space-y-4 mb-8">
-                                <h1 className="text-[42px] leading-tight font-black text-slate-900 tracking-tight">
+                                <h1 className="text-h1 text-slate-900">
                                     {interviewData?.jobPosition || "Software Engineer"}
                                 </h1>
-                             <p className="text-lg text-slate-500 font-medium">
+                             <p className="text-body-lg text-slate-500">
                                    {/* Senior Level • Full-time */}
                                 </p>
                             </div>
 
                             <div className="flex flex-wrap gap-3 mb-12">
-                                <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-sm font-bold text-slate-700">
+                                <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-title text-slate-700">
                                     <Clock size={16} className="text-slate-400" />
                                     {interviewData?.duration || "15 Min"}
                                 </div>
-                                <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-sm font-bold text-slate-700">
+                                <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-title text-slate-700">
                                     <Video size={16} className="text-slate-400" />
                                     {Array.isArray(interviewData?.type) 
                                         ? interviewData.type[0] 
@@ -173,18 +173,18 @@ function Interview() {
                     <div className="w-full lg:w-[55%] p-10 lg:p-14 flex flex-col justify-center">
                         <div className="max-w-md mx-auto w-full space-y-8">
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-bold text-slate-900">Welcome!</h2>
-                                <p className="text-slate-500">Please confirm your details to join the session.</p>
+                                <h2 className="text-h2 text-slate-900">Welcome!</h2>
+                                <p className="text-body text-slate-500">Please confirm your details to join the session.</p>
                             </div>
 
                             <div className="space-y-5">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                                    <label className="text-title text-slate-700 ml-1">Full Name</label>
                                     <div className="relative">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <Input 
                                             placeholder="e.g. John Doe"
-                                            className="pl-11 h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-primary text-base"
+                                            className="pl-11 h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-primary text-body-lg"
                                             value={userName}
                                             onChange={(e) => setUserName(e.target.value)}
                                         />
@@ -192,12 +192,12 @@ function Interview() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
+                                    <label className="text-title text-slate-700 ml-1">Email Address</label>
                                     <div className="relative">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <Input 
                                             placeholder="Enter your email" 
-                                            className="pl-11 h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-primary text-base"
+                                            className="pl-11 h-12 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-primary text-body-lg"
                                             value={userEmail}
                                             onChange={(e) => setUserEmail(e.target.value)}
                                         />
@@ -208,7 +208,7 @@ function Interview() {
                             <div className="pt-4 space-y-4">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                                    <span className="text-sm font-bold text-slate-900">Before you begin</span>
+                                    <span className="text-title text-slate-900">Before you begin</span>
                                 </div>
 
                                 <div className="space-y-3">
@@ -222,8 +222,8 @@ function Interview() {
                                                 <item.icon size={20} />
                                             </div>
                                             <div>
-                                                <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
-                                                <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
+                                                <h4 className="text-title text-slate-900">{item.title}</h4>
+                                                <p className="text-helper text-slate-500">{item.desc}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -231,7 +231,7 @@ function Interview() {
                             </div>
 
                             <Button 
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-14 rounded-xl text-lg shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all"
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-title h-14 rounded-xl shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all"
                                 onClick={onJoinInterview}
                                 disabled={joining}
                             >
@@ -252,7 +252,7 @@ function Interview() {
             </main>
 
             {/* Footer */}
-            <footer className="py-8 text-center text-sm font-medium text-slate-400 space-x-6">
+            <footer className="py-8 text-center text-body text-slate-400 space-x-6">
                 <Link href="#" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
                 <span className="text-slate-300">•</span>
                 <Link href="#" className="hover:text-slate-600 transition-colors">Terms of Service</Link>

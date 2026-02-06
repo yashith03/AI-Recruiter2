@@ -33,7 +33,7 @@ function Login() {
   // Prevent UI flash while checking auth - only show nothing if loading
   if (user === undefined) {
     return (
-      <div className="bg-background-light font-display text-slate-900 antialiased">
+      <div className="text-slate-900">
         <div className="flex min-h-screen flex-col">
           {/* Header */}
           <header className="flex w-full items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md sticky top-0 z-50">
@@ -67,7 +67,7 @@ function Login() {
   }
 
   return (
-    <div className="bg-background-light font-display text-slate-900 antialiased">
+    <div className="text-slate-900">
       <div className="flex min-h-screen flex-col">
         <header className="flex w-full items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md sticky top-0 z-50">
           <div className="flex items-center">
@@ -99,17 +99,17 @@ function Login() {
               </div>
 
               <div className="px-8 py-12 text-center">
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-h1 tracking-tight">
                   Welcome to AI Recruiter
                 </h1>
-                <p className="mt-4 text-base text-slate-500">
+                <p className="mt-4 text-body-lg text-slate-500">
                   Sign in to continue to your dashboard
                 </p>
 
                 <div className="mt-10">
                   <button
                     onClick={signInWithGoogle}
-                    className="group relative flex w-full items-center justify-center gap-3 rounded-lg bg-primary px-4 py-4 text-sm font-semibold text-white transition-all hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30"
+                    className="group relative flex w-full items-center justify-center gap-3 rounded-lg bg-primary px-4 py-4 text-title text-white transition-all hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30"
                   >
                     <span className="ml-6">Continue with Google</span>
                   </button>
@@ -117,7 +117,7 @@ function Login() {
               </div>
             </div>
 
-            <p className="text-center text-xs text-slate-400">
+            <p className="text-center text-helper text-slate-400">
               Trusted by forward-thinking hiring teams worldwide
             </p>
           </div>

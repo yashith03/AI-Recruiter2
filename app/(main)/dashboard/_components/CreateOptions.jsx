@@ -74,7 +74,7 @@ function CreateOptions() {
                 
                 <div>
                     <h2 className='text-h2 text-white mb-2'>Create New Interview</h2>
-                    <p className='text-body text-blue-50 opacity-90'>
+                    <p className='text-body-lg text-blue-50 opacity-90'>
                         Set up a new AI-driven interview session tailored to specific job roles and requirements.
                     </p>
                 </div>
@@ -113,7 +113,7 @@ function CreateOptions() {
                                 {stat.label}
                             </span>
                         </div>
-                        <span className="text-h3 text-slate-900">
+                        <span className="text-title text-slate-900">
                            {metrics.loading ? "-" : stat.value}
                         </span>
                     </div>
@@ -122,7 +122,7 @@ function CreateOptions() {
 
             <div className="mt-8 pt-6 border-t border-slate-50">
                 <Link href="/analytics">
-                    <button className="text-primary text-body font-bold flex items-center gap-1.5 hover:underline decoration-2 underline-offset-4">
+                    <button className="text-primary text-title flex items-center gap-1.5 hover:underline decoration-2 underline-offset-4">
                         View Full Analytics <ArrowRight size={14} className="-rotate-45" />
                     </button>
                 </Link>
