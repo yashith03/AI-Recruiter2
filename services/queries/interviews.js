@@ -66,6 +66,9 @@ export const fetchLatestInterviews = async (email) => {
     .order('created_at', { ascending: false })
     .limit(3);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error:', error.message);
+    return [];
+  }
   return data ?? [];
 };

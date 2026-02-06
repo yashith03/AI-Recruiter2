@@ -42,12 +42,23 @@ jest.mock("@/services/supabaseClient", () => ({
 
 const { supabase } = require("@/services/supabaseClient");
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 // -----------------------------
 // Tests
 // -----------------------------
 describe("LatestInterviewsList Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    queryClient.clear();
   });
 
   test("renders empty state when no interviews are found", async () => {
@@ -55,7 +66,11 @@ describe("LatestInterviewsList Component", () => {
 
     mockLimit.mockResolvedValueOnce({ data: [], error: null });
 
-    render(<LatestInterviewsList />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LatestInterviewsList />
+      </QueryClientProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText("No Interviews Created")).toBeInTheDocument();
@@ -77,7 +92,11 @@ describe("LatestInterviewsList Component", () => {
       error: null,
     });
 
-    render(<LatestInterviewsList />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LatestInterviewsList />
+      </QueryClientProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getAllByTestId("interview-card").length).toBe(2);
@@ -96,7 +115,11 @@ describe("LatestInterviewsList Component", () => {
       error: { message: "Database failure" },
     });
 
-    render(<LatestInterviewsList />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LatestInterviewsList />
+      </QueryClientProvider>
+    );
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -111,7 +134,11 @@ describe("LatestInterviewsList Component", () => {
   test("does not call supabase when user = null", () => {
     mockUseUser.mockReturnValue({ user: null });
 
-    render(<LatestInterviewsList />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LatestInterviewsList />
+      </QueryClientProvider>
+    );
 
     expect(supabase.from).not.toHaveBeenCalled();
   });
