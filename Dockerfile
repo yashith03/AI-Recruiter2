@@ -32,7 +32,7 @@ RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
 # Install Chromium and minimal dependencies for Puppeteer
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     chromium \
     ca-certificates \
     fonts-liberation \
