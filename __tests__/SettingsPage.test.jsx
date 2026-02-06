@@ -23,13 +23,7 @@ jest.mock("@/app/provider", () => ({
   }),
 }));
 
-// Mock next-themes
-jest.mock("next-themes", () => ({
-  useTheme: () => ({
-    theme: "light",
-    setTheme: jest.fn(),
-  }),
-}));
+
 
 // Mock next/image
 jest.mock("next/image", () => (props) => <img {...props} />);

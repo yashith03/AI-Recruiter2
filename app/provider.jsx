@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useContext, createContext } from "react";
 import { supabase } from "@/services/supabaseClient";
-import { ThemeProvider } from "next-themes";
 
 export const UserDetailContext = createContext();
 
@@ -102,9 +101,7 @@ function Provider({ children }) {
         isAuthLoading: user === undefined,
       }}
     >
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        {children}
-      </ThemeProvider>
+      {children}
     </UserDetailContext.Provider>
   );
 }

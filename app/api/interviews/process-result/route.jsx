@@ -4,11 +4,12 @@ import { generateWithFallback } from "@/services/ai/providerSwitcher";
 import { extractJSON, STATIC_FALLBACKS } from "@/services/ai/utils";
 import { CANDIDATE_SUMMARY_PROMPT, FEEDBACK_PROMPT } from "@/services/Constants";
 import moment from "moment";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium-min";
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/services/supabaseServer";
 
-// Required for Puppeteer
+// Required for Puppeteer in Serverless
 export const runtime = "nodejs";
 
 function normalizeQuestion(q) {
@@ -26,6 +27,7 @@ export async function POST(req) {
     const { interview_id, conversation, userName, userEmail, recording_path } = body || {};
 
     if (!interview_id || !conversation || !userName || !userEmail) {
+      console.error("❌ Missing required fields:", { interview_id, hasConversation: !!conversation, userName, userEmail });
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -37,6 +39,7 @@ export async function POST(req) {
       .single();
 
     if (interviewError || !interview) {
+      console.error("❌ Interview not found:", interview_id, interviewError?.message);
       return NextResponse.json({ error: "Interview not found" }, { status: 404 });
     }
 
@@ -53,7 +56,7 @@ export async function POST(req) {
       feedbackJson = extractJSON(rawFeedback);
       if (Object.keys(feedbackJson).length === 0) throw new Error("Invalid Feedback JSON");
     } catch (err) {
-      console.error("Recruiter Feedback Fallback:", err.message);
+      console.error("⚠️ Recruiter Feedback Fallback:", err.message);
       feedbackJson = STATIC_FALLBACKS.feedback;
     }
 
@@ -66,7 +69,7 @@ export async function POST(req) {
       summaryJson = extractJSON(rawSummary);
       if (Object.keys(summaryJson).length === 0) throw new Error("Invalid Summary JSON");
     } catch (err) {
-      console.error("Candidate Summary Fallback:", err.message);
+      console.error("⚠️ Candidate Summary Fallback:", err.message);
       summaryJson = STATIC_FALLBACKS.summary;
     }
 
@@ -130,76 +133,90 @@ export async function POST(req) {
     `;
 
     // 5. Generate and Store PDF
-    const browser = await puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-    const pdfBuffer = await page.pdf({ 
-      format: "A4",
-      printBackground: true,
-      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
-    });
-    await browser.close();
+    console.log(" Launching Browser...");
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
+      
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+      const pdfBuffer = await page.pdf({ 
+        format: "A4",
+        printBackground: true,
+        margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+      });
+      await browser.close();
 
-    const fileName = `Interview_Summary_${userName.replace(/\s+/g, '_')}_${moment().format("YYYY-MM-DD")}.pdf`;
-    const filePath = `summaries/${interview_id}/${fileName}`;
+      console.log(" PDF Generated successfully");
+      const fileName = `Interview_Summary_${userName.replace(/\s+/g, '_')}_${moment().format("YYYY-MM-DD")}.pdf`;
+      const filePath = `summaries/${interview_id}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage.from("interview-summaries").upload(filePath, pdfBuffer, {
-      contentType: "application/pdf",
-      upsert: true,
-    });
+      const { error: uploadError } = await supabase.storage.from("interview-summaries").upload(filePath, pdfBuffer, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
 
-    if (uploadError) throw new Error("Failed to upload PDF: " + uploadError.message);
+      if (uploadError) throw new Error("Failed to upload PDF: " + uploadError.message);
 
-    const { data: publicData } = supabase.storage.from("interview-summaries").getPublicUrl(filePath);
-    const publicUrl = publicData?.publicUrl;
+      const { data: publicData } = supabase.storage.from("interview-summaries").getPublicUrl(filePath);
+      const publicUrl = publicData?.publicUrl;
 
-    // 6. Save to Database (Manual Upsert to bypass missing constraint)
-    console.log(" Saving results to database...");
-    const feedbackPayload = {
-      userName,
-      userEmail,
-      interview_id,
-      feedback: feedbackJson,
-      recommendation: feedbackJson.recommendation === "Recommended",
-      candidate_summary: summaryJson,
-      pdf_url: publicUrl,
-      recording_path: recording_path || null,
-      asked_questions: askedQuestions,
-      interview_date: moment().format("YYYY-MM-DD"),
-      start_time: startTime,
-      duration: durationStr,
-    };
+      // 6. Save to Database (Manual Upsert to bypass missing constraint)
+      console.log(" Saving results to database...");
+      const feedbackPayload = {
+        userName,
+        userEmail,
+        interview_id,
+        feedback: feedbackJson,
+        recommendation: feedbackJson.recommendation === "Recommended",
+        candidate_summary: summaryJson,
+        pdf_url: publicUrl,
+        recording_path: recording_path || null,
+        asked_questions: askedQuestions,
+        interview_date: moment().format("YYYY-MM-DD"),
+        start_time: startTime,
+        duration: durationStr,
+        summary_status: "ready", // Added to ensure status is updated correctly
+      };
 
-    const { data: existingFeedback } = await supabase
-      .from("interview-feedback")
-      .select("id")
-      .eq("interview_id", interview_id)
-      .maybeSingle();
-
-    let feedbackError;
-    if (existingFeedback) {
-      const { error } = await supabase
+      const { data: existingFeedback } = await supabase
         .from("interview-feedback")
-        .update(feedbackPayload)
-        .eq("id", existingFeedback.id);
-      feedbackError = error;
-    } else {
-      const { error } = await supabase
-        .from("interview-feedback")
-        .insert(feedbackPayload);
-      feedbackError = error;
+        .select("id")
+        .eq("interview_id", interview_id)
+        .maybeSingle();
+
+      let feedbackError;
+      if (existingFeedback) {
+        const { error } = await supabase
+          .from("interview-feedback")
+          .update(feedbackPayload)
+          .eq("id", existingFeedback.id);
+        feedbackError = error;
+      } else {
+        const { error } = await supabase
+          .from("interview-feedback")
+          .insert(feedbackPayload);
+        feedbackError = error;
+      }
+
+      if (feedbackError) throw new Error("Database Save Error: " + feedbackError.message);
+
+      console.log("✅ Process complete for", interview_id);
+      return NextResponse.json({ success: true, pdfUrl: publicUrl });
+
+    } catch (browserErr) {
+      console.error("❌ PDF/Browser Error:", browserErr);
+      if (browser) await browser.close().catch(() => {});
+      throw browserErr;
     }
 
-    if (feedbackError) throw new Error("Database Save Error: " + feedbackError.message);
-
-    console.log("✅ Process complete for", interview_id);
-    return NextResponse.json({ success: true, pdfUrl: publicUrl });
-
   } catch (e) {
-    console.error("❌ Process Result Error:", e);
+    console.error("❌ Process Result Global Error:", e);
     return NextResponse.json({ error: e.message || "Internal Server Error" }, { status: 500 });
   }
 }

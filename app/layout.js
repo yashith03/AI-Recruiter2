@@ -30,13 +30,13 @@ export default function RootLayout({ children }) {
   }));
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <title>AI Recruiter - Hire Faster</title>
         <link rel="icon" href="/favicon.png" />
         <meta name="description" content="Streamline your recruitment process from creation to feedback with intelligent AI voice conversations." />
       </head>
-      <body suppressHydrationWarning className={`${outfit.variable} antialiased`}>
+      <body className={`${outfit.variable} antialiased`}>
         <QueryClientProvider client={queryClient}>
           <Provider>
             {children}
