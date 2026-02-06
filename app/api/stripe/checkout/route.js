@@ -2,6 +2,8 @@
 
 import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/services/supabaseServer";
+import Stripe from "stripe";
+
 export async function POST(req) {
   try {
     const stripeKey = process.env.STRIPE_SECRET_KEY;

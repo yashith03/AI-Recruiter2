@@ -1,6 +1,0 @@
-// context/UserDetailContext.jsx
-
-"use client"
-import { createContext } from 'react'
-
-export const UserDetailContext = createContext(null);
