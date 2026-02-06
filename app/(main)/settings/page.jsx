@@ -44,6 +44,7 @@ import {
 
 import { toast } from "sonner"
 import { supabase } from "@/services/supabaseClient"
+import axios from "axios"
 
 export default function SettingsPage() {
   const { user, setUser } = useUser()
@@ -108,41 +109,32 @@ export default function SettingsPage() {
     setLoading(true)
 
     try {
-      console.log("Updating users table for email:", user.email)
+      console.log("Updating profile via API for email:", user.email)
       
-      const { data, error } = await supabase
-        .from("users")
-        .update({
-          name: formData.name,
-          phone: formData.phone,
-          job: formData.job,
-          company: formData.company,
-        })
-        .eq("email", user.email)
-        .select() // Request return data to verify update
-
-      if (error) {
-        console.error("Supabase update error object:", error)
-        throw error
-      }
-
-      if (!data || data.length === 0) {
-        console.error("Update succeeded but returned no data. Possible RLS issue.")
-        throw new Error("Update failed: No changes saved. Please check your permissions.")
-      }
-
-      console.log("Supabase update successful:", data)
-      
-      setUser(prev => ({
-        ...prev,
+      const response = await axios.post('/api/user/update', {
         name: formData.name,
         phone: formData.phone,
         job: formData.job,
         company: formData.company,
-      }))
+        userEmail: user.email
+      })
 
-      toast.success("Profile updated successfully")
-      setIsEditing(false)
+      if (response.data.success) {
+        console.log("Profile update successful:", response.data.user)
+        
+        setUser(prev => ({
+          ...prev,
+          name: formData.name,
+          phone: formData.phone,
+          job: formData.job,
+          company: formData.company,
+        }))
+
+        toast.success("Profile updated successfully")
+        setIsEditing(false)
+      } else {
+        throw new Error(response.data.error || "Failed to update profile")
+      }
     } catch (err) {
       console.error("HandleSave unexpected error:", err)
       toast.error(err.message || "Failed to update profile")

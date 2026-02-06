@@ -28,10 +28,25 @@ function Provider({ children }) {
         return;
       }
 
+      // 2. Fetch full user profile from 'users' table
+      const { data: dbUser, error: dbError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", sessionUser.email)
+        .single();
+
+      if (dbError) {
+        console.warn("Error fetching DB user profile:", dbError.message);
+      }
+
       setUser({
         email: sessionUser.email,
-        name: sessionUser.user_metadata?.name ?? "",
-        picture: sessionUser.user_metadata?.picture ?? "",
+        name: dbUser?.name ?? sessionUser.user_metadata?.name ?? "",
+        picture: dbUser?.picture ?? sessionUser.user_metadata?.picture ?? "",
+        phone: dbUser?.phone ?? "",
+        job: dbUser?.job ?? "",
+        company: dbUser?.company ?? "",
+        credits: dbUser?.credits ?? 0,
       });
     };
 
@@ -46,11 +61,25 @@ function Provider({ children }) {
         if (!sessionUser) {
           setUser(null);
         } else {
-          setUser({
-            email: sessionUser.email,
-            name: sessionUser.user_metadata?.name ?? "",
-            picture: sessionUser.user_metadata?.picture ?? "",
-          });
+          // Fetch DB user on auth change too
+          supabase
+            .from("users")
+            .select("*")
+            .eq("email", sessionUser.email)
+            .single()
+            .then(({ data: dbUser, error: dbError }) => {
+              if (mounted) {
+                setUser({
+                  email: sessionUser.email,
+                  name: dbUser?.name ?? sessionUser.user_metadata?.name ?? "",
+                  picture: dbUser?.picture ?? sessionUser.user_metadata?.picture ?? "",
+                  phone: dbUser?.phone ?? "",
+                  job: dbUser?.job ?? "",
+                  company: dbUser?.company ?? "",
+                  credits: dbUser?.credits ?? 0,
+                });
+              }
+            });
         }
       }
     );
