@@ -7,15 +7,16 @@ import { Loader, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import QuestionsListContainer from "./QuestionsListContainer"
-import { useUser } from "@/app/provider"
-import { v4 as uuidv4 } from "uuid"
 import { supabase } from "@/services/supabaseClient"
+import { useUser } from "@/app/provider"
+import { CREDITS } from "@/app/utils/constants"
+import { v4 as uuidv4 } from "uuid"
 
 function QuestionList({ formData, onCreateLink, initialQuestionList }) {
   const [loading, setLoading] = useState(!initialQuestionList || initialQuestionList.length === 0)
   const [questionList, setQuestionList] = useState(initialQuestionList || [])
   const [saving, setSaving] = useState(false)
-  const { user } = useUser()
+  const { user, setUser } = useUser()
 
   useEffect(() => {
     if (initialQuestionList && initialQuestionList.length > 0) {
@@ -87,6 +88,15 @@ function QuestionList({ formData, onCreateLink, initialQuestionList }) {
       }
 
       console.log("Server save success.");
+      
+      // Update local credits immediately for UI feedback
+      if (user && setUser && user.subscription_plan !== 'Monthly' && user.subscription_plan !== 'Yearly') {
+        setUser(prev => ({
+          ...prev,
+          credits: Math.max(0, (prev.credits || 0) - CREDITS.INTERVIEW_COST)
+        }));
+      }
+
       toast.success("Interview created successfully!")
       setSaving(false)
       console.log("Calling onCreateLink with ID:", interview_id);

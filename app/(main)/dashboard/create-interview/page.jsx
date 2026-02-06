@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { useUser } from "@/app/provider"
 import { canCreateInterview } from "@/app/utils/subscription"
+import CreditBadge from "../../_components/CreditBadge"
 
 function CreateInterview() {
   const router = useRouter()
@@ -135,15 +136,18 @@ function CreateInterview() {
   return (
     <div className="mt-10 px-10 md:px-24 lg:px-44 xl:px-56">
       {/* Header */}
-      <div className="flex gap-4 items-center mb-6">
-        <div 
-          onClick={() => router.back()}
-          data-testid="back-arrow"
-          className="p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors text-slate-400 hover:text-slate-900"
-        >
-          <ArrowLeft size={24} />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex gap-4 items-center">
+          <div 
+            onClick={() => router.back()}
+            data-testid="back-arrow"
+            className="p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors text-slate-400 hover:text-slate-900"
+          >
+            <ArrowLeft size={24} />
+          </div>
+          <h2 className="text-h2 text-slate-900">Create New Interview</h2>
         </div>
-        <h2 className="text-h2 text-slate-900">Create New Interview</h2>
+        <CreditBadge />
       </div>
 
       {/* Progress bar */}

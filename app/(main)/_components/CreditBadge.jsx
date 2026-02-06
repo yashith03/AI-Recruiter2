@@ -8,7 +8,7 @@ const CreditBadge = ({ className }) => {
 
   return (
     <div className={cn(
-      "hidden sm:flex items-center gap-2 bg-slate-50 px-4 h-12 rounded-xl border border-slate-100",
+      "flex items-center gap-2 bg-slate-50 px-4 h-12 rounded-xl border border-slate-100",
       className
     )}>
       <Brain className="text-primary" size={18} />

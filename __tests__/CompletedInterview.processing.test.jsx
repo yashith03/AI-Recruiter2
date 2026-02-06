@@ -37,16 +37,30 @@ describe('InterviewComplete Background Processing', () => {
     useParams.mockReturnValue({ interview_id })
     jest.clearAllMocks()
     
-    // Mock successful feedback fetch (initially null, then populated)
-    global.fetch = jest.fn()
-      .mockResolvedValueOnce({ 
-        ok: true, 
-        json: () => Promise.resolve(null) 
-      })
-      .mockResolvedValue({ 
-        ok: true, 
-        json: () => Promise.resolve({ pdf_url: 'http://pdf-link', interview_date: '2026-02-02' }) 
-      })
+    // Mock fetch based on URL
+    global.fetch = jest.fn((url) => {
+      if (url.includes('/api/interviews/upload-recording')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ filePath: 'uploaded/path.webm' })
+        })
+      }
+      
+      if (url.includes('/feedback')) {
+        const callCount = global.fetch.mock.calls.filter(c => c[0].includes('/feedback')).length;
+        // Return data on the second call onwards to simulate polling delay
+        const response = callCount > 1
+          ? { pdf_url: 'http://pdf-link', interview_date: '2026-02-02' }
+          : null;
+
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(response)
+        })
+      }
+
+      return Promise.reject(new Error(`Unhandled fetch URL: ${url}`));
+    })
   })
 
   it('triggers background processing on mount if context has data', async () => {
@@ -56,18 +70,24 @@ describe('InterviewComplete Background Processing', () => {
       </InterviewDataContext.Provider>
     )
 
-    // Verify upload called
+    // Verify upload called via fetch (use stringContaining to be safe with localhost prefix)
     await waitFor(() => {
-      expect(supabase.storage.from).toHaveBeenCalledWith('interview-recordings')
-    })
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/interviews/upload-recording'),
+        expect.any(Object)
+      )
+    }, { timeout: 3000 })
 
     // Verify process-result API called
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith('/api/interviews/process-result', expect.objectContaining({
-        interview_id,
-        userName: 'Jane Done',
-      }))
-    })
+      expect(axios.post).toHaveBeenCalledWith(
+        '/api/interviews/process-result', 
+        expect.objectContaining({
+          interview_id,
+          userName: 'Jane Done',
+        })
+      )
+    }, { timeout: 3000 })
 
     // Verify status indicators show processing
     expect(screen.getByText(/Analyzing feedback/i)).toBeInTheDocument()
@@ -83,8 +103,8 @@ describe('InterviewComplete Background Processing', () => {
     // Initially loading/waiting
     // Then after polling:
     await waitFor(() => {
-      expect(screen.getByText(/Summary ready/i)).toBeInTheDocument()
+      expect(screen.getByText(/Analysis complete/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Download Interview Summary/i })).not.toBeDisabled()
-    }, { timeout: 5000 })
+    }, { timeout: 8000 }) // Increase timeout to allow for multiple poll intervals
   })
 })

@@ -47,6 +47,8 @@ function Provider({ children }) {
         job: dbUser?.job ?? "",
         company: dbUser?.company ?? "",
         credits: dbUser?.credits ?? 0,
+        subscription_plan: dbUser?.subscription_plan ?? "Starter",
+        subscription_status: dbUser?.subscription_status ?? "Inactive",
       });
     };
 
@@ -77,6 +79,8 @@ function Provider({ children }) {
                   job: dbUser?.job ?? "",
                   company: dbUser?.company ?? "",
                   credits: dbUser?.credits ?? 0,
+                  subscription_plan: dbUser?.subscription_plan ?? "Starter",
+                  subscription_status: dbUser?.subscription_status ?? "Inactive",
                 });
               }
             });
