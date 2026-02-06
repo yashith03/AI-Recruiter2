@@ -35,14 +35,29 @@ jest.mock("@/services/supabaseClient", () => ({
   },
 }));
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 describe("NotificationsPage", () => {
   beforeEach(() => {
     useUser.mockReturnValue({ user: { email: "test@mail.com" } });
     jest.clearAllMocks();
+    queryClient.clear();
   });
 
   test("renders notifications title and dynamically fetched items", async () => {
-    render(<NotificationsPage />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <NotificationsPage />
+      </QueryClientProvider>
+    );
     
     expect(screen.getByText("Notifications")).toBeInTheDocument();
     
@@ -53,7 +68,11 @@ describe("NotificationsPage", () => {
   });
 
   test("renders action buttons from real data", async () => {
-    render(<NotificationsPage />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <NotificationsPage />
+      </QueryClientProvider>
+    );
     
     await waitFor(() => {
         expect(screen.getByText("Show feedback")).toBeInTheDocument();
@@ -61,7 +80,11 @@ describe("NotificationsPage", () => {
   });
 
   test("filters unread notifications correctly", async () => {
-    render(<NotificationsPage />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <NotificationsPage />
+      </QueryClientProvider>
+    );
     
     await waitFor(() => {
       expect(screen.getByText("Unread")).toBeInTheDocument();

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
   CheckCheck, 
@@ -13,70 +13,33 @@ import {
   MoreVertical,
   Loader2
 } from 'lucide-react'
-import { supabase } from '@/services/supabaseClient'
+import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/app/provider'
-import moment from 'moment'
+import { fetchNotifications } from '@/services/queries/notifications'
 import Link from 'next/link'
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState('all')
-  const [notifications, setNotifications] = useState([])
-  const [loading, setLoading] = useState(true)
-  const { user } = useUser()
+  const { user, isAuthLoading } = useUser()
 
-  const fetchNotifications = useCallback(async () => {
-    if (!user?.email) return
-    setLoading(true)
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['notifications', user?.email],
+    queryFn: () => fetchNotifications(user.email),
+    enabled: !!user?.email && !isAuthLoading,
+  })
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_email', user.email)
-      .order('created_at', { ascending: false })
+  // Set icons after fetching (since they can't be serialized)
+  const notificationsWithIcons = notifications.map(n => ({
+    ...n,
+    icon: ClipboardList,
+    actionIcon: ChevronRight,
+  }))
 
-    if (error) {
-      console.error('Error fetching notifications:', error)
-      setLoading(false)
-      return
-    }
-
-    // Map the database records to the UI notification format
-    const mappedNotifications = data.map(item => {
-      const createdAt = moment(item.created_at)
-      let group = 'Earlier this week'
-      if (createdAt.isSame(moment(), 'day')) group = 'Today'
-      else if (createdAt.isSame(moment().subtract(1, 'days'), 'day')) group = 'Yesterday'
-
-      return {
-        id: item.id,
-        type: item.type,
-        title: item.title,
-        description: item.message,
-        time: createdAt.fromNow(),
-        isUnread: !item.is_read,
-        group: group,
-        icon: ClipboardList,
-        iconColor: 'text-primary',
-        iconBg: 'bg-primary/5',
-        actionLabel: 'Show feedback',
-        actionIcon: ChevronRight,
-        link: item.link
-      }
-    })
-
-    setNotifications(mappedNotifications)
-    setLoading(false)
-  }, [user])
-
-  useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
-
-  const unreadCount = notifications.filter(n => n.isUnread).length
+  const unreadCount = notificationsWithIcons.filter(n => n.isUnread).length
 
   const filteredNotifications = activeTab === 'unread' 
-    ? notifications.filter(n => n.isUnread)
-    : notifications
+    ? notificationsWithIcons.filter(n => n.isUnread)
+    : notificationsWithIcons
 
   const groupedNotifications = filteredNotifications.reduce((acc, curr) => {
     if (!acc[curr.group]) acc[curr.group] = []
@@ -146,12 +109,25 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* Notification List */}
         <div className="space-y-10">
-          {loading ? (
-             <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="animate-spin text-primary" size={40} />
-                <p className="text-slate-500 font-medium">Loading notifications...</p>
+          {isLoading ? (
+             <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="bg-card rounded-2xl border border-border shadow-sm p-5 flex items-start gap-4">
+                    <div className="p-3 rounded-xl bg-slate-50 shrink-0 h-12 w-12 animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                       <div className="flex items-center gap-2">
+                          <div className="h-5 w-48 bg-slate-100 rounded animate-pulse" />
+                          <div className="h-2 w-2 rounded-full bg-slate-100 animate-pulse" />
+                       </div>
+                       <div className="h-4 w-full max-w-lg bg-slate-50 rounded animate-pulse" />
+                       <div className="h-3 w-24 bg-slate-50 rounded animate-pulse pt-1" />
+                    </div>
+                    <div className="hidden md:block">
+                       <div className="h-9 w-32 bg-slate-50 rounded-xl animate-pulse" />
+                    </div>
+                  </div>
+                ))}
              </div>
           ) : Object.keys(groupedNotifications).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4 bg-white rounded-3xl border border-dashed border-slate-200">

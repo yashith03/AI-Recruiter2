@@ -2,7 +2,7 @@
 
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { 
   Search, 
   Filter, 
@@ -25,8 +25,9 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/app/provider'
-import { supabase } from '@/services/supabaseClient'
+import { fetchAllInterviews } from '@/services/queries/interviews'
 import moment from 'moment'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -42,33 +43,15 @@ import PageHeader from '../_components/PageHeader'
 import CreditBadge from '../_components/CreditBadge'
 
 export default function AllInterviews() {
-  const [interviewList, setInterviewList] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const { user } = useUser();
+  const { user, isAuthLoading } = useUser();
 
-  const GetInterviewList = useCallback(async () => {
-    if (!user?.email) return;
-    
-    setLoading(true);
-    let { data, error } = await supabase
-      .from('interviews')
-      .select('*, interview-feedback!interview_feedback_interview_id_fk(*)')
-      .eq('userEmail', user.email)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Supabase error:', error.message);
-    } else {
-      setInterviewList(data || []);
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    GetInterviewList();
-  }, [GetInterviewList]);
+  const { data: interviewList = [], isLoading, refetch } = useQuery({
+    queryKey: ['interviews', 'all', user?.email],
+    queryFn: () => fetchAllInterviews(user.email),
+    enabled: !!user?.email && !isAuthLoading,
+  });
 
   // Pagination Logic
   const totalPages = Math.ceil(interviewList.length / itemsPerPage);
@@ -131,9 +114,50 @@ export default function AllInterviews() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {loading ? (
+        {isLoading ? (
           Array(6).fill(0).map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-slate-50 animate-pulse border border-slate-100" />
+            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col gap-5 border-b-4 border-b-slate-100 h-[380px]">
+              {/* Badge Skeleton */}
+              <div className="flex justify-end -mt-2 -mr-2">
+                 <div className="h-6 w-20 bg-slate-100 rounded-bl-xl animate-pulse" />
+              </div>
+              
+              {/* Header Skeleton */}
+              <div className="flex justify-between items-start">
+                <div className="flex gap-4 w-full">
+                  <div className="h-12 w-12 rounded-xl bg-slate-50 animate-pulse shrink-0" />
+                  <div className="space-y-2 w-full">
+                    <div className="h-6 w-32 bg-slate-100 rounded animate-pulse" />
+                    <div className="h-4 w-48 bg-slate-50 rounded animate-pulse" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Date/Time Skeleton */}
+              <div className="flex gap-4">
+                <div className="h-4 w-24 bg-slate-50 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-slate-50 rounded animate-pulse" />
+              </div>
+
+              {/* Progress Skeleton */}
+              <div className="space-y-3 mt-auto">
+                <div className="flex justify-between">
+                  <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                  <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded animate-pulse" />
+                <div className="flex justify-between">
+                   <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                   <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                </div>
+              </div>
+
+              {/* Buttons Skeleton */}
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="h-10 w-full bg-slate-50 rounded-xl animate-pulse" />
+                <div className="h-10 w-full bg-slate-100 rounded-xl animate-pulse" />
+              </div>
+            </div>
           ))
         ) : (
           <>
@@ -141,7 +165,7 @@ export default function AllInterviews() {
               <PremiumInterviewCard 
                 interview={interview} 
                 key={index} 
-                onRefresh={GetInterviewList}
+                onRefresh={refetch}
               />
             ))}
             
@@ -162,7 +186,7 @@ export default function AllInterviews() {
       </div>
 
       {/* Pagination Footer */}
-      {!loading && interviewList.length > 0 && (
+      {!isLoading && interviewList.length > 0 && (
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-10 border-t border-slate-100">
           <p className="text-label text-slate-400 font-bold uppercase tracking-wider">
             Showing <span className="text-slate-900">{Math.min(startIndex + 1, interviewList.length)}-{Math.min(endIndex, interviewList.length)}</span> of <span className="text-slate-900">{interviewList.length}</span> interviews

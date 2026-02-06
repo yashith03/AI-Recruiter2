@@ -109,7 +109,7 @@ function Interview() {
             {/* Header */}
             <header className="w-full px-6 py-4 flex items-center justify-between bg-white border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                    <Image src="/logo.png" alt="AI Recruiter" width={140} height={50} className="h-10 w-auto object-contain" />
+                    <Image src="/logo.png" alt="logo" width={140} height={50} className="h-10 w-auto object-contain" />
                 </div>
                 <div className="flex items-center gap-6">
                     <Link href="/candidate-support" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">

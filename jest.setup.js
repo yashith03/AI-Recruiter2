@@ -114,3 +114,15 @@ jest.mock("sonner", () => {
 jest.mock("uuid", () => ({
   v4: () => "test-uuid", // ✅ stable ID for tests
 }));
+
+// Mock MediaRecorder
+global.MediaRecorder = jest.fn().mockImplementation(() => ({
+  start: jest.fn(),
+  stop: jest.fn(),
+  pause: jest.fn(),
+  resume: jest.fn(),
+  state: "inactive",
+  ondataavailable: null,
+  onstop: null,
+  onerror: null,
+}));

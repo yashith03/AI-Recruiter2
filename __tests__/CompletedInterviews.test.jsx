@@ -29,10 +29,21 @@ jest.mock("@/services/supabaseClient", () => {
 // Import the internal mock parts to verify calls if needed
 const { _mockSelect } = require("@/services/supabaseClient");
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 describe("CompletedInterviews Page", () => {
   beforeEach(() => {
     useUser.mockReturnValue({ user: { email: "test@example.com" } });
     jest.clearAllMocks();
+    queryClient.clear();
   });
 
   test("renders empty state when no completed interviews found", async () => {
@@ -42,7 +53,11 @@ describe("CompletedInterviews Page", () => {
       })
     });
 
-    render(<CompletedInterviews />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <CompletedInterviews />
+      </QueryClientProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText(/No Completed Interviews Yet/i)).toBeInTheDocument();
@@ -65,7 +80,11 @@ describe("CompletedInterviews Page", () => {
         })
     });
 
-    render(<CompletedInterviews />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <CompletedInterviews />
+      </QueryClientProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Manager")).toBeInTheDocument();

@@ -2,42 +2,25 @@
 
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { Search, Filter, ArrowRight, Video, ChevronDown } from 'lucide-react'
+import React from 'react'
+import { Search, Filter, ArrowRight, Video, ChevronDown, Calendar, Clock, User, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/app/provider'
-import { supabase } from '@/services/supabaseClient'
+import { fetchLatestInterviews } from '@/services/queries/interviews'
 import InterviewCard from './InterviewCard'
 import Link from 'next/link'
+import moment from 'moment' // Added as per instruction, though not used in this snippet
 
 function LatestInterviewsList() {
-  const [interviewList, setInterviewList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useUser();
+  const { user, isAuthLoading } = useUser();
 
-  const GetInterviewList = useCallback(async () => {
-    setLoading(true);
-    let { data, error } = await supabase
-      .from('interviews')
-      .select('*, interview-feedback!interview_feedback_interview_id_fk(*)')
-      .eq('userEmail', user.email)
-      .order('created_at', { ascending: false })
-      .limit(3); // Mockup shows 3 items usually for "latest"
-
-    if (error) {
-      console.error('Supabase error:', error.message);
-    } else {
-      setInterviewList(data || []);
-    }
-    setLoading(false);
-  },[user]);
-
-  useEffect(() => {
-    if (user) {
-      GetInterviewList();
-    }
-  }, [user, GetInterviewList]);
+  const { data: interviewList = [], isLoading } = useQuery({
+    queryKey: ['interviews', 'latest', user?.email],
+    queryFn: () => fetchLatestInterviews(user.email),
+    enabled: !!user?.email && !isAuthLoading,
+  });
 
   return (
     <div className='my-16 space-y-8'> 
@@ -62,10 +45,31 @@ function LatestInterviewsList() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading && interviewList.length === 0 ? (
         <div className="space-y-4">
           {[1, 2, 3].map((_, i) => (
-            <div key={i} className="h-40 rounded-3xl bg-slate-50 animate-pulse border border-slate-100" />
+            <div key={i} className="bg-white rounded-3xl border border-slate-100 p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex items-start gap-5 w-full">
+                <div className="p-4 rounded-2xl bg-slate-50 shrink-0 h-14 w-14 animate-pulse" />
+                <div className="space-y-3 w-full max-w-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-6 w-48 bg-slate-100 rounded-lg animate-pulse" />
+                    <div className="h-6 w-16 bg-slate-50 rounded-full animate-pulse" />
+                  </div>
+                  <div className="h-4 w-full bg-slate-50 rounded animate-pulse" />
+                  <div className="flex gap-6 pt-2">
+                    <div className="h-4 w-16 bg-slate-50 rounded animate-pulse" />
+                    <div className="h-4 w-24 bg-slate-50 rounded animate-pulse" />
+                    <div className="h-4 w-20 bg-slate-50 rounded animate-pulse" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 self-end lg:self-center shrink-0">
+                <div className="h-10 w-24 bg-slate-50 rounded-xl animate-pulse" />
+                <div className="h-10 w-24 bg-slate-50 rounded-xl animate-pulse" />
+                <div className="h-11 w-32 bg-slate-100 rounded-xl animate-pulse" />
+              </div>
+            </div>
           ))}
         </div>
       ) : (
